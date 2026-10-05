@@ -59,7 +59,7 @@ describe('useNow', () => {
     )
     render(
       <I18nProvider locale="pt-BR">
-        <App initialTasks={[task]} />
+        <App initialData={{ decks: [{ id: 'd', name: 'Geral' }], tasks: [task] }} />
       </I18nProvider>,
     )
     expect(screen.getByText('Hoje')).toBeInTheDocument()

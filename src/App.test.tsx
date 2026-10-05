@@ -25,7 +25,7 @@ function renderApp(tasks: readonly Task[], locale: 'pt-BR' | 'en' = 'pt-BR') {
   let next = 0
   return renderWithI18n(
     <App
-      initialTasks={tasks}
+      initialData={{ decks: [{ id: 'd', name: 'Geral' }], tasks }}
       createId={() => {
         next += 1
         return `created-${next}`

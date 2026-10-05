@@ -7,7 +7,7 @@ import { Icon } from './components/Icon.tsx'
 import { LiveRegion, type Announcement } from './components/LiveRegion.tsx'
 import { TOP_CARD_ATTRIBUTE } from './components/TaskCard.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
-import { canRedo, canUndo, orderDeck, type Task } from './domain/index.ts'
+import { canRedo, canUndo, orderDeck, type AppData, type Task } from './domain/index.ts'
 import { useI18n } from './i18n/index.tsx'
 import { createId as randomId } from './lib/id.ts'
 import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
@@ -15,21 +15,19 @@ import type { SwipeAction } from './ui/gestures.ts'
 import { useNow } from './ui/useNow.ts'
 
 export interface AppProps {
-  readonly initialTasks: readonly Task[]
+  readonly initialData: AppData
   /** Id factory for new tasks (injectable for tests). */
   readonly createId?: () => string
 }
 
-export const DEFAULT_DECK_ID = 'default'
-
 // Toast and announcement keys per action (same names in both dictionary sections).
 const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
 
-export default function App({ initialTasks, createId = randomId }: AppProps) {
+export default function App({ initialData, createId = randomId }: AppProps) {
   const { t } = useI18n()
-  const [state, dispatch] = useReducer(deckReducer, initialTasks, createDeckState)
+  const [state, dispatch] = useReducer(deckReducer, initialData, createDeckState)
   const now = useNow()
-  const tasks = useMemo(() => orderDeck(state.present, now), [state.present, now])
+  const tasks = useMemo(() => orderDeck(state.present.tasks, now), [state.present.tasks, now])
   const top = tasks[0] ?? null
 
   const [flippedId, setFlippedId] = useState<string | null>(null)
@@ -64,7 +62,7 @@ export default function App({ initialTasks, createId = randomId }: AppProps) {
   function apply(action: DeckAction, message: string): void {
     const next = deckReducer(state, action)
     dispatch(action)
-    const empty = orderDeck(next.present, action.now).length === 0
+    const empty = orderDeck(next.present.tasks, action.now).length === 0
     messageCounter.current += 1
     setAnnouncement({ id: messageCounter.current, message: empty ? `${message} ${t.announce.empty}` : message })
     setFlippedId(null)
@@ -79,7 +77,7 @@ export default function App({ initialTasks, createId = randomId }: AppProps) {
 
   function finishAction(action: SwipeAction) {
     if (exiting === null) return
-    const title = state.present.find((task) => task.id === exiting.id)?.title ?? ''
+    const title = state.present.tasks.find((task) => task.id === exiting.id)?.title ?? ''
     apply({ type: action, id: exiting.id, now: new Date() }, t.announce[MESSAGE_KEY[action]](title))
     setExiting(null)
     setToast({ id: messageCounter.current, message: t.toast[MESSAGE_KEY[action]] })
@@ -205,7 +203,7 @@ export default function App({ initialTasks, createId = randomId }: AppProps) {
       </div>
       <LiveRegion announcement={announcement} />
       {sheetOpen && (
-        <AddTaskSheet deckId={DEFAULT_DECK_ID} createId={createId} onCreate={addTask} onClose={closeSheet} />
+        <AddTaskSheet deckId={state.present.decks[0]?.id ?? ''} createId={createId} onCreate={addTask} onClose={closeSheet} />
       )}
     </>
   )

@@ -2,7 +2,9 @@ import { addDays, addHours, format, subDays } from 'date-fns'
 import { createTask, TaskSchema, toDayKey, type Due, type Task, type TaskInput } from '../domain/index.ts'
 import { createId as randomId } from '../lib/id.ts'
 
-const DECK_ID = 'demo'
+/** Deck the demo tasks belong to until the app manages decks itself. */
+export const DEMO_DECK = { id: 'demo', name: 'Geral' } as const
+const DECK_ID = DEMO_DECK.id
 
 function dayOffset(now: Date, days: number): Due {
   return { date: toDayKey(addDays(now, days)) }
