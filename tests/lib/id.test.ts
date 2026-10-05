@@ -9,7 +9,7 @@ const realCrypto = globalThis.crypto
 /** Web Crypto as seen at http://192.168.x.x: getRandomValues but no randomUUID. */
 function stubInsecureContext() {
   vi.stubGlobal('crypto', {
-    getRandomValues: <T extends Uint8Array>(array: T) => realCrypto.getRandomValues(array),
+    getRandomValues: (array: Uint8Array<ArrayBuffer>) => realCrypto.getRandomValues(array),
   })
 }
 

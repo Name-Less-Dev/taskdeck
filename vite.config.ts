@@ -32,6 +32,7 @@ export default defineConfig({
       include: [
         'src/domain/**/*.ts',
         'src/state/**/*.ts',
+        'src/storage/**/*.ts',
         'src/ui/**/*.{ts,tsx}',
         'src/i18n/**/*.{ts,tsx}',
         'src/components/**/*.tsx',
@@ -44,6 +45,7 @@ export default defineConfig({
       thresholds: {
         'src/domain/**': { lines: 90 },
         'src/state/**': { lines: 90 },
+        'src/storage/**': { lines: 90 },
       },
     },
   },
