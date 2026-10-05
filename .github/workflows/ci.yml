@@ -25,6 +25,15 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+      - name: Report bundle size (gzip)
+        run: |
+          {
+            echo '| File | Raw (bytes) | Gzip (bytes) |'
+            echo '| --- | ---: | ---: |'
+            for file in dist/assets/*.js dist/assets/*.css; do
+              echo "| ${file#dist/} | $(wc -c < "$file") | $(gzip -9 -c "$file" | wc -c) |"
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
   test:
     name: Tests (TZ=${{ matrix.tz }})
