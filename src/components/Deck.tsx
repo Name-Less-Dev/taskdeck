@@ -1,4 +1,4 @@
-import type { KeyboardEventHandler, Ref } from 'react'
+import type { KeyboardEventHandler, ReactNode, Ref } from 'react'
 import type { Task } from '../domain/index.ts'
 import { useI18n } from '../i18n/index.tsx'
 import type { SwipeAction } from '../ui/gestures.ts'
@@ -25,6 +25,8 @@ export interface DeckProps {
   readonly onExited: (action: SwipeAction) => void
   readonly onKeyDown?: KeyboardEventHandler<HTMLElement>
   readonly regionRef?: Ref<HTMLElement>
+  /** Replaces the default "all caught up" message when there is no card. */
+  readonly emptyState?: ReactNode
 }
 
 export function Deck({
@@ -37,13 +39,14 @@ export function Deck({
   onExited,
   onKeyDown,
   regionRef,
+  emptyState,
 }: DeckProps) {
   const { t } = useI18n()
 
   return (
     <section ref={regionRef} className={styles.region} aria-label={t.app.deckLabel} tabIndex={-1} onKeyDown={onKeyDown}>
       {tasks.length === 0 ? (
-        <EmptyState />
+        (emptyState ?? <EmptyState />)
       ) : (
         tasks.slice(0, VISIBLE_CARDS).map((task, depth) => (
           <TaskCard

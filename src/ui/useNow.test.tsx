@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App.tsx'
 import { createTask } from '../domain/index.ts'
 import { I18nProvider } from '../i18n/index.tsx'
+import { appProps } from '../test/app.tsx'
 import { DEFAULT_NOW_INTERVAL_MS, useNow } from './useNow.ts'
 
 const LATE_EVENING = new Date(2026, 9, 5, 23, 59, 0)
@@ -59,7 +60,7 @@ describe('useNow', () => {
     )
     render(
       <I18nProvider locale="pt-BR">
-        <App initialData={{ decks: [{ id: 'd', name: 'Geral' }], tasks: [task] }} />
+        <App {...appProps({ decks: [{ id: 'd', name: 'Geral' }], tasks: [task] })} />
       </I18nProvider>,
     )
     expect(screen.getByText('Hoje')).toBeInTheDocument()

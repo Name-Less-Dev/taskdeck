@@ -1,6 +1,9 @@
 import { plural, type Dictionary } from './dictionary.ts'
 
-const p = (count: number, one: string, other: string) => plural('pt-BR', count, { one, other })
+// CLDR puts 0 in the "one" category for Portuguese ("0 tarefa"); Brazilian usage
+// is plural ("0 tarefas"), so zero always takes the plural form here.
+const p = (count: number, one: string, other: string) =>
+  count === 0 ? other.replace('{n}', '0') : plural('pt-BR', count, { one, other })
 
 export const ptBR: Dictionary = {
   locale: 'pt-BR',
@@ -72,6 +75,7 @@ export const ptBR: Dictionary = {
     postponed: (title) => `Tarefa adiada: ${title}. Desfazer disponível.`,
     removed: (title) => `Tarefa apagada: ${title}. Desfazer disponível.`,
     added: (title) => `Tarefa criada: ${title}.`,
+    samplesLoaded: (n) => p(n, '{n} tarefa de exemplo carregada.', '{n} tarefas de exemplo carregadas.'),
     undone: 'Ação desfeita.',
     redone: 'Ação refeita.',
     empty: 'Nenhuma tarefa no baralho.',
@@ -89,6 +93,31 @@ export const ptBR: Dictionary = {
     remove: 'Apagar',
     undo: 'Desfazer',
     redo: 'Refazer',
+  },
+  startup: {
+    loading: 'Carregando suas tarefas…',
+    generalDeck: 'Geral',
+    recoveredDeck: 'Recuperadas',
+  },
+  storage: {
+    memoryWarning: 'Seus dados não serão salvos neste navegador. Exporte um backup antes de sair.',
+    saveFailed: 'Não foi possível salvar as últimas alterações.',
+    retry: 'Tentar de novo',
+  },
+  firstRun: {
+    title: 'Bem-vindo ao taskdeck',
+    body: 'Comece com algumas tarefas de exemplo para experimentar os gestos, ou com o baralho vazio.',
+    loadSamples: 'Carregar tarefas de exemplo',
+    startEmpty: 'Começar do zero',
+  },
+  readOnly: {
+    title: 'Dados de uma versão mais nova',
+    newerVersion: (found, supported) =>
+      `Estes dados foram salvos por uma versão mais nova do taskdeck (formato ${found}). Esta versão só entende o formato ${supported}.`,
+    missingMigration: (found) => `Estes dados estão num formato antigo (${found}) que esta versão não sabe converter.`,
+    untouched: 'Nada foi alterado: o app está em modo somente leitura. Atualize o app ou exporte uma cópia dos dados.',
+    found: (decks, tasks) => `Encontrado: ${p(decks, '{n} registro de baralho', '{n} registros de baralho')}, ${p(tasks, '{n} registro de tarefa', '{n} registros de tarefa')}.`,
+    export: 'Exportar o que foi encontrado',
   },
   errorScreen: {
     title: 'Algo deu errado',

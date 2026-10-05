@@ -72,6 +72,7 @@ export const en: Dictionary = {
     postponed: (title) => `Task postponed: ${title}. Undo available.`,
     removed: (title) => `Task deleted: ${title}. Undo available.`,
     added: (title) => `Task created: ${title}.`,
+    samplesLoaded: (n) => p(n, '{n} sample task loaded.', '{n} sample tasks loaded.'),
     undone: 'Action undone.',
     redone: 'Action redone.',
     empty: 'No tasks in the deck.',
@@ -89,6 +90,31 @@ export const en: Dictionary = {
     remove: 'Delete',
     undo: 'Undo',
     redo: 'Redo',
+  },
+  startup: {
+    loading: 'Loading your tasks…',
+    generalDeck: 'General',
+    recoveredDeck: 'Recovered',
+  },
+  storage: {
+    memoryWarning: 'Your data will not be saved in this browser. Export a backup before leaving.',
+    saveFailed: 'Your latest changes could not be saved.',
+    retry: 'Try again',
+  },
+  firstRun: {
+    title: 'Welcome to taskdeck',
+    body: 'Start with a few sample tasks to try the gestures, or with an empty deck.',
+    loadSamples: 'Load sample tasks',
+    startEmpty: 'Start from scratch',
+  },
+  readOnly: {
+    title: 'Data from a newer version',
+    newerVersion: (found, supported) =>
+      `This data was saved by a newer version of taskdeck (format ${found}). This version only understands format ${supported}.`,
+    missingMigration: (found) => `This data uses an old format (${found}) that this version cannot convert.`,
+    untouched: 'Nothing was changed: the app is read-only. Update the app or export a copy of the data.',
+    found: (decks, tasks) => `Found: ${p(decks, '{n} deck record', '{n} deck records')}, ${p(tasks, '{n} task record', '{n} task records')}.`,
+    export: 'Export what was found',
   },
   errorScreen: {
     title: 'Something went wrong',

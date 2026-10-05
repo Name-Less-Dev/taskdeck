@@ -4,7 +4,8 @@ import { en } from './en.ts'
 import { ptBR } from './pt-BR.ts'
 
 export type { Dictionary, Locale } from './dictionary.ts'
-export { detectLocale } from './locale.ts'
+export { detectLocale, isLocaleForcedByUrl, resolveLocale } from './locale.ts'
+export type { LanguageSetting } from './locale.ts'
 
 export const dictionaries: Readonly<Record<Locale, Dictionary>> = { 'pt-BR': ptBR, en }
 

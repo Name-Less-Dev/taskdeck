@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import { createTask, type Task, type TaskInput } from './domain/index.ts'
+import { appProps } from './test/app.tsx'
 import { renderWithI18n } from './test/render.tsx'
 
 // Fixed local clock (5 Oct 2026, 10:00). Only Date is faked: real timers keep
@@ -25,7 +26,7 @@ function renderApp(tasks: readonly Task[], locale: 'pt-BR' | 'en' = 'pt-BR') {
   let next = 0
   return renderWithI18n(
     <App
-      initialData={{ decks: [{ id: 'd', name: 'Geral' }], tasks }}
+      {...appProps({ decks: [{ id: 'd', name: 'Geral' }], tasks })}
       createId={() => {
         next += 1
         return `created-${next}`

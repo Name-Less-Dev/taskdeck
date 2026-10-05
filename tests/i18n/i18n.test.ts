@@ -97,6 +97,12 @@ describe('other formatters', () => {
     )
   })
 
+  it('uses the plural for zero in Portuguese, despite the CLDR "one" category', () => {
+    expect(new Intl.PluralRules('pt-BR').select(0)).toBe('one')
+    expect(ptBR.readOnly.found(0, 0)).toBe('Encontrado: 0 registros de baralho, 0 registros de tarefa.')
+    expect(en.readOnly.found(0, 1)).toBe('Found: 0 deck records, 1 task record.')
+  })
+
   it('formats the postponed badge and counter with plurals', () => {
     expect([ptBR.card.postponedBadge(1), ptBR.card.postponedBadge(3)]).toEqual(['adiada 1 dia', 'adiada 3 dias'])
     expect([en.card.postponedBadge(1), en.card.postponedBadge(3)]).toEqual(['postponed 1 day', 'postponed 3 days'])

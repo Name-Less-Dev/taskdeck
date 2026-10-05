@@ -75,6 +75,7 @@ export interface Dictionary {
     readonly postponed: (title: string) => string
     readonly removed: (title: string) => string
     readonly added: (title: string) => string
+    readonly samplesLoaded: (count: number) => string
     readonly undone: string
     readonly redone: string
     readonly empty: string
@@ -92,6 +93,30 @@ export interface Dictionary {
     readonly remove: string
     readonly undo: string
     readonly redo: string
+  }
+  readonly startup: {
+    readonly loading: string
+    readonly generalDeck: string
+    readonly recoveredDeck: string
+  }
+  readonly storage: {
+    readonly memoryWarning: string
+    readonly saveFailed: string
+    readonly retry: string
+  }
+  readonly firstRun: {
+    readonly title: string
+    readonly body: string
+    readonly loadSamples: string
+    readonly startEmpty: string
+  }
+  readonly readOnly: {
+    readonly title: string
+    readonly newerVersion: (found: number, supported: number) => string
+    readonly missingMigration: (found: number) => string
+    readonly untouched: string
+    readonly found: (decks: number, tasks: number) => string
+    readonly export: string
   }
   readonly errorScreen: {
     readonly title: string

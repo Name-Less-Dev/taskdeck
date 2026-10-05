@@ -2,21 +2,25 @@ import { addDays, addHours, format, subDays } from 'date-fns'
 import { createTask, TaskSchema, toDayKey, type Due, type Task, type TaskInput } from '../domain/index.ts'
 import { createId as randomId } from '../lib/id.ts'
 
-/** Deck the demo tasks belong to until the app manages decks itself. */
-export const DEMO_DECK = { id: 'demo', name: 'Geral' } as const
-const DECK_ID = DEMO_DECK.id
 
 function dayOffset(now: Date, days: number): Due {
   return { date: toDayKey(addDays(now, days)) }
 }
 
+export interface DemoOptions {
+  /** Deck that receives the sample tasks. */
+  readonly deckId: string
+  readonly createId?: () => string
+}
+
 /**
- * In-memory demo deck (stage 2 has no persistence), relative to `now` so it
- * always covers every urgency band. Ids are generated here, outside the domain.
+ * Sample tasks relative to `now`, covering every urgency band. They only
+ * enter the app through the "load sample tasks" button on first run, never
+ * on top of persisted data. Ids are generated here, outside the domain.
  */
-export function createDemoTasks(now: Date, createId: () => string = randomId): Task[] {
+export function createDemoTasks(now: Date, { deckId, createId = randomId }: DemoOptions): Task[] {
   const inTwoHours = addHours(now, 2)
-  const make = (input: Omit<TaskInput, 'deckId'>) => createTask({ deckId: DECK_ID, ...input }, { id: createId(), now })
+  const make = (input: Omit<TaskInput, 'deckId'>) => createTask({ deckId, ...input }, { id: createId(), now })
 
   const postponed = TaskSchema.parse({
     ...make({

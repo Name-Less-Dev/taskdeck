@@ -3,32 +3,79 @@ import styles from './App.module.css'
 import { ActionBar } from './components/ActionBar.tsx'
 import { AddTaskSheet } from './components/AddTaskSheet.tsx'
 import { Deck, type Exiting } from './components/Deck.tsx'
+import { EmptyState, emptyStateButton } from './components/EmptyState.tsx'
 import { Icon } from './components/Icon.tsx'
 import { LiveRegion, type Announcement } from './components/LiveRegion.tsx'
+import { StorageBanner } from './components/StorageBanner.tsx'
 import { TOP_CARD_ATTRIBUTE } from './components/TaskCard.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
+import { createDemoTasks } from './demo/seed.ts'
 import { canRedo, canUndo, orderDeck, type AppData, type Task } from './domain/index.ts'
 import { useI18n } from './i18n/index.tsx'
 import { createId as randomId } from './lib/id.ts'
 import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
+import { SCHEMA_VERSION, type AppStorage, type Language, type Meta } from './storage/index.ts'
+import type { Download } from './ui/download.ts'
 import type { SwipeAction } from './ui/gestures.ts'
+import { useAutosave } from './ui/useAutosave.ts'
 import { useNow } from './ui/useNow.ts'
+import { browserPersistence, usePersistence, type PersistenceApi } from './ui/usePersistence.ts'
 
 export interface AppProps {
   readonly initialData: AppData
-  /** Id factory for new tasks (injectable for tests). */
+  readonly initialMeta: Meta
+  readonly storage: AppStorage
+  /** "memory" when IndexedDB could not be opened: nothing survives a reload. */
+  readonly storageMode: 'indexeddb' | 'memory'
+  /** Nothing was ever saved: offer sample tasks or an empty start. */
+  readonly firstRun?: boolean
+  readonly quarantineTotal?: number
+  readonly language: Language
+  readonly onLanguageChange: (language: Language) => void
+  /** Id factory for new tasks and decks (injectable for tests). */
   readonly createId?: () => string
+  readonly persistence?: PersistenceApi
+  readonly download?: Download
 }
 
 // Toast and announcement keys per action (same names in both dictionary sections).
 const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
 
-export default function App({ initialData, createId = randomId }: AppProps) {
+export default function App({
+  initialData,
+  initialMeta,
+  storage,
+  storageMode,
+  firstRun: initialFirstRun = false,
+  language,
+  createId = randomId,
+  persistence = browserPersistence,
+}: AppProps) {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(deckReducer, initialData, createDeckState)
+  const { decks, tasks: allTasks } = state.present
   const now = useNow()
-  const tasks = useMemo(() => orderDeck(state.present.tasks, now), [state.present.tasks, now])
+
+  // UI state outside the undo history. activeDeckId is persisted in meta.
+  const [activeDeckId] = useState<string | null>(initialMeta.settings.activeDeckId)
+  const [lastBackupAt] = useState<string | null>(initialMeta.lastBackupAt)
+  const [firstRun, setFirstRun] = useState(initialFirstRun)
+  // A deck can disappear (removed, undo, import): fall back to "all decks".
+  const deckId = activeDeckId !== null && decks.some((deck) => deck.id === activeDeckId) ? activeDeckId : null
+
+  const visibleTasks = useMemo(
+    () => (deckId === null ? allTasks : allTasks.filter((task) => task.deckId === deckId)),
+    [allTasks, deckId],
+  )
+  const tasks = useMemo(() => orderDeck(visibleTasks, now), [visibleTasks, now])
   const top = tasks[0] ?? null
+
+  const meta = useMemo<Meta>(
+    () => ({ schemaVersion: SCHEMA_VERSION, settings: { activeDeckId: deckId, language }, lastBackupAt }),
+    [deckId, language, lastBackupAt],
+  )
+  const autosave = useAutosave(storage, state.present, meta)
+  const { requestOnce: requestPersistence } = usePersistence(persistence, storageMode === 'indexeddb')
 
   const [flippedId, setFlippedId] = useState<string | null>(null)
   const [exiting, setExiting] = useState<Exiting | null>(null)
@@ -53,6 +100,12 @@ export default function App({ initialData, createId = randomId }: AppProps) {
   const busy = exiting !== null
   const undoAvailable = canUndo(state) && !busy
   const redoAvailable = canRedo(state) && !busy
+  const defaultDeckId = deckId ?? decks[0]?.id ?? ''
+
+  function announce(message: string) {
+    messageCounter.current += 1
+    setAnnouncement({ id: messageCounter.current, message })
+  }
 
   /**
    * Dispatches and announces the result. The reducer is pure, so running it
@@ -62,11 +115,13 @@ export default function App({ initialData, createId = randomId }: AppProps) {
   function apply(action: DeckAction, message: string): void {
     const next = deckReducer(state, action)
     dispatch(action)
-    const empty = orderDeck(next.present.tasks, action.now).length === 0
-    messageCounter.current += 1
-    setAnnouncement({ id: messageCounter.current, message: empty ? `${message} ${t.announce.empty}` : message })
+    const nextVisible = deckId === null ? next.present.tasks : next.present.tasks.filter((task) => task.deckId === deckId)
+    const empty = orderDeck(nextVisible, action.now).length === 0
+    announce(empty ? `${message} ${t.announce.empty}` : message)
     setFlippedId(null)
     setFocusRequest((n) => n + 1)
+    setFirstRun(false)
+    requestPersistence()
   }
 
   /** Gestures, buttons and keys share this path: exit animation first, dispatch after. */
@@ -77,7 +132,7 @@ export default function App({ initialData, createId = randomId }: AppProps) {
 
   function finishAction(action: SwipeAction) {
     if (exiting === null) return
-    const title = state.present.tasks.find((task) => task.id === exiting.id)?.title ?? ''
+    const title = allTasks.find((task) => task.id === exiting.id)?.title ?? ''
     apply({ type: action, id: exiting.id, now: new Date() }, t.announce[MESSAGE_KEY[action]](title))
     setExiting(null)
     setToast({ id: messageCounter.current, message: t.toast[MESSAGE_KEY[action]] })
@@ -102,6 +157,18 @@ export default function App({ initialData, createId = randomId }: AppProps) {
 
   function closeSheet() {
     setSheetOpen(false)
+    setFocusRequest((n) => n + 1)
+  }
+
+  function loadSamples() {
+    const now = new Date()
+    const samples = createDemoTasks(now, { deckId: defaultDeckId, createId })
+    apply({ type: 'replaceAll', data: { decks, tasks: [...allTasks, ...samples] }, now }, t.announce.samplesLoaded(samples.length))
+  }
+
+  function startEmpty() {
+    setFirstRun(false)
+    autosave.saveNow()
     setFocusRequest((n) => n + 1)
   }
 
@@ -150,6 +217,18 @@ export default function App({ initialData, createId = randomId }: AppProps) {
     }
   }
 
+  const emptyState =
+    firstRun && allTasks.length === 0 ? (
+      <EmptyState title={t.firstRun.title} body={t.firstRun.body} icon="plus">
+        <button type="button" className={emptyStateButton.primary} onClick={loadSamples}>
+          {t.firstRun.loadSamples}
+        </button>
+        <button type="button" className={emptyStateButton.secondary} onClick={startEmpty}>
+          {t.firstRun.startEmpty}
+        </button>
+      </EmptyState>
+    ) : undefined
+
   return (
     <>
       <div className={styles.shell} inert={sheetOpen}>
@@ -178,6 +257,8 @@ export default function App({ initialData, createId = randomId }: AppProps) {
           </button>
         </header>
 
+        <StorageBanner memoryMode={storageMode === 'memory'} saveFailed={autosave.saveFailed} onRetry={autosave.retry} />
+
         <main className={styles.main}>
           <Deck
             tasks={tasks}
@@ -189,6 +270,7 @@ export default function App({ initialData, createId = randomId }: AppProps) {
             onExited={finishAction}
             onKeyDown={handleDeckKeyDown}
             regionRef={regionRef}
+            emptyState={emptyState}
           />
           <UndoToast
             toast={toast}
@@ -202,9 +284,7 @@ export default function App({ initialData, createId = randomId }: AppProps) {
         <ActionBar disabled={top === null || busy} onAction={requestAction} />
       </div>
       <LiveRegion announcement={announcement} />
-      {sheetOpen && (
-        <AddTaskSheet deckId={state.present.decks[0]?.id ?? ''} createId={createId} onCreate={addTask} onClose={closeSheet} />
-      )}
+      {sheetOpen && <AddTaskSheet deckId={defaultDeckId} createId={createId} onCreate={addTask} onClose={closeSheet} />}
     </>
   )
 }
