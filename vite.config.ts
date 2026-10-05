@@ -9,10 +9,11 @@ export default defineConfig({
     globalSetup: ['./tests/global-setup.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/domain/**/*.ts'],
+      include: ['src/domain/**/*.ts', 'src/state/**/*.ts'],
       reporter: ['text', 'html', 'json-summary'],
       thresholds: {
-        lines: 90,
+        'src/domain/**': { lines: 90 },
+        'src/state/**': { lines: 90 },
       },
     },
   },
