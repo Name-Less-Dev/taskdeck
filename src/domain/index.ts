@@ -26,3 +26,8 @@ export {
   toDayKey,
 } from './dates.ts'
 export type { DayKey, IntervalUnit } from './dates.ts'
+
+export { getDueStatus, SOON_WINDOW_MINUTES, WEEK_HORIZON_DAYS } from './due-status.ts'
+export type { DueStatus, DueStatusKind } from './due-status.ts'
+
+export { compareUrgency, isPostponedToday, orderDeck, topCard, URGENCY_BANDS } from './urgency.ts'
