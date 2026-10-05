@@ -5,20 +5,23 @@ Guidance for working in this repository.
 ## Conventions
 
 - Code, identifiers, tests, comments and commit messages are in **English**. The user
-  communicates in Portuguese; the UI will be translated (PT/EN) later.
-- Conventional commits (`feat(domain): ...`, `chore: ...`, `ci: ...`, `docs: ...`), one
-  commit per logical part, each with its tests.
+  communicates in Portuguese. UI text lives only in `src/i18n` (pt-BR default, en);
+  never hard-code user-visible strings in components.
+- Conventional commits (`feat(domain): ...`, `feat(ui): ...`, `test(ui): ...`, `ci: ...`,
+  `docs: ...`), one commit per logical part, each with its tests.
 - TypeScript strict with `noUncheckedIndexedAccess`. No `any`. No non-null assertion
   (`!`) unless the line carries an `eslint-disable-next-line ... -- reason` comment.
 - npm only. Node 24+.
 - Never open, read or print `.env` files.
+- Do not change `src/domain` unless fixing a real bug: first a failing test that
+  reproduces it, then the fix in its own commit.
 
 ## Commands
 
 ```bash
-npm run dev            # Vite dev server
-npm test               # Vitest once (TZ defaults to America/Sao_Paulo)
-npm run test:coverage  # V8 coverage, >= 90% lines required in src/domain
+npm run dev            # Vite dev server (-- --host to reach it from a phone)
+npm test               # Vitest once: "node" and "dom" (jsdom) projects
+npm run test:coverage  # V8 coverage, >= 90% lines required in src/domain and src/state
 npm run lint           # ESLint (type-checked)
 npm run typecheck      # tsc --noEmit for app, tooling and tests
 npm run build          # tsc -b && vite build
@@ -41,21 +44,32 @@ strips `TZ` before it reaches Node.
   strings, so they pass in any zone. Fixed `now`: 5 Oct 2026 10:00 local.
 - No snapshot tests; no empty tests to inflate coverage.
 
+## UI conventions (stage 2)
+
+- `src/state/deckReducer.ts` is pure (no React); every action carries `now`.
+- Swipe meaning comes only from `decideSwipe` (`src/ui/gestures.ts`). Gestures,
+  buttons and keys all go through `App.requestAction` → exit animation → dispatch.
+- Styling: CSS Modules + tokens from `src/index.css`. New text/background token pairs
+  must be added to `tests/ui/contrast.test.ts` (WCAG AA in light and dark).
+- Motion is imported from `motion/react`. Do not hand callback refs to cards that can
+  be promoted in the stack; find the top card through `data-top-card` instead.
+- Do not simulate drag in jsdom; test the decision with `decideSwipe` and the actions
+  through buttons/keys. Component tests fake only `Date` (`vi.useFakeTimers({ toFake: ['Date'] })`).
+
 ## Current state
 
-Stage 1 is done: domain core (schemas, dates, due status, urgency/deck order,
-recurrence, actions, undo history, insights) with tests passing in
-America/Sao_Paulo, UTC and Pacific/Auckland. There is **no UI** beyond a placeholder
-`App.tsx`, and no persistence, PWA or gestures.
+Stage 1 (domain core) and stage 2 (card UI) are done. One deck screen with drag,
+buttons and keyboard for every action, undo/redo with toast, live-region
+announcements, a minimal "new task" sheet and pt-BR/en. State is in memory, seeded
+with demo data (`src/demo/seed.ts`). The manual phone QA checklist in the README is
+still open.
 
-## Roadmap
+## Roadmap (remaining)
 
-1. ~~Domain core~~ (done)
-2. Card UI with gestures (right = complete, left = postpone, up = delete, tap = flip)
-   and undo, using `History<T>`.
-3. Decks (`Deck` type already exists), tags, local persistence (validate stored data
-   with the zod schemas on load).
+3. Multiple decks (`Deck` type already exists), tags, local persistence (validate
+   stored data with the zod schemas on load).
 4. Due-date and recurrence editing (recompute `originDay` when the due date changes),
    `.ics` export.
-5. PWA (offline, installable) and backup/restore.
+5. PWA (offline, installable), backup/restore and Playwright end-to-end tests
+   (including real drag gestures).
 6. Optional: Capacitor packaging for Android.
