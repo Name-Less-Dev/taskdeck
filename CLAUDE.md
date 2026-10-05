@@ -51,6 +51,8 @@ strips `TZ` before it reaches Node.
   buttons and keys all go through `App.requestAction` → exit animation → dispatch.
 - Styling: CSS Modules + tokens from `src/index.css`. New text/background token pairs
   must be added to `tests/ui/contrast.test.ts` (WCAG AA in light and dark).
+- Ids: always `createId()` from `src/lib/id.ts`, never `crypto.randomUUID` (missing in
+  insecure contexts such as `http://<LAN IP>` on a phone; ESLint enforces it).
 - Motion is imported from `motion/react`. Do not hand callback refs to cards that can
   be promoted in the stack; find the top card through `data-top-card` instead.
 - Do not simulate drag in jsdom; test the decision with `decideSwipe` and the actions

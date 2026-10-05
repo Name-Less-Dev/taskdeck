@@ -184,6 +184,24 @@ Not done yet: this needs a real device. Run `npm run dev -- --host`, then open t
 Wi-Fi. On Windows, allow Node.js through the firewall for private networks when asked
 (or the phone will time out).
 
+**`http://<LAN IP>` is not a secure context.** Browsers only treat HTTPS and
+`localhost` as secure, so on the phone over plain HTTP:
+
+- `crypto.randomUUID` does not exist. The app never calls it directly: ids come from
+  `createId()` (`src/lib/id.ts`), which falls back to `crypto.getRandomValues`. ESLint
+  blocks direct `crypto.randomUUID` calls. (This was the cause of a blank screen on the
+  phone in stage 2.)
+- No service worker, so no offline mode and no "install app" (PWA) prompt. Other
+  secure-context APIs (clipboard, Web Share, notifications) are also missing; none are
+  used yet.
+- **PWA testing (stage 5) requires HTTPS**: use the Vercel deployment URL, not the LAN
+  address.
+
+In development, uncaught errors and unhandled promise rejections are printed on the
+page itself by a small overlay (`src/dev/errorOverlay.ts`), since the phone has no
+DevTools. Production builds drop it; there, a render error shows the error screen with a
+"Recarregar" button instead of a blank page.
+
 - [ ] Swipe right, left and up: overlay grows with the distance, card leaves, action applies
 - [ ] Release before the threshold: card springs back, nothing happens
 - [ ] Short fast flick in each direction triggers the action
@@ -196,6 +214,24 @@ Wi-Fi. On Windows, allow Node.js through the firewall for private networks when 
 - [ ] Rotating the screen keeps the layout usable
 - [ ] Screen reader (TalkBack / VoiceOver): card name, flip state, actions and
       announcements are read
+
+## Browser support
+
+The build uses Vite 8's default target (Chrome/Edge 111, Firefox 114, Safari/iOS 16.4).
+Vite down-compiles syntax but does not polyfill APIs or CSS. Newer features in use:
+
+| Feature | Where | Notes |
+| --- | --- | --- |
+| `crypto.randomUUID` | `src/lib/id.ts` only | Secure contexts only; falls back to `getRandomValues` |
+| `Array.prototype.with` | `domain/actions.ts` (`upsertTask`) | Firefox 115+, one version above the target |
+| `Array.prototype.at` | `AddTaskSheet` focus trap | Safari 15.4+, Firefox 90+ |
+| `inert` attribute | stacked cards, page behind the sheet | Safari 15.5+, Firefox 112+; also backed by `aria-hidden`/`tabIndex` |
+| CSS `:has()` | selected priority in the sheet | **Firefox 121+**: on 114-120 the selected option is not highlighted |
+| CSS `dvh` units | app shell, card, sheet | Safari 15.4+, Firefox 101+; no `vh` fallback |
+| `Intl.PluralRules`, `Intl.DateTimeFormat` | i18n, dates | Widely available |
+
+No clipboard, Web Share, `structuredClone`, service worker or notification APIs are
+used yet.
 
 ## Known limitations
 
