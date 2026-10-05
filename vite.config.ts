@@ -5,12 +5,39 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [react()],
   test: {
-    include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
     globalSetup: ['./tests/global-setup.ts'],
+    projects: [
+      {
+        // Pure logic (domain, state, gestures, i18n): plain Node, no DOM.
+        extends: true,
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['tests/**/*.test.ts'],
+        },
+      },
+      {
+        // React components and hooks: jsdom + Testing Library.
+        extends: true,
+        test: {
+          name: 'dom',
+          environment: 'jsdom',
+          include: ['src/**/*.test.tsx'],
+          setupFiles: ['./src/test/setup.ts'],
+        },
+      },
+    ],
     coverage: {
       provider: 'v8',
-      include: ['src/domain/**/*.ts', 'src/state/**/*.ts', 'src/ui/**/*.{ts,tsx}', 'src/i18n/**/*.{ts,tsx}'],
-      exclude: ['**/*.test.{ts,tsx}'],
+      include: [
+        'src/domain/**/*.ts',
+        'src/state/**/*.ts',
+        'src/ui/**/*.{ts,tsx}',
+        'src/i18n/**/*.{ts,tsx}',
+        'src/components/**/*.tsx',
+        'src/App.tsx',
+      ],
+      exclude: ['**/*.test.{ts,tsx}', 'src/test/**'],
       reporter: ['text', 'html', 'json-summary'],
       thresholds: {
         'src/domain/**': { lines: 90 },

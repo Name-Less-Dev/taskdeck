@@ -1,0 +1,225 @@
+/* One stacked slot. --depth: 0 = top card, 1 and 2 = cards underneath. */
+.slot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: calc(10 - var(--depth));
+  transform: translateY(calc(var(--depth) * 14px)) scale(calc(1 - var(--depth) * 0.05));
+  transition: transform 220ms ease;
+}
+
+.card {
+  position: relative;
+  width: min(92vw, 420px);
+  height: 60dvh;
+  max-height: 640px;
+  perspective: 1400px;
+  border-radius: var(--radius-lg);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.top {
+  cursor: grab;
+  /* The card handles every touch itself: no scrolling, zooming or back-swipe from it. */
+  touch-action: none;
+}
+
+.top:active {
+  cursor: grabbing;
+}
+
+.inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 450ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.flipped {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.back {
+  transform: rotateY(180deg);
+  overflow-y: auto;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.badge[data-tone='danger'] {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-fg);
+}
+
+.badge[data-tone='warning'] {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-fg);
+}
+
+.badge[data-tone='accent'] {
+  background: var(--color-info-bg);
+  color: var(--color-info-fg);
+}
+
+.badge[data-tone='neutral'] {
+  background: var(--color-neutral-bg);
+  color: var(--color-neutral-fg);
+}
+
+.badge[data-tone='muted'] {
+  background: var(--color-muted-bg);
+  color: var(--color-muted-fg);
+  font-weight: 500;
+}
+
+.title {
+  flex: 1;
+  margin: var(--space-2) 0 0;
+  font-size: clamp(1.4rem, 5vw, 1.9rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.priority,
+.repeat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.priority[data-priority='high'] {
+  color: var(--color-danger-fg);
+  font-weight: 700;
+}
+
+.hint {
+  margin-left: auto;
+}
+
+.backHeading {
+  margin: 0;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.description {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: auto 0 0;
+  font-size: 0.9375rem;
+}
+
+.details dt {
+  color: var(--color-text-muted);
+}
+
+.details dd {
+  margin: 0;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-lg);
+  color: var(--color-on-overlay);
+  font-size: 1.5rem;
+  font-weight: 700;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.overlay[data-action='complete'] {
+  background: var(--color-complete);
+}
+
+.overlay[data-action='postpone'] {
+  background: var(--color-postpone);
+}
+
+.overlay[data-action='remove'] {
+  background: var(--color-remove);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No 3D flip: the faces cross-fade instead. Dragging still works. */
+  .slot {
+    transition: none;
+  }
+
+  .inner,
+  .flipped,
+  .back {
+    transform: none;
+    transition: none;
+  }
+
+  .face {
+    transition: opacity 150ms linear;
+  }
+
+  .back,
+  .flipped .front {
+    opacity: 0;
+  }
+
+  .flipped .back {
+    opacity: 1;
+  }
+}
