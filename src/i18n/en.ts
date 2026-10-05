@@ -82,6 +82,7 @@ export const en: Dictionary = {
   },
   shortcuts: {
     summary: 'Shortcuts',
+    spaceKey: 'Space',
     flip: 'Flip the card',
     complete: 'Complete',
     postpone: 'Postpone',

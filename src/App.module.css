@@ -27,3 +27,30 @@
   min-height: 0;
   padding: var(--space-2) var(--space-4) var(--space-5);
 }
+
+.history {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.headerButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.headerButton:not(:disabled):hover {
+  border-color: var(--color-border);
+}
+
+.headerButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

@@ -1,7 +1,10 @@
-import { useMemo, useReducer, useRef, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from 'react'
 import styles from './App.module.css'
+import { ActionBar } from './components/ActionBar.tsx'
 import { Deck, type Exiting } from './components/Deck.tsx'
-import { orderDeck, type Task } from './domain/index.ts'
+import { Icon } from './components/Icon.tsx'
+import { UndoToast, type ToastData } from './components/UndoToast.tsx'
+import { canRedo, canUndo, orderDeck, type Task } from './domain/index.ts'
 import { useI18n } from './i18n/index.tsx'
 import { createDeckState, deckReducer } from './state/deckReducer.ts'
 import type { SwipeAction } from './ui/gestures.ts'
@@ -10,6 +13,8 @@ import { useNow } from './ui/useNow.ts'
 export interface AppProps {
   readonly initialTasks: readonly Task[]
 }
+
+const TOAST_MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
 
 export default function App({ initialTasks }: AppProps) {
   const { t } = useI18n()
@@ -20,12 +25,26 @@ export default function App({ initialTasks }: AppProps) {
 
   const [flippedId, setFlippedId] = useState<string | null>(null)
   const [exiting, setExiting] = useState<Exiting | null>(null)
+  const [toast, setToast] = useState<ToastData | null>(null)
+  const toastCounter = useRef(0)
+
   const regionRef = useRef<HTMLElement>(null)
   const topCardRef = useRef<HTMLDivElement>(null)
+  const [focusRequest, setFocusRequest] = useState(0)
 
-  /** Gestures and buttons share this path: exit animation first, dispatch after. */
+  // After an action the card under focus is gone: move focus back to the deck.
+  useEffect(() => {
+    if (focusRequest === 0) return
+    ;(topCardRef.current ?? regionRef.current)?.focus()
+  }, [focusRequest])
+
+  const busy = exiting !== null
+  const undoAvailable = canUndo(state) && !busy
+  const redoAvailable = canRedo(state) && !busy
+
+  /** Gestures, buttons and keys share this path: exit animation first, dispatch after. */
   function requestAction(action: SwipeAction) {
-    if (top === null || exiting !== null) return
+    if (top === null || busy) return
     setExiting({ id: top.id, action })
   }
 
@@ -34,6 +53,25 @@ export default function App({ initialTasks }: AppProps) {
     dispatch({ type: action, id: exiting.id, now: new Date() })
     setExiting(null)
     setFlippedId(null)
+    toastCounter.current += 1
+    setToast({ id: toastCounter.current, message: t.toast[TOAST_MESSAGE_KEY[action]] })
+    setFocusRequest((n) => n + 1)
+  }
+
+  function undoLast() {
+    if (!undoAvailable) return
+    dispatch({ type: 'undo', now: new Date() })
+    setToast(null)
+    setFlippedId(null)
+    setFocusRequest((n) => n + 1)
+  }
+
+  function redoLast() {
+    if (!redoAvailable) return
+    dispatch({ type: 'redo', now: new Date() })
+    setToast(null)
+    setFlippedId(null)
+    setFocusRequest((n) => n + 1)
   }
 
   function toggleFlip() {
@@ -41,11 +79,62 @@ export default function App({ initialTasks }: AppProps) {
     setFlippedId((current) => (current === top.id ? null : top.id))
   }
 
+  function handleDeckKeyDown(event: KeyboardEvent<HTMLElement>) {
+    const key = event.key.toLowerCase()
+    const modifier = event.ctrlKey || event.metaKey
+
+    if (modifier && (key === 'y' || (key === 'z' && event.shiftKey))) {
+      event.preventDefault()
+      redoLast()
+      return
+    }
+    if (modifier && key === 'z') {
+      event.preventDefault()
+      undoLast()
+      return
+    }
+    if (modifier || event.altKey) return
+
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        // Only the card itself flips; Enter on another control keeps its meaning.
+        if (event.target !== topCardRef.current) return
+        event.preventDefault()
+        toggleFlip()
+        return
+      case 'ArrowRight':
+        event.preventDefault()
+        requestAction('complete')
+        return
+      case 'ArrowLeft':
+        event.preventDefault()
+        requestAction('postpone')
+        return
+      case 'Delete':
+      case 'Backspace':
+        event.preventDefault()
+        requestAction('remove')
+        return
+    }
+  }
+
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
         <h1 className={styles.brand}>{t.app.name}</h1>
+        <div className={styles.history} role="group" aria-label={t.app.historyLabel}>
+          <button type="button" className={styles.headerButton} disabled={!undoAvailable} onClick={undoLast}>
+            <Icon name="undo" size={18} />
+            <span>{t.actions.undo}</span>
+          </button>
+          <button type="button" className={styles.headerButton} disabled={!redoAvailable} onClick={redoLast}>
+            <Icon name="redo" size={18} />
+            <span>{t.actions.redo}</span>
+          </button>
+        </div>
       </header>
+
       <main className={styles.main}>
         <Deck
           tasks={tasks}
@@ -55,10 +144,20 @@ export default function App({ initialTasks }: AppProps) {
           onFlip={toggleFlip}
           onRequestAction={requestAction}
           onExited={finishAction}
+          onKeyDown={handleDeckKeyDown}
           regionRef={regionRef}
           topCardRef={topCardRef}
         />
+        <UndoToast
+          toast={toast}
+          onUndo={undoLast}
+          onDismiss={() => {
+            setToast(null)
+          }}
+        />
       </main>
+
+      <ActionBar disabled={top === null || busy} onAction={requestAction} />
     </div>
   )
 }

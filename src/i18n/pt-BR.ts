@@ -82,6 +82,7 @@ export const ptBR: Dictionary = {
   },
   shortcuts: {
     summary: 'Atalhos',
+    spaceKey: 'Espaço',
     flip: 'Virar a carta',
     complete: 'Concluir',
     postpone: 'Adiar',

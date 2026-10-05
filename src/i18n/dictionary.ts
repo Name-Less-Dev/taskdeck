@@ -85,6 +85,7 @@ export interface Dictionary {
   }
   readonly shortcuts: {
     readonly summary: string
+    readonly spaceKey: string
     readonly flip: string
     readonly complete: string
     readonly postpone: string
