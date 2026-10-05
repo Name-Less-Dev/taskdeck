@@ -9,7 +9,7 @@ export default defineConfig({
     globalSetup: ['./tests/global-setup.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/domain/**/*.ts', 'src/state/**/*.ts', 'src/ui/**/*.{ts,tsx}'],
+      include: ['src/domain/**/*.ts', 'src/state/**/*.ts', 'src/ui/**/*.{ts,tsx}', 'src/i18n/**/*.{ts,tsx}'],
       exclude: ['**/*.test.{ts,tsx}'],
       reporter: ['text', 'html', 'json-summary'],
       thresholds: {
