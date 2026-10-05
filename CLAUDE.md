@@ -13,15 +13,15 @@ Guidance for working in this repository.
   (`!`) unless the line carries an `eslint-disable-next-line ... -- reason` comment.
 - npm only. Node 24+.
 - Never open, read or print `.env` files.
-- Do not change `src/domain` unless fixing a real bug: first a failing test that
-  reproduces it, then the fix in its own commit.
+- `src/domain` may grow with new PURE functions; existing behaviour only changes to fix
+  a real bug: first a failing test that reproduces it, then the fix in its own commit.
 
 ## Commands
 
 ```bash
 npm run dev            # Vite dev server (-- --host to reach it from a phone)
 npm test               # Vitest once: "node" and "dom" (jsdom) projects
-npm run test:coverage  # V8 coverage, >= 90% lines required in src/domain and src/state
+npm run test:coverage  # V8 coverage, >= 90% lines required in src/domain, src/state, src/storage
 npm run lint           # ESLint (type-checked)
 npm run typecheck      # tsc --noEmit for app, tooling and tests
 npm run build          # tsc -b && vite build
@@ -44,34 +44,44 @@ strips `TZ` before it reaches Node.
   strings, so they pass in any zone. Fixed `now`: 5 Oct 2026 10:00 local.
 - No snapshot tests; no empty tests to inflate coverage.
 
-## UI conventions (stage 2)
+## UI conventions
 
-- `src/state/deckReducer.ts` is pure (no React); every action carries `now`.
+- `src/state/deckReducer.ts` is pure (no React); the state is `History<AppData>`, every
+  action carries `now` and its ids, and invalid/no-op actions return the same state.
 - Swipe meaning comes only from `decideSwipe` (`src/ui/gestures.ts`). Gestures,
   buttons and keys all go through `App.requestAction` → exit animation → dispatch.
-- Styling: CSS Modules + tokens from `src/index.css`. New text/background token pairs
-  must be added to `tests/ui/contrast.test.ts` (WCAG AA in light and dark).
+- Every sheet is built on `components/Sheet.tsx` (focus trap, Escape, aria-modal);
+  App makes the page `inert` and returns focus to the opener or the deck.
+- Never put a control inside the card (`role="button"`); siblings only (see Edit).
+- Styling: CSS Modules + tokens from `src/index.css`; `vh` fallback before `dvh`. New
+  text/background token pairs go into `tests/ui/contrast.test.ts` (WCAG AA, both themes).
 - Ids: always `createId()` from `src/lib/id.ts`, never `crypto.randomUUID` (missing in
   insecure contexts such as `http://<LAN IP>` on a phone; ESLint enforces it).
-- Motion is imported from `motion/react`. Do not hand callback refs to cards that can
-  be promoted in the stack; find the top card through `data-top-card` instead.
-- Do not simulate drag in jsdom; test the decision with `decideSwipe` and the actions
-  through buttons/keys. Component tests fake only `Date` (`vi.useFakeTimers({ toFake: ['Date'] })`).
+- Motion is imported from `motion/react`. Find the top card through `data-top-card`.
+- Do not simulate drag in jsdom. Component tests fake only `Date`
+  (`vi.useFakeTimers({ toFake: ['Date'] })`); fake timers also freeze fake-indexeddb.
+
+## Storage conventions (stage 3)
+
+- Everything goes through `AppStorage` (`src/storage`); never touch IndexedDB elsewhere.
+- Loading validates every record with the domain schemas; invalid records go to
+  quarantine, never silently dropped. Repairs ("Geral", "Recuperadas") get localized
+  names from the caller.
+- Changing the persisted format: bump `SCHEMA_VERSION`, add a step to `MIGRATIONS` and
+  a test. Data from a newer version must never be overwritten (read-only mode).
+- A save is one transaction; do not await anything else while it is open.
+- Sample tasks enter only through the first-run button, never over saved data.
 
 ## Current state
 
-Stage 1 (domain core) and stage 2 (card UI) are done. One deck screen with drag,
-buttons and keyboard for every action, undo/redo with toast, live-region
-announcements, a minimal "new task" sheet and pt-BR/en. State is in memory, seeded
-with demo data (`src/demo/seed.ts`). The manual phone QA checklist in the README is
-still open.
+Stages 1 (domain core), 2 (card UI) and 3 (decks, tags, editing, IndexedDB
+persistence with validation/quarantine/migrations, JSON backup, settings) are done.
+The manual phone QA checklist (gestures and persistence) in the README is still open.
 
 ## Roadmap (remaining)
 
-3. Multiple decks (`Deck` type already exists), tags, local persistence (validate
-   stored data with the zod schemas on load).
-4. Due-date and recurrence editing (recompute `originDay` when the due date changes),
-   `.ics` export.
-5. PWA (offline, installable), backup/restore and Playwright end-to-end tests
-   (including real drag gestures).
+4. Due dates and recurrence in the UI (editing `originDay` already follows the due
+   date in `updateTask`), `.ics` export.
+5. Installable PWA, offline (service worker), Playwright end-to-end tests (including
+   real drag gestures), deploy (Vercel, HTTPS).
 6. Optional: Capacitor packaging for Android.
