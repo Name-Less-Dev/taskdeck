@@ -12,6 +12,7 @@
 .card {
   position: relative;
   width: min(92vw, 420px);
+  height: 60vh;
   height: 60dvh;
   max-height: 640px;
   perspective: 1400px;

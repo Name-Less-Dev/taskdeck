@@ -11,6 +11,7 @@
 /* Bottom sheet; dvh shrinks with the on-screen keyboard where the browser supports it. */
 .sheet {
   width: min(100%, 560px);
+  max-height: 92vh;
   max-height: 92dvh;
   overflow-y: auto;
   overscroll-behavior: contain;

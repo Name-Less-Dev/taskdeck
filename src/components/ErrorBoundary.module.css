@@ -1,6 +1,7 @@
 .screen {
   display: grid;
   place-items: center;
+  min-height: 100vh;
   min-height: 100dvh;
   padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
 }
@@ -45,6 +46,7 @@
 }
 
 .details pre {
+  max-height: 40vh;
   max-height: 40dvh;
   margin: var(--space-2) 0 0;
   overflow: auto;
