@@ -31,3 +31,8 @@ export { getDueStatus, SOON_WINDOW_MINUTES, WEEK_HORIZON_DAYS } from './due-stat
 export type { DueStatus, DueStatusKind } from './due-status.ts'
 
 export { compareUrgency, isPostponedToday, orderDeck, topCard, URGENCY_BANDS } from './urgency.ts'
+
+export { isRecurring, nextDue } from './recurrence.ts'
+export type { RecurringTask } from './recurrence.ts'
+
+export { completeTask, postponeTask, removeTask, upsertTask } from './actions.ts'
