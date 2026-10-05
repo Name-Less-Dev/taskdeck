@@ -103,6 +103,7 @@ export interface Dictionary {
     readonly optional: string
     readonly save: string
     readonly cancel: string
+    readonly close: string
     readonly errors: {
       readonly titleRequired: string
       readonly titleTooLong: (max: number) => string

@@ -100,6 +100,7 @@ export const ptBR: Dictionary = {
     optional: '(opcional)',
     save: 'Criar tarefa',
     cancel: 'Cancelar',
+    close: 'Fechar',
     errors: {
       titleRequired: 'Informe um título.',
       titleTooLong: (max) => `Use no máximo ${max} caracteres.`,

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from 'react'
 import styles from './App.module.css'
 import { ActionBar } from './components/ActionBar.tsx'
+import { AddTaskSheet } from './components/AddTaskSheet.tsx'
 import { Deck, type Exiting } from './components/Deck.tsx'
 import { Icon } from './components/Icon.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
@@ -12,11 +13,19 @@ import { useNow } from './ui/useNow.ts'
 
 export interface AppProps {
   readonly initialTasks: readonly Task[]
+  /** Id factory for new tasks (injectable for tests). */
+  readonly createId?: () => string
+}
+
+export const DEFAULT_DECK_ID = 'default'
+
+function randomId(): string {
+  return crypto.randomUUID()
 }
 
 const TOAST_MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
 
-export default function App({ initialTasks }: AppProps) {
+export default function App({ initialTasks, createId = randomId }: AppProps) {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(deckReducer, initialTasks, createDeckState)
   const now = useNow()
@@ -27,6 +36,7 @@ export default function App({ initialTasks }: AppProps) {
   const [exiting, setExiting] = useState<Exiting | null>(null)
   const [toast, setToast] = useState<ToastData | null>(null)
   const toastCounter = useRef(0)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   const regionRef = useRef<HTMLElement>(null)
   const topCardRef = useRef<HTMLDivElement>(null)
@@ -71,6 +81,16 @@ export default function App({ initialTasks }: AppProps) {
     dispatch({ type: 'redo', now: new Date() })
     setToast(null)
     setFlippedId(null)
+    setFocusRequest((n) => n + 1)
+  }
+
+  function addTask(task: Task) {
+    dispatch({ type: 'add', task, now: new Date() })
+    closeSheet()
+  }
+
+  function closeSheet() {
+    setSheetOpen(false)
     setFocusRequest((n) => n + 1)
   }
 
@@ -120,44 +140,60 @@ export default function App({ initialTasks }: AppProps) {
   }
 
   return (
-    <div className={styles.shell}>
-      <header className={styles.header}>
-        <h1 className={styles.brand}>{t.app.name}</h1>
-        <div className={styles.history} role="group" aria-label={t.app.historyLabel}>
-          <button type="button" className={styles.headerButton} disabled={!undoAvailable} onClick={undoLast}>
-            <Icon name="undo" size={18} />
-            <span>{t.actions.undo}</span>
+    <>
+      <div className={styles.shell} inert={sheetOpen}>
+        <header className={styles.header}>
+          <h1 className={styles.brand}>{t.app.name}</h1>
+          <div className={styles.history} role="group" aria-label={t.app.historyLabel}>
+            <button type="button" className={styles.headerButton} disabled={!undoAvailable} onClick={undoLast}>
+              <Icon name="undo" size={18} />
+              <span>{t.actions.undo}</span>
+            </button>
+            <button type="button" className={styles.headerButton} disabled={!redoAvailable} onClick={redoLast}>
+              <Icon name="redo" size={18} />
+              <span>{t.actions.redo}</span>
+            </button>
+          </div>
+          <button
+            type="button"
+            className={styles.addButton}
+            aria-haspopup="dialog"
+            onClick={() => {
+              setSheetOpen(true)
+            }}
+          >
+            <Icon name="plus" size={20} />
+            <span>{t.actions.add}</span>
           </button>
-          <button type="button" className={styles.headerButton} disabled={!redoAvailable} onClick={redoLast}>
-            <Icon name="redo" size={18} />
-            <span>{t.actions.redo}</span>
-          </button>
-        </div>
-      </header>
+        </header>
 
-      <main className={styles.main}>
-        <Deck
-          tasks={tasks}
-          now={now}
-          flippedId={flippedId}
-          exiting={exiting}
-          onFlip={toggleFlip}
-          onRequestAction={requestAction}
-          onExited={finishAction}
-          onKeyDown={handleDeckKeyDown}
-          regionRef={regionRef}
-          topCardRef={topCardRef}
-        />
-        <UndoToast
-          toast={toast}
-          onUndo={undoLast}
-          onDismiss={() => {
-            setToast(null)
-          }}
-        />
-      </main>
+        <main className={styles.main}>
+          <Deck
+            tasks={tasks}
+            now={now}
+            flippedId={flippedId}
+            exiting={exiting}
+            onFlip={toggleFlip}
+            onRequestAction={requestAction}
+            onExited={finishAction}
+            onKeyDown={handleDeckKeyDown}
+            regionRef={regionRef}
+            topCardRef={topCardRef}
+          />
+          <UndoToast
+            toast={toast}
+            onUndo={undoLast}
+            onDismiss={() => {
+              setToast(null)
+            }}
+          />
+        </main>
 
-      <ActionBar disabled={top === null || busy} onAction={requestAction} />
-    </div>
+        <ActionBar disabled={top === null || busy} onAction={requestAction} />
+      </div>
+      {sheetOpen && (
+        <AddTaskSheet deckId={DEFAULT_DECK_ID} createId={createId} onCreate={addTask} onClose={closeSheet} />
+      )}
+    </>
   )
 }

@@ -100,6 +100,7 @@ export const en: Dictionary = {
     optional: '(optional)',
     save: 'Create task',
     cancel: 'Cancel',
+    close: 'Close',
     errors: {
       titleRequired: 'Enter a title.',
       titleTooLong: (max) => `Use at most ${max} characters.`,

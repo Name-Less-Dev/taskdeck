@@ -54,3 +54,35 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Narrow phones: the header keeps icons and drops the undo/redo words. */
+@media (max-width: 400px) {
+  .headerButton span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .headerButton {
+    min-width: var(--touch-target);
+    justify-content: center;
+    padding: 0;
+  }
+}
