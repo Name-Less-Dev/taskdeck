@@ -90,6 +90,12 @@ export const en: Dictionary = {
     undo: 'Undo',
     redo: 'Redo',
   },
+  errorScreen: {
+    title: 'Something went wrong',
+    body: 'taskdeck hit an error and could not continue. Reload the page to try again.',
+    reload: 'Reload',
+    details: 'Technical details',
+  },
   form: {
     title: 'New task',
     titleLabel: 'Title',

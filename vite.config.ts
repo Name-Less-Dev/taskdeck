@@ -22,7 +22,7 @@ export default defineConfig({
         test: {
           name: 'dom',
           environment: 'jsdom',
-          include: ['src/**/*.test.tsx'],
+          include: ['src/**/*.test.{ts,tsx}'],
           setupFiles: ['./src/test/setup.ts'],
         },
       },
@@ -35,6 +35,8 @@ export default defineConfig({
         'src/ui/**/*.{ts,tsx}',
         'src/i18n/**/*.{ts,tsx}',
         'src/components/**/*.tsx',
+        'src/dev/**/*.ts',
+        'src/lib/**/*.ts',
         'src/App.tsx',
       ],
       exclude: ['**/*.test.{ts,tsx}', 'src/test/**'],

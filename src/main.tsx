@@ -1,9 +1,13 @@
+// Must stay the first import: the dev error overlay has to be listening
+// before any other module can throw.
+import './dev/install.ts'
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import { createDemoTasks } from './demo/seed.ts'
+import { ErrorBoundary, ErrorScreen } from './components/ErrorBoundary.tsx'
 import { detectLocale, I18nProvider } from './i18n/index.tsx'
 import './index.css'
+import { Root } from './Root.tsx'
 
 const container = document.getElementById('root')
 if (container === null) {
@@ -15,7 +19,9 @@ const locale = detectLocale({ search: window.location.search, language: navigato
 createRoot(container).render(
   <StrictMode>
     <I18nProvider locale={locale}>
-      <App initialTasks={createDemoTasks(new Date())} />
+      <ErrorBoundary fallback={(error) => <ErrorScreen error={error} />}>
+        <Root />
+      </ErrorBoundary>
     </I18nProvider>
   </StrictMode>,
 )

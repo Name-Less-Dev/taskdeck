@@ -93,6 +93,12 @@ export interface Dictionary {
     readonly undo: string
     readonly redo: string
   }
+  readonly errorScreen: {
+    readonly title: string
+    readonly body: string
+    readonly reload: string
+    readonly details: string
+  }
   readonly form: {
     readonly title: string
     readonly titleLabel: string

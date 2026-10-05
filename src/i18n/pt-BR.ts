@@ -90,6 +90,12 @@ export const ptBR: Dictionary = {
     undo: 'Desfazer',
     redo: 'Refazer',
   },
+  errorScreen: {
+    title: 'Algo deu errado',
+    body: 'O taskdeck encontrou um erro e não pôde continuar. Recarregue a página para tentar de novo.',
+    reload: 'Recarregar',
+    details: 'Detalhes técnicos',
+  },
   form: {
     title: 'Nova tarefa',
     titleLabel: 'Título',
