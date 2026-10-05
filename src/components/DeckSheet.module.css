@@ -1,0 +1,134 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.select {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select:hover {
+  border-color: var(--color-border);
+}
+
+.select[aria-current='true'] {
+  border-color: var(--color-accent);
+  background: var(--color-info-bg);
+  color: var(--color-info-fg);
+}
+
+.select[aria-current='true'] .count {
+  color: inherit;
+}
+
+.name {
+  max-width: 100%;
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.rowAction {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.rowAction:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.renameForm {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.input {
+  flex: 1;
+  min-width: 140px;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  font-size: 16px;
+}
+
+.input[aria-invalid='true'] {
+  border: 2px solid var(--color-danger-fg);
+}
+
+.createForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.confirmTitle {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+/* Narrow phones: row actions keep their icons and drop the words. */
+@media (max-width: 400px) {
+  .rowAction span {
+    display: none;
+  }
+}

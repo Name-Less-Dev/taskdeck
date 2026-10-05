@@ -27,6 +27,8 @@ export interface DeckProps {
   readonly regionRef?: Ref<HTMLElement>
   /** Replaces the default "all caught up" message when there is no card. */
   readonly emptyState?: ReactNode
+  /** Deck names by id: when given ("All decks" view) each card shows its deck. */
+  readonly deckNames?: ReadonlyMap<string, string>
 }
 
 export function Deck({
@@ -40,6 +42,7 @@ export function Deck({
   onKeyDown,
   regionRef,
   emptyState,
+  deckNames,
 }: DeckProps) {
   const { t } = useI18n()
 
@@ -59,6 +62,7 @@ export function Deck({
             onFlip={onFlip}
             onSwipe={onRequestAction}
             onExited={onExited}
+            {...(deckNames?.has(task.deckId) === true ? { deckName: deckNames.get(task.deckId) } : {})}
           />
         ))
       )}

@@ -6,6 +6,9 @@ const PATHS = {
   redo: 'M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3',
   plus: 'M12 5v14M5 12h14',
   close: 'M6 6l12 12M18 6L6 18',
+  pencil: 'M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4',
+  chevron: 'M6 9l6 6 6-6',
+  folder: 'M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6z',
   repeat: 'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3',
 } as const
 

@@ -63,12 +63,15 @@ export interface Dictionary {
     readonly postponedLabel: string
     readonly postponedBadge: (days: number) => string
     readonly postponedCount: (days: number) => string
-    readonly ariaLabel: (title: string, due: string, priority: string) => string
+    readonly ariaLabel: (title: string, due: string, priority: string, deck?: string) => string
   }
   readonly toast: {
     readonly completed: string
     readonly postponed: string
     readonly removed: string
+    readonly deckCreated: string
+    readonly deckRenamed: string
+    readonly deckRemoved: string
   }
   readonly announce: {
     readonly completed: (title: string) => string
@@ -76,6 +79,10 @@ export interface Dictionary {
     readonly removed: (title: string) => string
     readonly added: (title: string) => string
     readonly samplesLoaded: (count: number) => string
+    readonly deckSelected: (name: string) => string
+    readonly deckCreated: (name: string) => string
+    readonly deckRenamed: (from: string, to: string) => string
+    readonly deckRemoved: (name: string, taskCount: number) => string
     readonly undone: string
     readonly redone: string
     readonly empty: string
@@ -93,6 +100,32 @@ export interface Dictionary {
     readonly remove: string
     readonly undo: string
     readonly redo: string
+  }
+  readonly decks: {
+    readonly switcherPrefix: string
+    readonly allDecks: string
+    readonly sheetTitle: string
+    readonly activeCount: (count: number) => string
+    readonly select: (name: string) => string
+    readonly rename: string
+    readonly renameLabel: (name: string) => string
+    readonly remove: string
+    readonly removeLabel: (name: string) => string
+    readonly save: string
+    readonly cancel: string
+    readonly nameLabel: string
+    readonly newDeckLabel: string
+    readonly create: string
+    readonly confirmRemoveTitle: (name: string) => string
+    readonly confirmRemoveBody: (taskCount: number) => string
+    readonly confirmRemove: string
+    readonly lastDeck: string
+    readonly cardLabel: string
+    readonly errors: {
+      readonly required: string
+      readonly tooLong: (max: number) => string
+      readonly duplicate: string
+    }
   }
   readonly startup: {
     readonly loading: string

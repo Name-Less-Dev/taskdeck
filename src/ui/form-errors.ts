@@ -1,4 +1,5 @@
 import type { ZodError } from 'zod'
+import { DUPLICATE_DECK_NAME } from '../domain/index.ts'
 import type { Dictionary } from '../i18n/dictionary.ts'
 
 export type TaskFormField = 'title' | 'description' | 'date' | 'time'
@@ -42,4 +43,12 @@ export function taskFormErrors(error: ZodError, t: Dictionary): TaskFormErrors {
   }
 
   return errors
+}
+
+/** First problem with a deck name from createDeck/renameDeck, as a UI message. */
+export function deckNameError(error: ZodError, t: Dictionary): string {
+  const issue = error.issues.find((candidate) => candidate.path[0] === 'name') ?? error.issues[0]
+  if (issue?.code === 'custom' && issue.params?.reason === DUPLICATE_DECK_NAME) return t.decks.errors.duplicate
+  if (issue?.code === 'too_big') return t.decks.errors.tooLong(Number(issue.maximum))
+  return t.decks.errors.required
 }

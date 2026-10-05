@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } 
 import styles from './App.module.css'
 import { ActionBar } from './components/ActionBar.tsx'
 import { AddTaskSheet } from './components/AddTaskSheet.tsx'
+import { DeckSheet } from './components/DeckSheet.tsx'
 import { Deck, type Exiting } from './components/Deck.tsx'
 import { EmptyState, emptyStateButton } from './components/EmptyState.tsx'
 import { Icon } from './components/Icon.tsx'
@@ -10,12 +11,14 @@ import { StorageBanner } from './components/StorageBanner.tsx'
 import { TOP_CARD_ATTRIBUTE } from './components/TaskCard.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
 import { createDemoTasks } from './demo/seed.ts'
-import { canRedo, canUndo, orderDeck, type AppData, type Task } from './domain/index.ts'
+import { ZodError } from 'zod'
+import { canRedo, canUndo, createDeck, orderDeck, renameDeck, type AppData, type Task } from './domain/index.ts'
 import { useI18n } from './i18n/index.tsx'
 import { createId as randomId } from './lib/id.ts'
 import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
 import { SCHEMA_VERSION, type AppStorage, type Language, type Meta } from './storage/index.ts'
 import type { Download } from './ui/download.ts'
+import { deckNameError } from './ui/form-errors.ts'
 import type { SwipeAction } from './ui/gestures.ts'
 import { useAutosave } from './ui/useAutosave.ts'
 import { useNow } from './ui/useNow.ts'
@@ -38,6 +41,8 @@ export interface AppProps {
   readonly download?: Download
 }
 
+type SheetKind = 'add' | 'decks'
+
 // Toast and announcement keys per action (same names in both dictionary sections).
 const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
 
@@ -57,7 +62,7 @@ export default function App({
   const now = useNow()
 
   // UI state outside the undo history. activeDeckId is persisted in meta.
-  const [activeDeckId] = useState<string | null>(initialMeta.settings.activeDeckId)
+  const [activeDeckId, setActiveDeckId] = useState<string | null>(initialMeta.settings.activeDeckId)
   const [lastBackupAt] = useState<string | null>(initialMeta.lastBackupAt)
   const [firstRun, setFirstRun] = useState(initialFirstRun)
   // A deck can disappear (removed, undo, import): fall back to "all decks".
@@ -82,7 +87,9 @@ export default function App({
   const [toast, setToast] = useState<ToastData | null>(null)
   const [announcement, setAnnouncement] = useState<Announcement | null>(null)
   const messageCounter = useRef(0)
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheet, setSheet] = useState<SheetKind | null>(null)
+  // Where focus goes when a sheet closes (the button that opened it), or the deck.
+  const returnFocus = useRef<HTMLElement | null>(null)
 
   const regionRef = useRef<HTMLElement>(null)
   const [focusRequest, setFocusRequest] = useState(0)
@@ -92,6 +99,12 @@ export default function App({
   // mounted underneath, so a ref handed to it on promotion is not reliable.
   useEffect(() => {
     if (focusRequest === 0) return
+    const opener = returnFocus.current
+    returnFocus.current = null
+    if (opener?.isConnected === true) {
+      opener.focus()
+      return
+    }
     const region = regionRef.current
     const card = region?.querySelector<HTMLElement>(`[${TOP_CARD_ATTRIBUTE}]`)
     ;(card ?? region)?.focus()
@@ -101,6 +114,12 @@ export default function App({
   const undoAvailable = canUndo(state) && !busy
   const redoAvailable = canRedo(state) && !busy
   const defaultDeckId = deckId ?? decks[0]?.id ?? ''
+  const activeDeckName = decks.find((deck) => deck.id === deckId)?.name ?? t.decks.allDecks
+  const deckNames = useMemo(
+    // Only useful when cards from several decks are mixed.
+    () => (deckId === null && decks.length > 1 ? new Map(decks.map((deck) => [deck.id, deck.name])) : undefined),
+    [decks, deckId],
+  )
 
   function announce(message: string) {
     messageCounter.current += 1
@@ -115,11 +134,14 @@ export default function App({
   function apply(action: DeckAction, message: string): void {
     const next = deckReducer(state, action)
     dispatch(action)
-    const nextVisible = deckId === null ? next.present.tasks : next.present.tasks.filter((task) => task.deckId === deckId)
+    // The deck shown after the action: the active one may have just been removed.
+    const nextDeckId = deckId !== null && next.present.decks.some((deck) => deck.id === deckId) ? deckId : null
+    const nextVisible =
+      nextDeckId === null ? next.present.tasks : next.present.tasks.filter((task) => task.deckId === nextDeckId)
     const empty = orderDeck(nextVisible, action.now).length === 0
     announce(empty ? `${message} ${t.announce.empty}` : message)
     setFlippedId(null)
-    setFocusRequest((n) => n + 1)
+    if (sheet === null) setFocusRequest((n) => n + 1)
     setFirstRun(false)
     requestPersistence()
   }
@@ -135,7 +157,7 @@ export default function App({
     const title = allTasks.find((task) => task.id === exiting.id)?.title ?? ''
     apply({ type: action, id: exiting.id, now: new Date() }, t.announce[MESSAGE_KEY[action]](title))
     setExiting(null)
-    setToast({ id: messageCounter.current, message: t.toast[MESSAGE_KEY[action]] })
+    showToast(t.toast[MESSAGE_KEY[action]])
   }
 
   function undoLast() {
@@ -150,20 +172,80 @@ export default function App({
     setToast(null)
   }
 
-  function addTask(task: Task) {
-    apply({ type: 'add', task, now: new Date() }, t.announce.added(task.title))
-    setSheetOpen(false)
+  function showToast(message: string) {
+    setToast({ id: messageCounter.current, message })
+  }
+
+  function openSheet(kind: SheetKind, opener: HTMLElement | null) {
+    returnFocus.current = opener
+    setSheet(kind)
   }
 
   function closeSheet() {
-    setSheetOpen(false)
+    setSheet(null)
     setFocusRequest((n) => n + 1)
+  }
+
+  function addTask(task: Task) {
+    returnFocus.current = null
+    apply({ type: 'add', task, now: new Date() }, t.announce.added(task.title))
+    setSheet(null)
+    setFocusRequest((n) => n + 1)
+  }
+
+  function selectDeck(id: string | null) {
+    setActiveDeckId(id)
+    announce(t.announce.deckSelected(decks.find((deck) => deck.id === id)?.name ?? t.decks.allDecks))
+    closeSheet()
+  }
+
+  /** Validates with the domain first so the sheet can show the error next to the field. */
+  function addDeck(name: string): string | null {
+    try {
+      const deck = createDeck({ name }, { id: createId(), existing: decks })
+      apply({ type: 'addDeck', deck, now: new Date() }, t.announce.deckCreated(deck.name))
+      showToast(t.toast.deckCreated)
+      return null
+    } catch (error) {
+      if (error instanceof ZodError) return deckNameError(error, t)
+      throw error
+    }
+  }
+
+  function renameDeckTo(id: string, name: string): string | null {
+    const deck = decks.find((candidate) => candidate.id === id)
+    if (deck === undefined) return null
+    try {
+      const renamed = renameDeck(deck, name, decks)
+      if (renamed.name !== deck.name) {
+        apply(
+          { type: 'renameDeck', id, name: renamed.name, now: new Date() },
+          t.announce.deckRenamed(deck.name, renamed.name),
+        )
+        showToast(t.toast.deckRenamed)
+      }
+      return null
+    } catch (error) {
+      if (error instanceof ZodError) return deckNameError(error, t)
+      throw error
+    }
+  }
+
+  function removeDeckById(id: string) {
+    const deck = decks.find((candidate) => candidate.id === id)
+    if (deck === undefined || decks.length <= 1) return
+    const taskCount = allTasks.filter((task) => task.deckId === id).length
+    apply({ type: 'removeDeck', id, now: new Date() }, t.announce.deckRemoved(deck.name, taskCount))
+    showToast(t.toast.deckRemoved)
   }
 
   function loadSamples() {
     const now = new Date()
     const samples = createDemoTasks(now, { deckId: defaultDeckId, createId })
-    apply({ type: 'replaceAll', data: { decks, tasks: [...allTasks, ...samples] }, now }, t.announce.samplesLoaded(samples.length))
+    apply(
+      { type: 'replaceAll', data: { decks, tasks: [...allTasks, ...samples] }, now },
+      t.announce.samplesLoaded(samples.length),
+    )
   }
 
   function startEmpty() {
@@ -231,9 +313,21 @@ export default function App({
 
   return (
     <>
-      <div className={styles.shell} inert={sheetOpen}>
+      <div className={styles.shell} inert={sheet !== null}>
         <header className={styles.header}>
-          <h1 className={styles.brand}>{t.app.name}</h1>
+          <h1 className="visually-hidden">{t.app.name}</h1>
+          <button
+            type="button"
+            className={styles.deckSwitcher}
+            aria-haspopup="dialog"
+            aria-label={`${t.decks.switcherPrefix} ${activeDeckName}`}
+            onClick={(event) => {
+              openSheet('decks', event.currentTarget)
+            }}
+          >
+            <span className={styles.deckName}>{activeDeckName}</span>
+            <Icon name="chevron" size={18} />
+          </button>
           <div className={styles.history} role="group" aria-label={t.app.historyLabel}>
             <button type="button" className={styles.headerButton} disabled={!undoAvailable} onClick={undoLast}>
               <Icon name="undo" size={18} />
@@ -249,7 +343,7 @@ export default function App({
             className={styles.addButton}
             aria-haspopup="dialog"
             onClick={() => {
-              setSheetOpen(true)
+              openSheet('add', null)
             }}
           >
             <Icon name="plus" size={20} />
@@ -257,7 +351,11 @@ export default function App({
           </button>
         </header>
 
-        <StorageBanner memoryMode={storageMode === 'memory'} saveFailed={autosave.saveFailed} onRetry={autosave.retry} />
+        <StorageBanner
+          memoryMode={storageMode === 'memory'}
+          saveFailed={autosave.saveFailed}
+          onRetry={autosave.retry}
+        />
 
         <main className={styles.main}>
           <Deck
@@ -271,20 +369,36 @@ export default function App({
             onKeyDown={handleDeckKeyDown}
             regionRef={regionRef}
             emptyState={emptyState}
-          />
-          <UndoToast
-            toast={toast}
-            onUndo={undoLast}
-            onDismiss={() => {
-              setToast(null)
-            }}
+            {...(deckNames === undefined ? {} : { deckNames })}
           />
         </main>
 
         <ActionBar disabled={top === null || busy} onAction={requestAction} />
       </div>
+      <UndoToast
+        toast={toast}
+        onUndo={undoLast}
+        placement={sheet === null ? 'bottom' : 'top'}
+        onDismiss={() => {
+          setToast(null)
+        }}
+      />
       <LiveRegion announcement={announcement} />
-      {sheetOpen && <AddTaskSheet deckId={defaultDeckId} createId={createId} onCreate={addTask} onClose={closeSheet} />}
+      {sheet === 'add' && (
+        <AddTaskSheet deckId={defaultDeckId} createId={createId} onCreate={addTask} onClose={closeSheet} />
+      )}
+      {sheet === 'decks' && (
+        <DeckSheet
+          decks={decks}
+          tasks={allTasks}
+          activeDeckId={deckId}
+          onSelect={selectDeck}
+          onCreate={addDeck}
+          onRename={renameDeckTo}
+          onRemove={removeDeckById}
+          onClose={closeSheet}
+        />
+      )}
     </>
   )
 }

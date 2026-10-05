@@ -17,10 +17,28 @@
   padding: var(--space-3) var(--space-4);
 }
 
-.brand {
-  margin: 0 auto 0 0;
+.deckSwitcher {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  min-height: var(--touch-target);
+  margin-right: auto;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
   font-size: 1.25rem;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.deckName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .main {

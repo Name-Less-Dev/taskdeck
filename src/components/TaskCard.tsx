@@ -43,6 +43,8 @@ export interface TaskCardProps {
   readonly onFlip: () => void
   readonly onSwipe: (action: SwipeAction) => void
   readonly onExited: (action: SwipeAction) => void
+  /** Deck name, shown on the card in the "All decks" view. */
+  readonly deckName?: string
 }
 
 /** Attribute that marks the interactive top card, used to find it for focus. */
@@ -71,7 +73,7 @@ function PriorityShape({ priority }: { priority: Priority }) {
   )
 }
 
-export function TaskCard({ task, now, depth, flipped, exit, onFlip, onSwipe, onExited }: TaskCardProps) {
+export function TaskCard({ task, now, depth, flipped, exit, onFlip, onSwipe, onExited, deckName }: TaskCardProps) {
   const { locale, t } = useI18n()
   const reduceMotion = useReducedMotion() === true
   const isTop = depth === 0
@@ -186,12 +188,19 @@ export function TaskCard({ task, now, depth, flipped, exit, onFlip, onSwipe, onE
         role={isTop ? 'button' : undefined}
         tabIndex={isTop ? 0 : -1}
         aria-pressed={isTop ? flipped : undefined}
-        aria-label={isTop ? t.card.ariaLabel(task.title, dueText, priorityText) : undefined}
+        aria-label={isTop ? t.card.ariaLabel(task.title, dueText, priorityText, deckName) : undefined}
         aria-describedby={isTop && flipped ? backId : undefined}
       >
         <div className={cx(styles.inner, flipped && styles.flipped)}>
           <div className={cx(styles.face, styles.front)} aria-hidden={flipped}>
             <div className={styles.badges}>
+              {deckName !== undefined && (
+                <span className={styles.deckLabel}>
+                  <Icon name="folder" size={14} />
+                  <span className="visually-hidden">{t.decks.cardLabel}: </span>
+                  {deckName}
+                </span>
+              )}
               <span className={styles.badge} data-tone={dueTone(status.kind)}>
                 <Icon name="clock" size={14} />
                 {dueText}

@@ -1,10 +1,10 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type SubmitEvent } from 'react'
+import { useId, useRef, useState, type SubmitEvent } from 'react'
 import { ZodError } from 'zod'
 import { createTask, PRIORITIES, type Due, type Priority, type Task } from '../domain/index.ts'
 import { useI18n } from '../i18n/index.tsx'
 import { TASK_FORM_FIELDS, taskFormErrors, type TaskFormErrors, type TaskFormField } from '../ui/form-errors.ts'
-import styles from './AddTaskSheet.module.css'
-import { Icon } from './Icon.tsx'
+import styles from './Form.module.css'
+import { AUTOFOCUS_ATTRIBUTE, Sheet } from './Sheet.tsx'
 
 export interface AddTaskSheetProps {
   readonly deckId: string
@@ -12,8 +12,6 @@ export interface AddTaskSheetProps {
   readonly onCreate: (task: Task) => void
   readonly onClose: () => void
 }
-
-const FOCUSABLE = 'button:not(:disabled), input:not(:disabled), textarea:not(:disabled), [tabindex="0"]'
 
 interface FormValues {
   title: string
@@ -26,21 +24,16 @@ interface FormValues {
 const EMPTY: FormValues = { title: '', description: '', priority: 'medium', date: '', time: '' }
 
 /**
- * Modal sheet to create a task. Validation is the domain's createTask: its
+ * Sheet to create a task. Validation is the domain's createTask: its
  * ZodError is mapped to per-field messages wired with aria-invalid and
- * aria-describedby. Escape or the backdrop closes it; Tab stays inside.
+ * aria-describedby. Dialog behaviour comes from the shared Sheet.
  */
 export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskSheetProps) {
   const { t } = useI18n()
   const id = useId()
   const [values, setValues] = useState<FormValues>(EMPTY)
   const [errors, setErrors] = useState<TaskFormErrors>({})
-  const dialogRef = useRef<HTMLDivElement>(null)
   const fieldRefs = useRef<Partial<Record<TaskFormField, HTMLInputElement | HTMLTextAreaElement | null>>>({})
-
-  useEffect(() => {
-    fieldRefs.current.title?.focus()
-  }, [])
 
   function update<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
@@ -76,27 +69,6 @@ export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskShe
     if (task !== null && nextErrors.form === undefined) onCreate(task)
   }
 
-  function trapFocus(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      onClose()
-      return
-    }
-    if (event.key !== 'Tab' || dialogRef.current === null) return
-
-    const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)]
-    const first = focusable[0]
-    const last = focusable.at(-1)
-    if (first === undefined || last === undefined) return
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault()
-      last.focus()
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault()
-      first.focus()
-    }
-  }
-
   function fieldProps(field: TaskFormField) {
     const message = errors[field]
     return {
@@ -119,124 +91,102 @@ export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskShe
   }
 
   return (
-    <div
-      className={styles.backdrop}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-    >
-      <div
-        ref={dialogRef}
-        className={styles.sheet}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={`${id}-heading`}
-        onKeyDown={trapFocus}
-      >
-        <div className={styles.header}>
-          <h2 id={`${id}-heading`} className={styles.heading}>
-            {t.form.title}
-          </h2>
-          <button type="button" className={styles.close} aria-label={t.form.close} onClick={onClose}>
-            <Icon name="close" />
-          </button>
+    <Sheet title={t.form.title} onClose={onClose}>
+      <form className={styles.form} noValidate onSubmit={handleSubmit}>
+        <div className={styles.field}>
+          <label htmlFor={`${id}-title`}>{t.form.titleLabel}</label>
+          <input
+            {...fieldProps('title')}
+            {...{ [AUTOFOCUS_ATTRIBUTE]: true }}
+            type="text"
+            autoComplete="off"
+            aria-required="true"
+            enterKeyHint="next"
+            value={values.title}
+            onChange={(event) => {
+              update('title', event.target.value)
+            }}
+          />
+          {errorFor('title')}
         </div>
 
-        <form className={styles.form} noValidate onSubmit={handleSubmit}>
-          <div className={styles.field}>
-            <label htmlFor={`${id}-title`}>{t.form.titleLabel}</label>
-            <input
-              {...fieldProps('title')}
-              type="text"
-              autoComplete="off"
-              aria-required="true"
-              enterKeyHint="next"
-              value={values.title}
-              onChange={(event) => {
-                update('title', event.target.value)
-              }}
-            />
-            {errorFor('title')}
-          </div>
+        <div className={styles.field}>
+          <label htmlFor={`${id}-description`}>
+            {t.form.descriptionLabel} <span className={styles.optional}>{t.form.optional}</span>
+          </label>
+          <textarea
+            {...fieldProps('description')}
+            rows={3}
+            value={values.description}
+            onChange={(event) => {
+              update('description', event.target.value)
+            }}
+          />
+          {errorFor('description')}
+        </div>
 
+        <fieldset className={styles.priority}>
+          <legend>{t.form.priorityLabel}</legend>
+          <div className={styles.segments}>
+            {PRIORITIES.map((priority) => (
+              <label key={priority} className={styles.segment}>
+                <input
+                  type="radio"
+                  name={`${id}-priority`}
+                  value={priority}
+                  checked={values.priority === priority}
+                  onChange={() => {
+                    update('priority', priority)
+                  }}
+                />
+                <span>{t.priority[priority]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className={styles.row}>
           <div className={styles.field}>
-            <label htmlFor={`${id}-description`}>
-              {t.form.descriptionLabel} <span className={styles.optional}>{t.form.optional}</span>
+            <label htmlFor={`${id}-date`}>
+              {t.form.dateLabel} <span className={styles.optional}>{t.form.optional}</span>
             </label>
-            <textarea
-              {...fieldProps('description')}
-              rows={3}
-              value={values.description}
+            <input
+              {...fieldProps('date')}
+              type="date"
+              value={values.date}
               onChange={(event) => {
-                update('description', event.target.value)
+                update('date', event.target.value)
               }}
             />
-            {errorFor('description')}
+            {errorFor('date')}
           </div>
-
-          <fieldset className={styles.priority}>
-            <legend>{t.form.priorityLabel}</legend>
-            <div className={styles.segments}>
-              {PRIORITIES.map((priority) => (
-                <label key={priority} className={styles.segment}>
-                  <input
-                    type="radio"
-                    name={`${id}-priority`}
-                    value={priority}
-                    checked={values.priority === priority}
-                    onChange={() => {
-                      update('priority', priority)
-                    }}
-                  />
-                  <span>{t.priority[priority]}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label htmlFor={`${id}-date`}>
-                {t.form.dateLabel} <span className={styles.optional}>{t.form.optional}</span>
-              </label>
-              <input
-                {...fieldProps('date')}
-                type="date"
-                value={values.date}
-                onChange={(event) => {
-                  update('date', event.target.value)
-                }}
-              />
-              {errorFor('date')}
-            </div>
-            <div className={styles.field}>
-              <label htmlFor={`${id}-time`}>
-                {t.form.timeLabel} <span className={styles.optional}>{t.form.optional}</span>
-              </label>
-              <input
-                {...fieldProps('time')}
-                type="time"
-                value={values.time}
-                onChange={(event) => {
-                  update('time', event.target.value)
-                }}
-              />
-              {errorFor('time')}
-            </div>
+          <div className={styles.field}>
+            <label htmlFor={`${id}-time`}>
+              {t.form.timeLabel} <span className={styles.optional}>{t.form.optional}</span>
+            </label>
+            <input
+              {...fieldProps('time')}
+              type="time"
+              value={values.time}
+              onChange={(event) => {
+                update('time', event.target.value)
+              }}
+            />
+            {errorFor('time')}
           </div>
+        </div>
 
-          {errors.form !== undefined && <p className={styles.error}>{errors.form}</p>}
+        {errors.form !== undefined && <p className={styles.error}>{errors.form}</p>}
 
-          <div className={styles.actions}>
-            <button type="button" className={styles.secondary} onClick={onClose}>
-              {t.form.cancel}
-            </button>
-            <button type="submit" className={styles.primary}>
-              {t.form.save}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className={styles.actions}>
+          <button type="button" className={styles.secondary} onClick={onClose}>
+            {t.form.cancel}
+          </button>
+          <button type="submit" className={styles.primary}>
+            {t.form.save}
+          </button>
+        </div>
+      </form>
+    </Sheet>
   )
 }
