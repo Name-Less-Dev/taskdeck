@@ -31,3 +31,12 @@ export type {
   Settings,
   StorageContext,
 } from './types.ts'
+export {
+  BACKUP_APP,
+  backupFileName,
+  formatPath,
+  parseBackup,
+  serializeBackup,
+  serializeRawBackup,
+} from './backup.ts'
+export type { BackupError, BackupWarning, ParseBackupResult } from './backup.ts'
