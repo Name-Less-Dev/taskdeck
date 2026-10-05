@@ -38,6 +38,7 @@ const TEXT_PAIRS: readonly [fg: string, bg: string][] = [
   ['danger-fg', 'danger-bg'],
   ['danger-fg', 'surface'],
   ['warning-fg', 'warning-bg'],
+  ['warning-fg', 'surface-raised'],
   ['info-fg', 'info-bg'],
   ['neutral-fg', 'neutral-bg'],
   ['muted-fg', 'muted-bg'],

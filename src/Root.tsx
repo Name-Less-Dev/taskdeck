@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import App from './App.tsx'
 import { LoadingScreen, ReadOnlyScreen } from './components/StartupScreens.tsx'
-import { dictionaries, I18nProvider, detectLocale, resolveLocale } from './i18n/index.tsx'
+import { dictionaries, I18nProvider, detectLocale, isLocaleForcedByUrl, resolveLocale } from './i18n/index.tsx'
 import { toDayKey } from './domain/index.ts'
 import { createId as randomId } from './lib/id.ts'
 import {
@@ -55,7 +55,10 @@ export function Root({
     // user sees on startup; the stored preference is not known yet.
     const t = dictionaries[detectLocale({ search, language: browserLanguage })]
     const run = async () => {
-      const opened = await open({ createId, names: { general: t.startup.generalDeck, recovered: t.startup.recoveredDeck } })
+      const opened = await open({
+        createId,
+        names: { general: t.startup.generalDeck, recovered: t.startup.recoveredDeck },
+      })
       const result = await opened.storage.load()
       if (!alive) return
       if (result.ok) {
@@ -85,7 +88,10 @@ export function Root({
           result={boot.result}
           onExport={() => {
             const now = new Date()
-            download(jsonBlob(serializeRawBackup(boot.result.raw, { now })), `taskdeck-raw-export-${toDayKey(now)}.json`)
+            download(
+              jsonBlob(serializeRawBackup(boot.result.raw, { now })),
+              `taskdeck-raw-export-${toDayKey(now)}.json`,
+            )
           }}
         />
       )}
@@ -99,6 +105,7 @@ export function Root({
           storageMode={boot.opened.mode}
           language={language}
           onLanguageChange={setLanguage}
+          languageForcedByUrl={isLocaleForcedByUrl(search)}
           createId={createId}
           persistence={persistence}
           download={download}

@@ -6,6 +6,7 @@ import { Deck, type Exiting } from './components/Deck.tsx'
 import { EmptyState, emptyStateButton } from './components/EmptyState.tsx'
 import { Icon } from './components/Icon.tsx'
 import { LiveRegion, type Announcement } from './components/LiveRegion.tsx'
+import { SettingsSheet } from './components/SettingsSheet.tsx'
 import { StorageBanner } from './components/StorageBanner.tsx'
 import { TagFilterBar } from './components/TagFilterBar.tsx'
 import { TOP_CARD_ATTRIBUTE } from './components/TaskCard.tsx'
@@ -28,8 +29,16 @@ import {
 import { useI18n } from './i18n/index.tsx'
 import { createId as randomId } from './lib/id.ts'
 import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
-import { SCHEMA_VERSION, type AppStorage, type Language, type Meta } from './storage/index.ts'
-import type { Download } from './ui/download.ts'
+import {
+  backupFileName,
+  parseBackup,
+  SCHEMA_VERSION,
+  serializeBackup,
+  type AppStorage,
+  type Language,
+  type Meta,
+} from './storage/index.ts'
+import { downloadBlob, jsonBlob, type Download } from './ui/download.ts'
 import { deckNameError } from './ui/form-errors.ts'
 import type { SwipeAction } from './ui/gestures.ts'
 import { useAutosave } from './ui/useAutosave.ts'
@@ -47,13 +56,15 @@ export interface AppProps {
   readonly quarantineTotal?: number
   readonly language: Language
   readonly onLanguageChange: (language: Language) => void
+  /** ?lang= in the address overrides the stored language for now. */
+  readonly languageForcedByUrl?: boolean
   /** Id factory for new tasks and decks (injectable for tests). */
   readonly createId?: () => string
   readonly persistence?: PersistenceApi
   readonly download?: Download
 }
 
-type SheetKind = 'add' | 'edit' | 'decks'
+type SheetKind = 'add' | 'edit' | 'decks' | 'settings'
 
 // Toast and announcement keys per action (same names in both dictionary sections).
 const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
@@ -64,9 +75,13 @@ export default function App({
   storage,
   storageMode,
   firstRun: initialFirstRun = false,
+  quarantineTotal = 0,
   language,
+  onLanguageChange,
+  languageForcedByUrl = false,
   createId = randomId,
   persistence = browserPersistence,
+  download = downloadBlob,
 }: AppProps) {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(deckReducer, initialData, createDeckState)
@@ -75,7 +90,7 @@ export default function App({
 
   // UI state outside the undo history. activeDeckId is persisted in meta.
   const [activeDeckId, setActiveDeckId] = useState<string | null>(initialMeta.settings.activeDeckId)
-  const [lastBackupAt] = useState<string | null>(initialMeta.lastBackupAt)
+  const [lastBackupAt, setLastBackupAt] = useState<string | null>(initialMeta.lastBackupAt)
   const [firstRun, setFirstRun] = useState(initialFirstRun)
   // Tag filter: session only, never persisted.
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -97,7 +112,10 @@ export default function App({
     [deckId, language, lastBackupAt],
   )
   const autosave = useAutosave(storage, state.present, meta)
-  const { requestOnce: requestPersistence } = usePersistence(persistence, storageMode === 'indexeddb')
+  const { state: persistenceState, requestOnce: requestPersistence } = usePersistence(
+    persistence,
+    storageMode === 'indexeddb',
+  )
 
   const [flippedId, setFlippedId] = useState<string | null>(null)
   const [exiting, setExiting] = useState<Exiting | null>(null)
@@ -302,6 +320,38 @@ export default function App({
     }
   }
 
+  function exportBackup() {
+    const now = new Date()
+    download(jsonBlob(serializeBackup(state.present, { now })), backupFileName(now))
+    setLastBackupAt(now.toISOString())
+    announce(t.announce.exported)
+  }
+
+  function parseImport(text: string) {
+    return parseBackup(text, {
+      createId,
+      names: { general: t.startup.generalDeck, recovered: t.startup.recoveredDeck },
+    })
+  }
+
+  function importData(data: AppData) {
+    returnFocus.current = null
+    setSheet(null)
+    setActiveTag(null)
+    // apply() moves focus to the deck only when no sheet is open; it is closing.
+    if (
+      apply({ type: 'replaceAll', data, now: new Date() }, t.announce.imported(data.decks.length, data.tasks.length))
+    ) {
+      showToast(t.toast.imported)
+    }
+    setFocusRequest((n) => n + 1)
+  }
+
+  function changeLanguage(next: Language) {
+    onLanguageChange(next)
+    announce(t.announce.languageChanged)
+  }
+
   function toggleFlip() {
     if (top === null) return
     setFlippedId((current) => (current === top.id ? null : top.id))
@@ -406,6 +456,17 @@ export default function App({
           </div>
           <button
             type="button"
+            className={styles.headerButton}
+            aria-haspopup="dialog"
+            aria-label={t.settings.open}
+            onClick={(event) => {
+              openSheet('settings', event.currentTarget)
+            }}
+          >
+            <Icon name="settings" size={20} />
+          </button>
+          <button
+            type="button"
             className={styles.addButton}
             aria-haspopup="dialog"
             onClick={() => {
@@ -466,6 +527,23 @@ export default function App({
             setEditingId(null)
             closeSheet()
           }}
+        />
+      )}
+      {sheet === 'settings' && (
+        <SettingsSheet
+          language={language}
+          languageForcedByUrl={languageForcedByUrl}
+          onLanguageChange={changeLanguage}
+          storageMode={storageMode}
+          persistence={persistenceState}
+          lastBackupAt={lastBackupAt}
+          quarantineTotal={quarantineTotal}
+          recoveredDeckName={t.startup.recoveredDeck}
+          generalDeckName={t.startup.generalDeck}
+          onExport={exportBackup}
+          parseImport={parseImport}
+          onImport={importData}
+          onClose={closeSheet}
         />
       )}
       {sheet === 'decks' && (

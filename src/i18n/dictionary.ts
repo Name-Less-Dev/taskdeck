@@ -76,6 +76,7 @@ export interface Dictionary {
     readonly deckRenamed: string
     readonly deckRemoved: string
     readonly taskUpdated: string
+    readonly imported: string
   }
   readonly announce: {
     readonly completed: (title: string) => string
@@ -87,6 +88,9 @@ export interface Dictionary {
     readonly taskUpdated: (title: string) => string
     readonly tagFilter: (tag: string, count: number) => string
     readonly tagFilterCleared: string
+    readonly imported: (decks: number, tasks: number) => string
+    readonly exported: string
+    readonly languageChanged: string
     readonly deckCreated: (name: string) => string
     readonly deckRenamed: (from: string, to: string) => string
     readonly deckRemoved: (name: string, taskCount: number) => string
@@ -149,6 +153,43 @@ export interface Dictionary {
       readonly required: string
       readonly tooLong: (max: number) => string
       readonly duplicate: string
+    }
+  }
+  readonly settings: {
+    readonly open: string
+    readonly title: string
+    readonly languageLegend: string
+    readonly languageAuto: string
+    readonly languagePt: string
+    readonly languageEn: string
+    readonly languageForcedByUrl: string
+    readonly storageHeading: string
+    readonly persistentLabel: string
+    readonly persistentYes: string
+    readonly persistentNo: string
+    readonly persistentUnavailable: string
+    readonly persistentChecking: string
+    readonly memoryMode: string
+    readonly lastBackupLabel: string
+    readonly never: string
+    readonly backupAdvice: string
+    readonly export: string
+    readonly importLabel: string
+    readonly importSummary: (decks: number, tasks: number) => string
+    readonly importConfirm: string
+    readonly importReplace: string
+    readonly importCancel: string
+    readonly orphansRecovered: (count: number, deckName: string) => string
+    readonly defaultDeckCreated: (deckName: string) => string
+    readonly quarantine: (count: number) => string
+    readonly errors: {
+      readonly invalidJson: string
+      readonly wrongFormat: string
+      readonly newerVersion: (version: number) => string
+      readonly missingMigration: (version: number) => string
+      readonly schema: (path: string) => string
+      readonly duplicateIds: (entity: 'deck' | 'task', ids: string) => string
+      readonly unreadable: string
     }
   }
   readonly startup: {
