@@ -7,7 +7,7 @@ import {
   useTransform,
   type PanInfo,
 } from 'motion/react'
-import { useEffect, useId, useRef, type CSSProperties, type Ref } from 'react'
+import { useEffect, useId, useRef, type CSSProperties } from 'react'
 import { getDueStatus, type Priority, type Task } from '../domain/index.ts'
 import { useI18n } from '../i18n/index.tsx'
 import { cx } from '../ui/cx.ts'
@@ -43,8 +43,10 @@ export interface TaskCardProps {
   readonly onFlip: () => void
   readonly onSwipe: (action: SwipeAction) => void
   readonly onExited: (action: SwipeAction) => void
-  readonly cardRef?: Ref<HTMLDivElement>
 }
+
+/** Attribute that marks the interactive top card, used to find it for focus. */
+export const TOP_CARD_ATTRIBUTE = 'data-top-card'
 
 const OVERLAYS: readonly { action: SwipeAction; icon: IconName }[] = [
   { action: 'complete', icon: 'check' },
@@ -69,7 +71,7 @@ function PriorityShape({ priority }: { priority: Priority }) {
   )
 }
 
-export function TaskCard({ task, now, depth, flipped, exit, onFlip, onSwipe, onExited, cardRef }: TaskCardProps) {
+export function TaskCard({ task, now, depth, flipped, exit, onFlip, onSwipe, onExited }: TaskCardProps) {
   const { locale, t } = useI18n()
   const reduceMotion = useReducedMotion() === true
   const isTop = depth === 0
@@ -141,12 +143,6 @@ export function TaskCard({ task, now, depth, flipped, exit, onFlip, onSwipe, onE
     else onSwipe(action)
   }
 
-  function setRefs(element: HTMLDivElement | null) {
-    elementRef.current = element
-    if (typeof cardRef === 'function') cardRef(element)
-    else if (cardRef) cardRef.current = element
-  }
-
   const status = getDueStatus(task.due, now)
   const dueText = formatDueStatus(status, t)
   const priorityText = t.priority[task.priority]
@@ -161,7 +157,8 @@ export function TaskCard({ task, now, depth, flipped, exit, onFlip, onSwipe, onE
       data-testid={isTop ? 'top-card' : undefined}
     >
       <motion.div
-        ref={setRefs}
+        ref={elementRef}
+        {...{ [TOP_CARD_ATTRIBUTE]: isTop ? 'true' : undefined }}
         className={cx(styles.card, isTop && styles.top)}
         style={{ x, y, opacity, rotate: reduceMotion ? 0 : rotate }}
         drag={interactive}

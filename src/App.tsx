@@ -4,10 +4,12 @@ import { ActionBar } from './components/ActionBar.tsx'
 import { AddTaskSheet } from './components/AddTaskSheet.tsx'
 import { Deck, type Exiting } from './components/Deck.tsx'
 import { Icon } from './components/Icon.tsx'
+import { LiveRegion, type Announcement } from './components/LiveRegion.tsx'
+import { TOP_CARD_ATTRIBUTE } from './components/TaskCard.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
 import { canRedo, canUndo, orderDeck, type Task } from './domain/index.ts'
 import { useI18n } from './i18n/index.tsx'
-import { createDeckState, deckReducer } from './state/deckReducer.ts'
+import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
 import type { SwipeAction } from './ui/gestures.ts'
 import { useNow } from './ui/useNow.ts'
 
@@ -23,7 +25,8 @@ function randomId(): string {
   return crypto.randomUUID()
 }
 
-const TOAST_MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
+// Toast and announcement keys per action (same names in both dictionary sections).
+const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
 
 export default function App({ initialTasks, createId = randomId }: AppProps) {
   const { t } = useI18n()
@@ -35,22 +38,41 @@ export default function App({ initialTasks, createId = randomId }: AppProps) {
   const [flippedId, setFlippedId] = useState<string | null>(null)
   const [exiting, setExiting] = useState<Exiting | null>(null)
   const [toast, setToast] = useState<ToastData | null>(null)
-  const toastCounter = useRef(0)
+  const [announcement, setAnnouncement] = useState<Announcement | null>(null)
+  const messageCounter = useRef(0)
   const [sheetOpen, setSheetOpen] = useState(false)
 
   const regionRef = useRef<HTMLElement>(null)
-  const topCardRef = useRef<HTMLDivElement>(null)
   const [focusRequest, setFocusRequest] = useState(0)
 
   // After an action the card under focus is gone: move focus back to the deck.
+  // Looked up in the DOM: the new top card may be an element that was already
+  // mounted underneath, so a ref handed to it on promotion is not reliable.
   useEffect(() => {
     if (focusRequest === 0) return
-    ;(topCardRef.current ?? regionRef.current)?.focus()
+    const region = regionRef.current
+    const card = region?.querySelector<HTMLElement>(`[${TOP_CARD_ATTRIBUTE}]`)
+    ;(card ?? region)?.focus()
   }, [focusRequest])
 
   const busy = exiting !== null
   const undoAvailable = canUndo(state) && !busy
   const redoAvailable = canRedo(state) && !busy
+
+  /**
+   * Dispatches and announces the result. The reducer is pure, so running it
+   * here as well tells us whether the deck ends up empty without waiting for
+   * the re-render.
+   */
+  function apply(action: DeckAction, message: string): void {
+    const next = deckReducer(state, action)
+    dispatch(action)
+    const empty = orderDeck(next.present, action.now).length === 0
+    messageCounter.current += 1
+    setAnnouncement({ id: messageCounter.current, message: empty ? `${message} ${t.announce.empty}` : message })
+    setFlippedId(null)
+    setFocusRequest((n) => n + 1)
+  }
 
   /** Gestures, buttons and keys share this path: exit animation first, dispatch after. */
   function requestAction(action: SwipeAction) {
@@ -60,33 +82,27 @@ export default function App({ initialTasks, createId = randomId }: AppProps) {
 
   function finishAction(action: SwipeAction) {
     if (exiting === null) return
-    dispatch({ type: action, id: exiting.id, now: new Date() })
+    const title = state.present.find((task) => task.id === exiting.id)?.title ?? ''
+    apply({ type: action, id: exiting.id, now: new Date() }, t.announce[MESSAGE_KEY[action]](title))
     setExiting(null)
-    setFlippedId(null)
-    toastCounter.current += 1
-    setToast({ id: toastCounter.current, message: t.toast[TOAST_MESSAGE_KEY[action]] })
-    setFocusRequest((n) => n + 1)
+    setToast({ id: messageCounter.current, message: t.toast[MESSAGE_KEY[action]] })
   }
 
   function undoLast() {
     if (!undoAvailable) return
-    dispatch({ type: 'undo', now: new Date() })
+    apply({ type: 'undo', now: new Date() }, t.announce.undone)
     setToast(null)
-    setFlippedId(null)
-    setFocusRequest((n) => n + 1)
   }
 
   function redoLast() {
     if (!redoAvailable) return
-    dispatch({ type: 'redo', now: new Date() })
+    apply({ type: 'redo', now: new Date() }, t.announce.redone)
     setToast(null)
-    setFlippedId(null)
-    setFocusRequest((n) => n + 1)
   }
 
   function addTask(task: Task) {
-    dispatch({ type: 'add', task, now: new Date() })
-    closeSheet()
+    apply({ type: 'add', task, now: new Date() }, t.announce.added(task.title))
+    setSheetOpen(false)
   }
 
   function closeSheet() {
@@ -119,7 +135,7 @@ export default function App({ initialTasks, createId = randomId }: AppProps) {
       case 'Enter':
       case ' ':
         // Only the card itself flips; Enter on another control keeps its meaning.
-        if (event.target !== topCardRef.current) return
+        if (!(event.target instanceof HTMLElement) || !event.target.hasAttribute(TOP_CARD_ATTRIBUTE)) return
         event.preventDefault()
         toggleFlip()
         return
@@ -178,7 +194,6 @@ export default function App({ initialTasks, createId = randomId }: AppProps) {
             onExited={finishAction}
             onKeyDown={handleDeckKeyDown}
             regionRef={regionRef}
-            topCardRef={topCardRef}
           />
           <UndoToast
             toast={toast}
@@ -191,6 +206,7 @@ export default function App({ initialTasks, createId = randomId }: AppProps) {
 
         <ActionBar disabled={top === null || busy} onAction={requestAction} />
       </div>
+      <LiveRegion announcement={announcement} />
       {sheetOpen && (
         <AddTaskSheet deckId={DEFAULT_DECK_ID} createId={createId} onCreate={addTask} onClose={closeSheet} />
       )}

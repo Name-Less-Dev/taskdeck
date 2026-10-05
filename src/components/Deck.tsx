@@ -25,7 +25,6 @@ export interface DeckProps {
   readonly onExited: (action: SwipeAction) => void
   readonly onKeyDown?: KeyboardEventHandler<HTMLElement>
   readonly regionRef?: Ref<HTMLElement>
-  readonly topCardRef?: Ref<HTMLDivElement>
 }
 
 export function Deck({
@@ -38,7 +37,6 @@ export function Deck({
   onExited,
   onKeyDown,
   regionRef,
-  topCardRef,
 }: DeckProps) {
   const { t } = useI18n()
 
@@ -58,7 +56,6 @@ export function Deck({
             onFlip={onFlip}
             onSwipe={onRequestAction}
             onExited={onExited}
-            {...(depth === 0 && topCardRef !== undefined ? { cardRef: topCardRef } : {})}
           />
         ))
       )}
