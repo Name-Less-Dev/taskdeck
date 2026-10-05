@@ -41,3 +41,22 @@ export { canRedo, canUndo, createHistory, DEFAULT_HISTORY_LIMIT, pushHistory, re
 export type { History } from './history.ts'
 
 export { DEFAULT_PROCRASTINATION_THRESHOLD, procrastinated } from './insights.ts'
+
+export {
+  adoptOrphans,
+  AppDataSchema,
+  checkIntegrity,
+  createDeck,
+  DUPLICATE_DECK_ID,
+  DUPLICATE_DECK_NAME,
+  ensureDeck,
+  removeDeck,
+  renameDeck,
+} from './decks.ts'
+export type { AppData, CreateDeckContext, DeckInput, IntegrityProblem } from './decks.ts'
+
+export { collectTags, filterByTag } from './tags.ts'
+export type { TagCount } from './tags.ts'
+
+export { updateTask } from './edit.ts'
+export type { TaskPatch } from './edit.ts'
