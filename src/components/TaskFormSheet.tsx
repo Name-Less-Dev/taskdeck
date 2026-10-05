@@ -1,15 +1,32 @@
 import { useId, useRef, useState, type SubmitEvent } from 'react'
 import { ZodError } from 'zod'
-import { createTask, PRIORITIES, type Due, type Priority, type Task } from '../domain/index.ts'
+import {
+  createTask,
+  PRIORITIES,
+  updateTask,
+  type Deck,
+  type Due,
+  type Priority,
+  type Task,
+  type TaskPatch,
+} from '../domain/index.ts'
 import { useI18n } from '../i18n/index.tsx'
 import { TASK_FORM_FIELDS, taskFormErrors, type TaskFormErrors, type TaskFormField } from '../ui/form-errors.ts'
+import { formatRecurrence } from '../ui/format.ts'
+import { addTags, type TagInputError } from '../ui/tags.ts'
 import styles from './Form.module.css'
 import { AUTOFOCUS_ATTRIBUTE, Sheet } from './Sheet.tsx'
+import { TagInput, tagInputMessage } from './TagInput.tsx'
 
-export interface AddTaskSheetProps {
-  readonly deckId: string
+export interface TaskFormSheetProps {
+  readonly decks: readonly Deck[]
+  /** Deck preselected when creating (active deck, or the first one). */
+  readonly defaultDeckId: string
+  /** When given, the sheet edits this task instead of creating one. */
+  readonly task?: Task
   readonly createId: () => string
   readonly onCreate: (task: Task) => void
+  readonly onUpdate: (id: string, patch: TaskPatch) => void
   readonly onClose: () => void
 }
 
@@ -19,21 +36,38 @@ interface FormValues {
   priority: Priority
   date: string
   time: string
+  deckId: string
+  tags: string[]
+  tagDraft: string
 }
 
-const EMPTY: FormValues = { title: '', description: '', priority: 'medium', date: '', time: '' }
+function initialValues(task: Task | undefined, deckId: string): FormValues {
+  return {
+    title: task?.title ?? '',
+    description: task?.description ?? '',
+    priority: task?.priority ?? 'medium',
+    date: task?.due?.date ?? '',
+    time: task?.due?.time ?? '',
+    deckId: task?.deckId ?? deckId,
+    tags: [...(task?.tags ?? [])],
+    tagDraft: '',
+  }
+}
 
 /**
- * Sheet to create a task. Validation is the domain's createTask: its
- * ZodError is mapped to per-field messages wired with aria-invalid and
- * aria-describedby. Dialog behaviour comes from the shared Sheet.
+ * Create or edit a task. Validation is the domain's: createTask for a new
+ * task, updateTask for an edit (so recurrence and counters are preserved).
+ * ZodErrors become per-field messages wired with aria-invalid and
+ * aria-describedby; focus moves to the first invalid field.
  */
-export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskSheetProps) {
+export function TaskFormSheet({ decks, defaultDeckId, task, createId, onCreate, onUpdate, onClose }: TaskFormSheetProps) {
   const { t } = useI18n()
   const id = useId()
-  const [values, setValues] = useState<FormValues>(EMPTY)
+  const [values, setValues] = useState<FormValues>(() => initialValues(task, defaultDeckId))
   const [errors, setErrors] = useState<TaskFormErrors>({})
+  const [tagError, setTagError] = useState<TagInputError | null>(null)
   const fieldRefs = useRef<Partial<Record<TaskFormField, HTMLInputElement | HTMLTextAreaElement | null>>>({})
+  const editing = task !== undefined
 
   function update<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
@@ -41,19 +75,29 @@ export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskShe
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
+    // Text still in the tag field counts as a tag.
+    const pending = addTags(values.tags, values.tagDraft)
     const due: Due | null =
       values.date === '' ? null : values.time === '' ? { date: values.date } : { date: values.date, time: values.time }
     // A time alone is a UI-level mistake (the domain only sees due = null), so check it here.
-    const uiErrors: TaskFormErrors =
-      values.date === '' && values.time !== '' ? { time: t.form.errors.timeWithoutDate } : {}
+    const uiErrors: TaskFormErrors = {
+      ...(values.date === '' && values.time !== '' ? { time: t.form.errors.timeWithoutDate } : {}),
+      ...(pending.error === null ? {} : { tags: tagInputMessage(pending.error, t) }),
+    }
+    const fields = {
+      deckId: values.deckId,
+      title: values.title,
+      description: values.description,
+      tags: pending.tags,
+      priority: values.priority,
+      due,
+    } satisfies TaskPatch
 
-    let task: Task | null = null
+    let created: Task | null = null
     let domainErrors: TaskFormErrors = {}
     try {
-      task = createTask(
-        { deckId, title: values.title, description: values.description, priority: values.priority, due },
-        { id: createId(), now: new Date() },
-      )
+      if (editing) updateTask(task, fields)
+      else created = createTask(fields, { id: createId(), now: new Date() })
     } catch (error) {
       if (!(error instanceof ZodError)) throw error
       domainErrors = taskFormErrors(error, t)
@@ -61,12 +105,16 @@ export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskShe
 
     const nextErrors = { ...domainErrors, ...uiErrors }
     setErrors(nextErrors)
+    setTagError(null)
+    setValues((current) => ({ ...current, tags: pending.tags, tagDraft: pending.error === null ? '' : current.tagDraft }))
     const firstInvalid = TASK_FORM_FIELDS.find((field) => nextErrors[field] !== undefined)
     if (firstInvalid !== undefined) {
       fieldRefs.current[firstInvalid]?.focus()
       return
     }
-    if (task !== null && nextErrors.form === undefined) onCreate(task)
+    if (nextErrors.form !== undefined) return
+    if (editing) onUpdate(task.id, fields)
+    else if (created !== null) onCreate(created)
   }
 
   function fieldProps(field: TaskFormField) {
@@ -81,8 +129,8 @@ export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskShe
     }
   }
 
-  function errorFor(field: TaskFormField) {
-    const message = errors[field]
+  function errorFor(field: TaskFormField, override?: string) {
+    const message = override ?? errors[field]
     return message === undefined ? null : (
       <p id={`${id}-${field}-error`} className={styles.error}>
         {message}
@@ -90,8 +138,10 @@ export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskShe
     )
   }
 
+  const tagMessage = tagError === null ? errors.tags : tagInputMessage(tagError, t)
+
   return (
-    <Sheet title={t.form.title} onClose={onClose}>
+    <Sheet title={editing ? t.form.editTitle : t.form.title} onClose={onClose}>
       <form className={styles.form} noValidate onSubmit={handleSubmit}>
         <div className={styles.field}>
           <label htmlFor={`${id}-title`}>{t.form.titleLabel}</label>
@@ -123,6 +173,45 @@ export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskShe
             }}
           />
           {errorFor('description')}
+        </div>
+
+        <div className={styles.field}>
+          <label htmlFor={`${id}-deck`}>{t.form.deckLabel}</label>
+          <select
+            id={`${id}-deck`}
+            value={values.deckId}
+            onChange={(event) => {
+              update('deckId', event.target.value)
+            }}
+          >
+            {decks.map((deck) => (
+              <option key={deck.id} value={deck.id}>
+                {deck.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.field}>
+          <label htmlFor={`${id}-tags`}>
+            {t.tags.label} <span className={styles.optional}>{t.form.optional}</span>
+          </label>
+          <TagInput
+            id={`${id}-tags`}
+            tags={values.tags}
+            draft={values.tagDraft}
+            error={tagMessage}
+            errorId={`${id}-tags-error`}
+            hintId={`${id}-tags-hint`}
+            inputRef={(element) => {
+              fieldRefs.current.tags = element
+            }}
+            onLocalError={setTagError}
+            onChange={({ tags, draft }) => {
+              setValues((current) => ({ ...current, tags: [...tags], tagDraft: draft }))
+            }}
+          />
+          {errorFor('tags', tagMessage)}
         </div>
 
         <fieldset className={styles.priority}>
@@ -176,6 +265,10 @@ export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskShe
           </div>
         </div>
 
+        {task?.recurrence != null && (
+          <p className={styles.hint}>{t.form.recurrenceNote(formatRecurrence(task.recurrence, t))}</p>
+        )}
+
         {errors.form !== undefined && <p className={styles.error}>{errors.form}</p>}
 
         <div className={styles.actions}>
@@ -183,7 +276,7 @@ export function AddTaskSheet({ deckId, createId, onCreate, onClose }: AddTaskShe
             {t.form.cancel}
           </button>
           <button type="submit" className={styles.primary}>
-            {t.form.save}
+            {editing ? t.form.saveChanges : t.form.save}
           </button>
         </div>
       </form>

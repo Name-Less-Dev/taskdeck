@@ -2,12 +2,12 @@ import type { ZodError } from 'zod'
 import { DUPLICATE_DECK_NAME } from '../domain/index.ts'
 import type { Dictionary } from '../i18n/dictionary.ts'
 
-export type TaskFormField = 'title' | 'description' | 'date' | 'time'
+export type TaskFormField = 'title' | 'description' | 'tags' | 'date' | 'time'
 
 /** One message per field; `form` holds anything that does not map to a field. */
 export type TaskFormErrors = Partial<Record<TaskFormField | 'form', string>>
 
-export const TASK_FORM_FIELDS: readonly TaskFormField[] = ['title', 'description', 'date', 'time']
+export const TASK_FORM_FIELDS: readonly TaskFormField[] = ['title', 'description', 'tags', 'date', 'time']
 
 /**
  * Translates the structured issues of a createTask ZodError into UI messages.
@@ -28,6 +28,14 @@ export function taskFormErrors(error: ZodError, t: Dictionary): TaskFormErrors {
     } else if (first === 'description' && issue.code === 'too_big') {
       field = 'description'
       message = messages.descriptionTooLong(Number(issue.maximum))
+    } else if (first === 'tags') {
+      field = 'tags'
+      // ["tags"] is the list (too many); ["tags", i] is one tag (too long).
+      const max = issue.code === 'too_big' ? Number(issue.maximum) : Number.NaN
+      message = second === undefined ? t.tags.errors.tooMany(max) : t.tags.errors.tooLong(max)
+    } else if (first === 'recurrence') {
+      field = 'date'
+      message = messages.recurrenceNeedsDue
     } else if (first === 'due' && second === 'date') {
       field = 'date'
       message = messages.invalidDate

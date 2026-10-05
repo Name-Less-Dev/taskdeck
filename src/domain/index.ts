@@ -7,6 +7,8 @@ export {
   RECURRENCE_ANCHORS,
   RECURRENCE_UNITS,
   RecurrenceSchema,
+  MAX_TAGS,
+  TAG_MAX_LENGTH,
   TagSchema,
   TagsSchema,
   TASK_STATUSES,

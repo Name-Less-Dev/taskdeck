@@ -9,12 +9,19 @@
   transition: transform 220ms ease;
 }
 
-.card {
+/* Same box as the card; holds the card and the Edit button side by side in the DOM. */
+.frame {
   position: relative;
   width: min(92vw, 420px);
   height: 60vh;
   height: 60dvh;
   max-height: 640px;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  height: 100%;
   perspective: 1400px;
   border-radius: var(--radius-lg);
   user-select: none;
@@ -63,6 +70,8 @@
 .back {
   transform: rotateY(180deg);
   overflow-y: auto;
+  /* Room for the Edit button over the bottom corner. */
+  padding-bottom: calc(var(--touch-target) + var(--space-5));
 }
 
 .badges {
@@ -239,4 +248,40 @@
   .flipped .back {
     opacity: 1;
   }
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-info-bg);
+  color: var(--color-info-fg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.edit {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+  cursor: pointer;
 }

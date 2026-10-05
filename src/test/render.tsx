@@ -8,3 +8,10 @@ export function renderWithI18n(ui: ReactElement, locale: Locale = 'pt-BR') {
   const user = userEvent.setup()
   return { user, ...render(<I18nProvider locale={locale}>{ui}</I18nProvider>) }
 }
+
+/** The interactive top card (role=button), not the Edit button next to it. */
+export function topCard(): HTMLElement {
+  const card = document.querySelector<HTMLElement>('[data-top-card]')
+  if (card === null) throw new Error('no top card rendered')
+  return card
+}

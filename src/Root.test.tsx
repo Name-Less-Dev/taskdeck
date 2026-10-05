@@ -6,6 +6,7 @@ import { Root, type RootProps } from './Root.tsx'
 import { createIndexedDbStorage, openStorage, type OpenedStorage } from './storage/index.ts'
 import { fakePersistence } from './test/app.tsx'
 import { freshIndexedDb } from './test/indexeddb.ts'
+import { topCard } from './test/render.tsx'
 
 const NOW = new Date(2026, 9, 5, 10, 0)
 const names = { general: 'Geral', recovered: 'Recuperadas' }
@@ -62,7 +63,7 @@ describe('startup', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Carregar tarefas de exemplo' }))
 
-    expect(within(screen.getByTestId('top-card')).getByRole('button')).toHaveAccessibleName(/Pagar a conta de luz/)
+    expect(topCard()).toHaveAccessibleName(/Pagar a conta de luz/)
     expect(screen.getByText('8 tarefas de exemplo carregadas.')).toBeInTheDocument()
   })
 

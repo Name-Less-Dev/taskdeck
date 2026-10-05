@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import { createTask, type Task, type TaskInput } from './domain/index.ts'
 import { appProps } from './test/app.tsx'
-import { renderWithI18n } from './test/render.tsx'
+import { renderWithI18n, topCard } from './test/render.tsx'
 
 // Fixed local clock (5 Oct 2026, 10:00). Only Date is faked: real timers keep
 // user-event and Motion working normally.
@@ -36,9 +36,6 @@ function renderApp(tasks: readonly Task[], locale: 'pt-BR' | 'en' = 'pt-BR') {
   )
 }
 
-function topCard(): HTMLElement {
-  return within(screen.getByTestId('top-card')).getByRole('button')
-}
 
 /** Titles in deck order, including the decorative cards underneath. */
 function deckTitles(): string[] {
@@ -268,7 +265,7 @@ describe('App in English', () => {
   it('renders the same deck with English texts', () => {
     renderApp([overdue], 'en')
 
-    expect(within(screen.getByTestId('top-card')).getByRole('button')).toHaveAccessibleName(
+    expect(topCard()).toHaveAccessibleName(
       'Pagar a luz. Overdue by 10 h. High priority.',
     )
     expect(screen.getByRole('button', { name: 'Complete' })).toBeInTheDocument()

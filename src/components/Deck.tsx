@@ -29,6 +29,8 @@ export interface DeckProps {
   readonly emptyState?: ReactNode
   /** Deck names by id: when given ("All decks" view) each card shows its deck. */
   readonly deckNames?: ReadonlyMap<string, string>
+  /** Opens the edit sheet for the top card. */
+  readonly onEdit?: () => void
 }
 
 export function Deck({
@@ -43,29 +45,31 @@ export function Deck({
   regionRef,
   emptyState,
   deckNames,
+  onEdit,
 }: DeckProps) {
   const { t } = useI18n()
 
   return (
     <section ref={regionRef} className={styles.region} aria-label={t.app.deckLabel} tabIndex={-1} onKeyDown={onKeyDown}>
-      {tasks.length === 0 ? (
-        (emptyState ?? <EmptyState />)
-      ) : (
-        tasks.slice(0, VISIBLE_CARDS).map((task, depth) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            now={now}
-            depth={depth}
-            flipped={depth === 0 && flippedId === task.id}
-            exit={depth === 0 && exiting?.id === task.id ? exiting.action : null}
-            onFlip={onFlip}
-            onSwipe={onRequestAction}
-            onExited={onExited}
-            {...(deckNames?.has(task.deckId) === true ? { deckName: deckNames.get(task.deckId) } : {})}
-          />
-        ))
-      )}
+      {tasks.length === 0
+        ? (emptyState ?? <EmptyState />)
+        : tasks
+            .slice(0, VISIBLE_CARDS)
+            .map((task, depth) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                now={now}
+                depth={depth}
+                flipped={depth === 0 && flippedId === task.id}
+                exit={depth === 0 && exiting?.id === task.id ? exiting.action : null}
+                onFlip={onFlip}
+                onSwipe={onRequestAction}
+                onExited={onExited}
+                {...(depth === 0 && onEdit !== undefined ? { onEdit } : {})}
+                {...(deckNames?.has(task.deckId) === true ? { deckName: deckNames.get(task.deckId) } : {})}
+              />
+            ))}
     </section>
   )
 }

@@ -1,18 +1,30 @@
 import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from 'react'
 import styles from './App.module.css'
 import { ActionBar } from './components/ActionBar.tsx'
-import { AddTaskSheet } from './components/AddTaskSheet.tsx'
 import { DeckSheet } from './components/DeckSheet.tsx'
 import { Deck, type Exiting } from './components/Deck.tsx'
 import { EmptyState, emptyStateButton } from './components/EmptyState.tsx'
 import { Icon } from './components/Icon.tsx'
 import { LiveRegion, type Announcement } from './components/LiveRegion.tsx'
 import { StorageBanner } from './components/StorageBanner.tsx'
+import { TagFilterBar } from './components/TagFilterBar.tsx'
 import { TOP_CARD_ATTRIBUTE } from './components/TaskCard.tsx'
+import { TaskFormSheet } from './components/TaskFormSheet.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
 import { createDemoTasks } from './demo/seed.ts'
 import { ZodError } from 'zod'
-import { canRedo, canUndo, createDeck, orderDeck, renameDeck, type AppData, type Task } from './domain/index.ts'
+import {
+  canRedo,
+  canUndo,
+  collectTags,
+  createDeck,
+  filterByTag,
+  orderDeck,
+  renameDeck,
+  type AppData,
+  type Task,
+  type TaskPatch,
+} from './domain/index.ts'
 import { useI18n } from './i18n/index.tsx'
 import { createId as randomId } from './lib/id.ts'
 import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
@@ -41,7 +53,7 @@ export interface AppProps {
   readonly download?: Download
 }
 
-type SheetKind = 'add' | 'decks'
+type SheetKind = 'add' | 'edit' | 'decks'
 
 // Toast and announcement keys per action (same names in both dictionary sections).
 const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
@@ -65,13 +77,18 @@ export default function App({
   const [activeDeckId, setActiveDeckId] = useState<string | null>(initialMeta.settings.activeDeckId)
   const [lastBackupAt] = useState<string | null>(initialMeta.lastBackupAt)
   const [firstRun, setFirstRun] = useState(initialFirstRun)
+  // Tag filter: session only, never persisted.
+  const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   // A deck can disappear (removed, undo, import): fall back to "all decks".
   const deckId = activeDeckId !== null && decks.some((deck) => deck.id === activeDeckId) ? activeDeckId : null
 
-  const visibleTasks = useMemo(
+  const deckTasks = useMemo(
     () => (deckId === null ? allTasks : allTasks.filter((task) => task.deckId === deckId)),
     [allTasks, deckId],
   )
+  const tagCounts = useMemo(() => collectTags(deckTasks.filter((task) => task.status === 'active')), [deckTasks])
+  const visibleTasks = useMemo(() => filterByTag(deckTasks, activeTag), [deckTasks, activeTag])
   const tasks = useMemo(() => orderDeck(visibleTasks, now), [visibleTasks, now])
   const top = tasks[0] ?? null
 
@@ -111,6 +128,7 @@ export default function App({
   }, [focusRequest])
 
   const busy = exiting !== null
+  const editingTask = allTasks.find((task) => task.id === editingId)
   const undoAvailable = canUndo(state) && !busy
   const redoAvailable = canRedo(state) && !busy
   const defaultDeckId = deckId ?? decks[0]?.id ?? ''
@@ -131,19 +149,21 @@ export default function App({
    * here as well tells us whether the deck ends up empty without waiting for
    * the re-render.
    */
-  function apply(action: DeckAction, message: string): void {
+  function apply(action: DeckAction, message: string): boolean {
     const next = deckReducer(state, action)
+    if (next === state) return false
     dispatch(action)
     // The deck shown after the action: the active one may have just been removed.
     const nextDeckId = deckId !== null && next.present.decks.some((deck) => deck.id === deckId) ? deckId : null
     const nextVisible =
       nextDeckId === null ? next.present.tasks : next.present.tasks.filter((task) => task.deckId === nextDeckId)
-    const empty = orderDeck(nextVisible, action.now).length === 0
+    const empty = orderDeck(filterByTag(nextVisible, activeTag), action.now).length === 0
     announce(empty ? `${message} ${t.announce.empty}` : message)
     setFlippedId(null)
     if (sheet === null) setFocusRequest((n) => n + 1)
     setFirstRun(false)
     requestPersistence()
+    return true
   }
 
   /** Gestures, buttons and keys share this path: exit animation first, dispatch after. */
@@ -195,6 +215,7 @@ export default function App({
 
   function selectDeck(id: string | null) {
     setActiveDeckId(id)
+    setActiveTag(null)
     announce(t.announce.deckSelected(decks.find((deck) => deck.id === id)?.name ?? t.decks.allDecks))
     closeSheet()
   }
@@ -254,6 +275,33 @@ export default function App({
     setFocusRequest((n) => n + 1)
   }
 
+  function openEdit() {
+    if (top === null) return
+    setEditingId(top.id)
+    openSheet('edit', null)
+  }
+
+  function updateTaskById(id: string, patch: TaskPatch) {
+    const title = patch.title?.trim() ?? allTasks.find((task) => task.id === id)?.title ?? ''
+    returnFocus.current = null
+    if (apply({ type: 'updateTask', id, patch, now: new Date() }, t.announce.taskUpdated(title))) {
+      showToast(t.toast.taskUpdated)
+    }
+    setSheet(null)
+    setEditingId(null)
+    setFocusRequest((n) => n + 1)
+  }
+
+  function toggleTag(tag: string | null) {
+    setActiveTag(tag)
+    if (tag === null) {
+      announce(t.announce.tagFilterCleared)
+    } else {
+      const count = filterByTag(deckTasks, tag).filter((task) => task.status === 'active').length
+      announce(t.announce.tagFilter(tag, count))
+    }
+  }
+
   function toggleFlip() {
     if (top === null) return
     setFlippedId((current) => (current === top.id ? null : top.id))
@@ -283,6 +331,12 @@ export default function App({
         event.preventDefault()
         toggleFlip()
         return
+      case 'e':
+      case 'E':
+        if (!(event.target instanceof HTMLElement) || !event.target.hasAttribute(TOP_CARD_ATTRIBUTE)) return
+        event.preventDefault()
+        openEdit()
+        return
       case 'ArrowRight':
         event.preventDefault()
         requestAction('complete')
@@ -307,6 +361,18 @@ export default function App({
         </button>
         <button type="button" className={emptyStateButton.secondary} onClick={startEmpty}>
           {t.firstRun.startEmpty}
+        </button>
+      </EmptyState>
+    ) : activeTag !== null ? (
+      <EmptyState title={t.tags.emptyTitle(activeTag)} body={t.tags.emptyBody} icon="folder">
+        <button
+          type="button"
+          className={emptyStateButton.primary}
+          onClick={() => {
+            toggleTag(null)
+          }}
+        >
+          {t.tags.clearFilter}
         </button>
       </EmptyState>
     ) : undefined
@@ -351,6 +417,8 @@ export default function App({
           </button>
         </header>
 
+        <TagFilterBar counts={tagCounts} activeTag={activeTag} onToggle={toggleTag} />
+
         <StorageBanner
           memoryMode={storageMode === 'memory'}
           saveFailed={autosave.saveFailed}
@@ -369,6 +437,7 @@ export default function App({
             onKeyDown={handleDeckKeyDown}
             regionRef={regionRef}
             emptyState={emptyState}
+            onEdit={openEdit}
             {...(deckNames === undefined ? {} : { deckNames })}
           />
         </main>
@@ -384,8 +453,20 @@ export default function App({
         }}
       />
       <LiveRegion announcement={announcement} />
-      {sheet === 'add' && (
-        <AddTaskSheet deckId={defaultDeckId} createId={createId} onCreate={addTask} onClose={closeSheet} />
+      {(sheet === 'add' || sheet === 'edit') && (
+        <TaskFormSheet
+          key={sheet === 'edit' ? (editingId ?? 'edit') : 'add'}
+          decks={decks}
+          defaultDeckId={defaultDeckId}
+          {...(sheet === 'edit' && editingTask !== undefined ? { task: editingTask } : {})}
+          createId={createId}
+          onCreate={addTask}
+          onUpdate={updateTaskById}
+          onClose={() => {
+            setEditingId(null)
+            closeSheet()
+          }}
+        />
       )}
       {sheet === 'decks' && (
         <DeckSheet

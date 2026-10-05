@@ -4,7 +4,7 @@ import App from './App.tsx'
 import { createTask, type AppData, type Task } from './domain/index.ts'
 import { DEFAULT_META } from './storage/index.ts'
 import { appProps } from './test/app.tsx'
-import { renderWithI18n } from './test/render.tsx'
+import { renderWithI18n, topCard } from './test/render.tsx'
 
 const NOW = new Date(2026, 9, 5, 10, 0)
 
@@ -35,9 +35,6 @@ function renderApp(activeDeckId: string | null = null) {
   )
 }
 
-function topCard(): HTMLElement {
-  return within(screen.getByTestId('top-card')).getByRole('button')
-}
 
 function switcher(): HTMLElement {
   return screen.getByRole('button', { name: /^Baralho:/ })

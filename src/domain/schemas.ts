@@ -39,12 +39,17 @@ export const RecurrenceSchema = z
   .readonly()
 export type Recurrence = z.infer<typeof RecurrenceSchema>
 
-export const TagSchema = z.string().trim().toLowerCase().min(1).max(20)
+/** Longest tag, after trimming. */
+export const TAG_MAX_LENGTH = 20
+/** Most tags a task can carry, after removing duplicates. */
+export const MAX_TAGS = 10
+
+export const TagSchema = z.string().trim().toLowerCase().min(1).max(TAG_MAX_LENGTH)
 
 export const TagsSchema = z
   .array(TagSchema)
   .overwrite((tags) => [...new Set(tags)])
-  .max(10)
+  .max(MAX_TAGS)
   .readonly()
 
 export const TASK_STATUSES = ['active', 'done'] as const

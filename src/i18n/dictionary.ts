@@ -64,6 +64,9 @@ export interface Dictionary {
     readonly postponedBadge: (days: number) => string
     readonly postponedCount: (days: number) => string
     readonly ariaLabel: (title: string, due: string, priority: string, deck?: string) => string
+    readonly edit: string
+    readonly editLabel: (title: string) => string
+    readonly tagsLabel: string
   }
   readonly toast: {
     readonly completed: string
@@ -72,6 +75,7 @@ export interface Dictionary {
     readonly deckCreated: string
     readonly deckRenamed: string
     readonly deckRemoved: string
+    readonly taskUpdated: string
   }
   readonly announce: {
     readonly completed: (title: string) => string
@@ -80,6 +84,9 @@ export interface Dictionary {
     readonly added: (title: string) => string
     readonly samplesLoaded: (count: number) => string
     readonly deckSelected: (name: string) => string
+    readonly taskUpdated: (title: string) => string
+    readonly tagFilter: (tag: string, count: number) => string
+    readonly tagFilterCleared: string
     readonly deckCreated: (name: string) => string
     readonly deckRenamed: (from: string, to: string) => string
     readonly deckRemoved: (name: string, taskCount: number) => string
@@ -100,6 +107,23 @@ export interface Dictionary {
     readonly remove: string
     readonly undo: string
     readonly redo: string
+  }
+  readonly tags: {
+    readonly label: string
+    readonly hint: string
+    readonly removeLabel: (tag: string) => string
+    readonly more: (count: number) => string
+    readonly moreLabel: (count: number) => string
+    readonly filterLabel: string
+    readonly filterButton: (tag: string, count: number) => string
+    readonly clear: string
+    readonly emptyTitle: (tag: string) => string
+    readonly emptyBody: string
+    readonly clearFilter: string
+    readonly errors: {
+      readonly tooLong: (max: number) => string
+      readonly tooMany: (max: number) => string
+    }
   }
   readonly decks: {
     readonly switcherPrefix: string
@@ -166,6 +190,10 @@ export interface Dictionary {
     readonly timeLabel: string
     readonly optional: string
     readonly save: string
+    readonly editTitle: string
+    readonly saveChanges: string
+    readonly deckLabel: string
+    readonly recurrenceNote: (rule: string) => string
     readonly cancel: string
     readonly close: string
     readonly errors: {
@@ -175,6 +203,7 @@ export interface Dictionary {
       readonly invalidDate: string
       readonly invalidTime: string
       readonly timeWithoutDate: string
+      readonly recurrenceNeedsDue: string
       readonly generic: string
     }
   }
