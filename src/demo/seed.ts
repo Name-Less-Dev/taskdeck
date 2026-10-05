@@ -1,5 +1,6 @@
 import { addDays, addHours, format, subDays } from 'date-fns'
 import { createTask, TaskSchema, toDayKey, type Due, type Task, type TaskInput } from '../domain/index.ts'
+import { createId as randomId } from '../lib/id.ts'
 
 const DECK_ID = 'demo'
 
@@ -11,7 +12,7 @@ function dayOffset(now: Date, days: number): Due {
  * In-memory demo deck (stage 2 has no persistence), relative to `now` so it
  * always covers every urgency band. Ids are generated here, outside the domain.
  */
-export function createDemoTasks(now: Date, createId: () => string = () => crypto.randomUUID()): Task[] {
+export function createDemoTasks(now: Date, createId: () => string = randomId): Task[] {
   const inTwoHours = addHours(now, 2)
   const make = (input: Omit<TaskInput, 'deckId'>) => createTask({ deckId: DECK_ID, ...input }, { id: createId(), now })
 

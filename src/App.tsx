@@ -9,6 +9,7 @@ import { TOP_CARD_ATTRIBUTE } from './components/TaskCard.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
 import { canRedo, canUndo, orderDeck, type Task } from './domain/index.ts'
 import { useI18n } from './i18n/index.tsx'
+import { createId as randomId } from './lib/id.ts'
 import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
 import type { SwipeAction } from './ui/gestures.ts'
 import { useNow } from './ui/useNow.ts'
@@ -20,10 +21,6 @@ export interface AppProps {
 }
 
 export const DEFAULT_DECK_ID = 'default'
-
-function randomId(): string {
-  return crypto.randomUUID()
-}
 
 // Toast and announcement keys per action (same names in both dictionary sections).
 const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const

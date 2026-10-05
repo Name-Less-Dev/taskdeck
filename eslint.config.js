@@ -28,6 +28,21 @@ export default defineConfig([
       // A "!" must be justified: disable it on the line with a "-- reason" comment.
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+      // randomUUID throws in insecure contexts (http://192.168.x.x on a phone).
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'crypto',
+          property: 'randomUUID',
+          message: 'Use createId() from src/lib/id.ts: randomUUID only exists in secure contexts.',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/lib/id.ts', 'tests/lib/id.test.ts'],
+    rules: {
+      'no-restricted-properties': 'off',
     },
   },
   {
