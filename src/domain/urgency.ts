@@ -1,3 +1,4 @@
+import { compareIds, compareNumbers } from './compare.ts'
 import { dueInstant, isoToTime, isSameLocalDay } from './dates.ts'
 import { getDueStatus, type DueStatusKind } from './due-status.ts'
 import type { Priority, Task } from './schemas.ts'
@@ -24,15 +25,6 @@ const BAND_RANK: Readonly<Record<DueStatusKind, number>> = {
 }
 
 const PRIORITY_RANK: Readonly<Record<Priority, number>> = { high: 0, medium: 1, low: 2 }
-
-function compareNumbers(a: number, b: number): number {
-  return a < b ? -1 : a > b ? 1 : 0
-}
-
-/** Code-unit comparison: deterministic and independent of the runtime locale. */
-function compareIds(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0
-}
 
 function dueTime(task: Task): number {
   return task.due === null ? Number.POSITIVE_INFINITY : dueInstant(task.due).getTime()

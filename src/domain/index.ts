@@ -36,3 +36,8 @@ export { isRecurring, nextDue } from './recurrence.ts'
 export type { RecurringTask } from './recurrence.ts'
 
 export { completeTask, postponeTask, removeTask, upsertTask } from './actions.ts'
+
+export { canRedo, canUndo, createHistory, DEFAULT_HISTORY_LIMIT, pushHistory, redo, undo } from './history.ts'
+export type { History } from './history.ts'
+
+export { DEFAULT_PROCRASTINATION_THRESHOLD, procrastinated } from './insights.ts'
