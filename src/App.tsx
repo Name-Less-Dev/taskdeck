@@ -62,6 +62,7 @@ import { EXIT_TIMEOUT_MS, exitReducer, IDLE, isExiting, type ExitEvent, type Exi
 import type { SwipeAction } from './ui/gestures.ts'
 import { useAutosave } from './ui/useAutosave.ts'
 import { useNow } from './ui/useNow.ts'
+import { useTheme } from './ui/useTheme.ts'
 import { browserPersistence, usePersistence, type PersistenceApi } from './ui/usePersistence.ts'
 
 export interface AppProps {
@@ -106,6 +107,8 @@ export default function App({
   const [state, dispatch] = useReducer(deckReducer, initialData, createDeckState)
   const { decks, tasks: allTasks } = state.present
   const now = useNow()
+  // Applies the saved theme and follows the system for "auto" (first paint: index.html).
+  useTheme()
 
   // UI state outside the undo history. activeDeckId is persisted in meta.
   const [activeDeckId, setActiveDeckId] = useState<string | null>(initialMeta.settings.activeDeckId)

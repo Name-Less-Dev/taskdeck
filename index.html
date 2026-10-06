@@ -2,6 +2,29 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Theme before the first paint: synchronous, before the CSS and the bundle, so the
+      page never flashes the wrong colours. Mirrors parseTheme/resolveTheme in
+      src/ui/theme.ts (tests/ui/theme-boot.test.ts runs this exact script against them).
+      Stored in localStorage only (never IndexedDB or backups); unavailable = auto.
+    -->
+    <script>
+      ;(function () {
+        var themes = ['auto', 'dark', 'light', 'lilac', 'pastel', 'neon']
+        var theme = 'auto'
+        try {
+          var raw = JSON.parse(window.localStorage.getItem('taskdeck:ui:theme'))
+          if (themes.indexOf(raw) !== -1) theme = raw
+        } catch (error) {}
+        var dark = false
+        try {
+          dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        } catch (error) {}
+        var root = document.documentElement
+        root.setAttribute('data-theme', theme === 'auto' ? (dark ? 'dark' : 'light') : theme)
+        root.setAttribute('data-theme-choice', theme)
+      })()
+    </script>
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/icon.svg" sizes="any" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
