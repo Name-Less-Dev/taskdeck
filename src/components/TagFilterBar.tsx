@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/index.tsx'
 import { useBooleanPreference } from '../ui/preferences.ts'
 import { Icon } from './Icon.tsx'
 import styles from './TagFilterBar.module.css'
+import { tagHue } from '../ui/theme.ts'
 
 /** localStorage key (see src/ui/preferences.ts) for the open/closed state. */
 export const TAG_FILTER_OPEN_PREFERENCE = 'tagFilterOpen'
@@ -77,6 +78,7 @@ export function TagFilterBar({ counts, activeTag, onToggle }: TagFilterBarProps)
               <button
                 type="button"
                 className={styles.tag}
+                data-tag-hue={tagHue(tag)}
                 aria-pressed={activeTag === tag}
                 aria-label={t.tags.filterButton(tag, count)}
                 onClick={() => {

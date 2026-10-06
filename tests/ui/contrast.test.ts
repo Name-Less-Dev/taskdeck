@@ -1,22 +1,13 @@
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { themeTokens } from './theme-tokens.ts'
 
 /**
  * Checks WCAG 2.x contrast for every token pair the UI puts text on, in both
  * themes, straight from src/index.css so the stylesheet cannot drift.
  */
 
-const css = readFileSync(new URL('../../src/index.css', import.meta.url), 'utf8')
-
-function tokens(block: string): Map<string, string> {
-  return new Map([...block.matchAll(/--(color-[\w-]+):\s*(#[0-9a-f]{6})\s*;/gi)].map((m) => [m[1] ?? '', m[2] ?? '']))
-}
-
-const lightBlock = /:root\s*{([^}]*)}/.exec(css)?.[1] ?? ''
-const darkBlock = /prefers-color-scheme:\s*dark\)\s*{\s*:root\s*{([^}]*)}/.exec(css)?.[1] ?? ''
-const light = tokens(lightBlock)
-// Dark mode overrides some tokens; the rest inherit from light.
-const dark = new Map([...light, ...tokens(darkBlock)])
+const light = themeTokens('light')
+const dark = themeTokens('dark')
 
 function luminance(hex: string): number {
   const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)

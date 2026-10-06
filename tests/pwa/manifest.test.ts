@@ -1,13 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { themeTokens } from '../ui/theme-tokens.ts'
 
 const read = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url))
-const css = read('src/index.css').toString('utf8')
 const html = read('index.html').toString('utf8')
-
-function token(block: string, name: string): string | undefined {
-  return new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i').exec(block)?.[1]
-}
 
 /** Width and height from a PNG's IHDR chunk. */
 function pngSize(path: string): [number, number] {
@@ -18,9 +14,9 @@ function pngSize(path: string): [number, number] {
 
 describe('PWA assets', () => {
   it('has theme-color metas for light and dark that match --color-bg', () => {
-    const darkBlock = /prefers-color-scheme:\s*dark\)\s*{\s*:root\s*{([^}]*)}/.exec(css)?.[1] ?? ''
-    const light = token(css, 'color-bg')
-    const dark = token(darkBlock, 'color-bg')
+    // The static metas (before the theme script runs) are the light and dark themes' background.
+    const light = themeTokens('light').get('color-bg')
+    const dark = themeTokens('dark').get('color-bg')
 
     expect(light).toBeDefined()
     expect(dark).toBeDefined()

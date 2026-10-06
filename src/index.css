@@ -1,39 +1,16 @@
 /*
  * Design tokens. Component styles (CSS Modules) only use these variables.
- * Every foreground/background pair listed in tests/ui/contrast.test.ts is
- * checked for WCAG AA (4.5:1) in both themes.
+ *
+ * Themes: each one defines EVERY colour token (and its color-scheme, so native
+ * controls match) in exactly one block, selected by data-theme on <html>. The
+ * attribute holds the resolved theme ("auto" is resolved to light or dark by
+ * the script in index.html and by useTheme), so nothing here depends on
+ * prefers-color-scheme. A nested element with data-theme (the swatches in
+ * Settings) gets that theme's tokens too. Every pair in
+ * tests/ui/contrast.test.ts is checked for WCAG AA in every theme.
+ * light and dark are exactly the colours used before themes existed.
  */
 :root {
-  color-scheme: light dark;
-
-  --color-bg: #f4f1ec;
-  --color-surface: #ffffff;
-  --color-surface-raised: #fbfaf8;
-  --color-text: #1d1b19;
-  --color-text-muted: #5c5650;
-  --color-border: #d9d1c6;
-  --color-focus: #3346c9;
-  --color-accent: #3346c9;
-  --color-on-accent: #ffffff;
-
-  --color-danger-bg: #fde3e1;
-  --color-danger-fg: #9b1c13;
-  --color-warning-bg: #fdecc8;
-  --color-warning-fg: #6e3c00;
-  --color-danger-surface: #fff4f3;
-  --color-warning-surface: #fff8ea;
-  --color-info-bg: #e3e8fd;
-  --color-info-fg: #2a3aa8;
-  --color-neutral-bg: #ece8e2;
-  --color-neutral-fg: #45403a;
-  --color-muted-bg: #f2efea;
-  --color-muted-fg: #5c5650;
-
-  --color-complete: #1d7238;
-  --color-postpone: #8a4b00;
-  --color-remove: #b3261e;
-  --color-on-overlay: #ffffff;
-
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 24px;
@@ -46,41 +23,231 @@
   --space-5: 24px;
   --space-6: 32px;
 
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 8%), 0 8px 24px rgb(0 0 0 / 10%);
-  --shadow-raised: 0 8px 32px rgb(0 0 0 / 18%);
-
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --touch-target: 48px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #141312;
-    --color-surface: #22201e;
-    --color-surface-raised: #2b2826;
-    --color-text: #f2eee9;
-    --color-text-muted: #b5ada4;
-    --color-border: #47423d;
-    --color-focus: #9eacff;
-    --color-accent: #9eacff;
-    --color-on-accent: #10131f;
+/* Light (also the default before the theme script runs). */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
 
-    --color-danger-bg: #4a1814;
-    --color-danger-fg: #ffb4ab;
-    --color-warning-bg: #47300a;
-    --color-warning-fg: #ffd08a;
-    --color-danger-surface: #2e1a18;
-    --color-warning-surface: #2c2415;
-    --color-info-bg: #232c5c;
-    --color-info-fg: #c9d0ff;
-    --color-neutral-bg: #36322e;
-    --color-neutral-fg: #e3dcd3;
-    --color-muted-bg: #2b2826;
-    --color-muted-fg: #b5ada4;
+  --color-bg: #f4f1ec;
+  --color-surface: #ffffff;
+  --color-surface-raised: #fbfaf8;
+  --color-text: #1d1b19;
+  --color-text-muted: #5c5650;
+  --color-border: #d9d1c6;
+  --color-focus: #3346c9;
+  --color-accent: #3346c9;
+  --color-on-accent: #ffffff;
+  --color-danger-bg: #fde3e1;
+  --color-danger-fg: #9b1c13;
+  --color-warning-bg: #fdecc8;
+  --color-warning-fg: #6e3c00;
+  --color-danger-surface: #fff4f3;
+  --color-warning-surface: #fff8ea;
+  --color-info-bg: #e3e8fd;
+  --color-info-fg: #2a3aa8;
+  --color-neutral-bg: #ece8e2;
+  --color-neutral-fg: #45403a;
+  --color-muted-bg: #f2efea;
+  --color-muted-fg: #5c5650;
+  --color-complete: #1d7238;
+  --color-postpone: #8a4b00;
+  --color-remove: #b3261e;
+  --color-on-overlay: #ffffff;
 
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 45%);
-    --shadow-raised: 0 8px 32px rgb(0 0 0 / 60%);
-  }
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 8%), 0 8px 24px rgb(0 0 0 / 10%);
+  --shadow-raised: 0 8px 32px rgb(0 0 0 / 18%);
+}
+
+/* Dark: neutral graphite with a restrained blue accent. */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-bg: #141312;
+  --color-surface: #22201e;
+  --color-surface-raised: #2b2826;
+  --color-text: #f2eee9;
+  --color-text-muted: #b5ada4;
+  --color-border: #47423d;
+  --color-focus: #9eacff;
+  --color-accent: #9eacff;
+  --color-on-accent: #10131f;
+  --color-danger-bg: #4a1814;
+  --color-danger-fg: #ffb4ab;
+  --color-warning-bg: #47300a;
+  --color-warning-fg: #ffd08a;
+  --color-danger-surface: #2e1a18;
+  --color-warning-surface: #2c2415;
+  --color-info-bg: #232c5c;
+  --color-info-fg: #c9d0ff;
+  --color-neutral-bg: #36322e;
+  --color-neutral-fg: #e3dcd3;
+  --color-muted-bg: #2b2826;
+  --color-muted-fg: #b5ada4;
+  --color-complete: #1d7238;
+  --color-postpone: #8a4b00;
+  --color-remove: #b3261e;
+  --color-on-overlay: #ffffff;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 45%);
+  --shadow-raised: 0 8px 32px rgb(0 0 0 / 60%);
+}
+
+/* Lilac: light base, soft lilac surfaces, pink accent, dark plum text. */
+[data-theme='lilac'] {
+  color-scheme: light;
+
+  --color-bg: #f6f0fa;
+  --color-surface: #fdfaff;
+  --color-surface-raised: #f1e8f8;
+  --color-text: #3a1d3d;
+  --color-text-muted: #664a69;
+  --color-border: #d8c6e3;
+  --color-focus: #a8296a;
+  --color-accent: #a8296a;
+  --color-on-accent: #ffffff;
+  --color-danger-bg: #fbe0e6;
+  --color-danger-fg: #9b1c2e;
+  --color-warning-bg: #fbe8cf;
+  --color-warning-fg: #6e3c00;
+  --color-danger-surface: #fff2f5;
+  --color-warning-surface: #fff7ec;
+  --color-info-bg: #efe2f7;
+  --color-info-fg: #6a2475;
+  --color-neutral-bg: #ece1f2;
+  --color-neutral-fg: #4a3350;
+  --color-muted-bg: #f3ebf8;
+  --color-muted-fg: #664a69;
+  --color-complete: #1d7238;
+  --color-postpone: #8a4b00;
+  --color-remove: #b3261e;
+  --color-on-overlay: #ffffff;
+
+  --shadow-card: 0 1px 2px rgb(58 29 61 / 8%), 0 8px 24px rgb(58 29 61 / 10%);
+  --shadow-raised: 0 8px 32px rgb(58 29 61 / 18%);
+}
+
+/* Pastel: warm light base; tags and badges take a pastel hue (see below). */
+[data-theme='pastel'] {
+  color-scheme: light;
+
+  --color-bg: #fbf5ec;
+  --color-surface: #fffdf8;
+  --color-surface-raised: #fdf8f0;
+  --color-text: #2b2620;
+  --color-text-muted: #5e554b;
+  --color-border: #e4d8c6;
+  --color-focus: #2d6a5e;
+  --color-accent: #2d6a5e;
+  --color-on-accent: #ffffff;
+  --color-danger-bg: #fde1dc;
+  --color-danger-fg: #9b1c13;
+  --color-warning-bg: #fdebc6;
+  --color-warning-fg: #6e3c00;
+  --color-danger-surface: #fff3f0;
+  --color-warning-surface: #fff8ea;
+  --color-info-bg: #dcefe9;
+  --color-info-fg: #1f5247;
+  --color-neutral-bg: #efe7db;
+  --color-neutral-fg: #463f36;
+  --color-muted-bg: #f4eee5;
+  --color-muted-fg: #5e554b;
+  --color-complete: #1d7238;
+  --color-postpone: #8a4b00;
+  --color-remove: #b3261e;
+  --color-on-overlay: #ffffff;
+  --color-tag-fg: #2b2620;
+  --color-tag-0: #ffd9d6;
+  --color-tag-1: #ffe4c4;
+  --color-tag-2: #fbefb0;
+  --color-tag-3: #d5f0d0;
+  --color-tag-4: #cfe6fb;
+  --color-tag-5: #e4dbfb;
+
+  --shadow-card: 0 1px 2px rgb(43 38 32 / 7%), 0 8px 24px rgb(43 38 32 / 9%);
+  --shadow-raised: 0 8px 32px rgb(43 38 32 / 16%);
+}
+
+/* Neon: near-black base, vibrant cyan / magenta / lime. Glow only reinforces focus and selection. */
+[data-theme='neon'] {
+  color-scheme: dark;
+
+  --color-bg: #0a0a0f;
+  --color-surface: #14141c;
+  --color-surface-raised: #1b1b26;
+  --color-text: #f3f3f8;
+  --color-text-muted: #a8a8bd;
+  --color-border: #3a3a52;
+  --color-focus: #b6ff3b;
+  --color-accent: #00e5ff;
+  --color-on-accent: #00161a;
+  --color-danger-bg: #3b0d14;
+  --color-danger-fg: #ff8d9b;
+  --color-warning-bg: #3a2905;
+  --color-warning-fg: #ffd166;
+  --color-danger-surface: #1f0b10;
+  --color-warning-surface: #1e1708;
+  --color-info-bg: #06262e;
+  --color-info-fg: #7df3ff;
+  --color-neutral-bg: #25253a;
+  --color-neutral-fg: #e2e2f0;
+  --color-muted-bg: #1b1b26;
+  --color-muted-fg: #a8a8bd;
+  --color-complete: #7dff4d;
+  --color-postpone: #ffb000;
+  --color-remove: #ff3d8b;
+  --color-on-overlay: #0a0a0f;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 50%), 0 8px 24px rgb(0 0 0 / 55%);
+  --shadow-raised: 0 8px 32px rgb(0 0 0 / 70%);
+  --glow: 0 0 0 1px var(--color-focus), 0 0 14px 2px rgb(182 255 59 / 45%);
+}
+
+/* Pastel tags and badges: data-tag-hue (0-5) comes from a stable hash of the text. */
+[data-theme='pastel'] [data-tag-hue='0'] {
+  border-color: transparent;
+  background: var(--color-tag-0);
+  color: var(--color-tag-fg);
+}
+
+[data-theme='pastel'] [data-tag-hue='1'] {
+  border-color: transparent;
+  background: var(--color-tag-1);
+  color: var(--color-tag-fg);
+}
+
+[data-theme='pastel'] [data-tag-hue='2'] {
+  border-color: transparent;
+  background: var(--color-tag-2);
+  color: var(--color-tag-fg);
+}
+
+[data-theme='pastel'] [data-tag-hue='3'] {
+  border-color: transparent;
+  background: var(--color-tag-3);
+  color: var(--color-tag-fg);
+}
+
+[data-theme='pastel'] [data-tag-hue='4'] {
+  border-color: transparent;
+  background: var(--color-tag-4);
+  color: var(--color-tag-fg);
+}
+
+[data-theme='pastel'] [data-tag-hue='5'] {
+  border-color: transparent;
+  background: var(--color-tag-5);
+  color: var(--color-tag-fg);
+}
+
+/* Neon: the outline stays the focus indicator; the glow only reinforces it (no text-shadow). */
+[data-theme='neon'] :focus-visible,
+[data-theme='neon'] [aria-pressed='true'],
+[data-theme='neon'] input:checked + span {
+  box-shadow: var(--glow);
 }
 
 *,

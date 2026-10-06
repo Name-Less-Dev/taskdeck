@@ -17,6 +17,7 @@ import { reportGesture } from '../dev/gestureDebug.ts'
 import { shouldResetMotion } from '../ui/exitState.ts'
 import { Icon, type IconName } from './Icon.tsx'
 import styles from './TaskCard.module.css'
+import { tagHue } from '../ui/theme.ts'
 
 /** Pointer travel (px) before a press becomes a drag; shorter presses are taps (flip). */
 export const DRAG_START_THRESHOLD_PX = 8
@@ -258,7 +259,7 @@ export function TaskCard({
             <div className={cx(styles.face, styles.front)} aria-hidden={flipped}>
               <div className={styles.badges}>
                 {deckName !== undefined && (
-                  <span className={styles.deckLabel}>
+                  <span className={styles.deckLabel} data-tag-hue={tagHue(deckName)}>
                     <Icon name="folder" size={14} />
                     <span className="visually-hidden">{t.decks.cardLabel}: </span>
                     {deckName}
@@ -284,7 +285,7 @@ export function TaskCard({
               {task.tags.length > 0 && (
                 <ul className={styles.tags} aria-label={t.card.tagsLabel}>
                   {task.tags.slice(0, FRONT_TAG_LIMIT).map((tag) => (
-                    <li key={tag} className={styles.tag}>
+                    <li key={tag} className={styles.tag} data-tag-hue={tagHue(tag)}>
                       #{tag}
                     </li>
                   ))}

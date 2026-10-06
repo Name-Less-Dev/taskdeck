@@ -5,6 +5,7 @@ import { isComposingKey } from '../ui/form-navigation.ts'
 import { addTags, type TagInputError } from '../ui/tags.ts'
 import { Icon } from './Icon.tsx'
 import styles from './TagInput.module.css'
+import { tagHue } from '../ui/theme.ts'
 
 export interface TagInputProps {
   readonly id: string
@@ -51,7 +52,7 @@ export function TagInput({ id, tags, draft, onChange, error, errorId, hintId, in
       {tags.length > 0 && (
         <ul className={styles.chips} aria-label={t.tags.label}>
           {tags.map((tag) => (
-            <li key={tag} className={styles.chip}>
+            <li key={tag} className={styles.chip} data-tag-hue={tagHue(tag)}>
               <span>#{tag}</span>
               <button
                 type="button"
