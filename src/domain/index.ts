@@ -61,4 +61,4 @@ export { collectTags, filterByTag } from './tags.ts'
 export type { TagCount } from './tags.ts'
 
 export { updateTask } from './edit.ts'
-export type { TaskPatch } from './edit.ts'
+export type { RecurrenceInput, TaskPatch } from './edit.ts'
