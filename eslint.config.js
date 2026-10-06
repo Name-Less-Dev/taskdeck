@@ -3,7 +3,8 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
-const domainFiles = ['src/domain/**/*.ts']
+// Pure layers: the domain and the calendar export (no DOM, clock or randomness).
+const domainFiles = ['src/domain/**/*.ts', 'src/calendar/**/*.ts']
 
 export default defineConfig([
   globalIgnores(['dist', 'coverage']),
