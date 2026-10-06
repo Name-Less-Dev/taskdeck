@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint'
 const domainFiles = ['src/domain/**/*.ts', 'src/calendar/**/*.ts']
 
 export default defineConfig([
-  globalIgnores(['dist', 'coverage']),
+  globalIgnores(['dist', 'coverage', 'playwright-report', 'test-results']),
   {
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
@@ -54,7 +54,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['vite.config.ts', 'tests/**/*.ts'],
+    files: ['vite.config.ts', 'pwa-assets.config.ts', 'playwright.config.ts', 'tests/**/*.ts', 'e2e/**/*.ts'],
     languageOptions: {
       globals: globals.node,
     },
