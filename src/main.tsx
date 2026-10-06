@@ -7,6 +7,7 @@ import { createRoot } from 'react-dom/client'
 import { ErrorBoundary, ErrorScreen } from './components/ErrorBoundary.tsx'
 import { detectLocale, I18nProvider } from './i18n/index.tsx'
 import './index.css'
+import { PwaProvider } from './pwa/PwaProvider.tsx'
 import { Root } from './Root.tsx'
 
 const container = document.getElementById('root')
@@ -20,7 +21,9 @@ createRoot(container).render(
   <StrictMode>
     <I18nProvider locale={locale}>
       <ErrorBoundary fallback={(error) => <ErrorScreen error={error} />}>
-        <Root />
+        <PwaProvider>
+          <Root />
+        </PwaProvider>
       </ErrorBoundary>
     </I18nProvider>
   </StrictMode>,

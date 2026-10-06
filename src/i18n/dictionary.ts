@@ -241,6 +241,14 @@ export interface Dictionary {
     readonly exported: (count: number) => string
     readonly downloaded: string
   }
+  readonly pwa: {
+    readonly updateAvailable: string
+    readonly update: string
+    readonly later: string
+    readonly heading: string
+    readonly offlineReady: string
+    readonly offlineNotReady: string
+  }
   readonly reminders: {
     readonly soon: (title: string, when: string) => string
     readonly overdue: (title: string) => string

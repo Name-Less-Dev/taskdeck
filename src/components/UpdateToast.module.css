@@ -1,0 +1,56 @@
+.toast {
+  /* Below the header, like reminders; shown only while no sheet is open. */
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 68px);
+  left: 50%;
+  z-index: 56;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1) var(--space-2);
+  width: max-content;
+  max-width: calc(100% - 2 * var(--space-4));
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  transform: translateX(-50%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-raised);
+}
+
+.message {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.update,
+.later {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.update {
+  border: 0;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.later {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: underline;
+}

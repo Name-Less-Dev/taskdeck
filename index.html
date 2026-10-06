@@ -2,7 +2,12 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/icon.svg" sizes="any" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <!-- Same values as --color-bg in src/index.css (checked by tests/pwa/manifest.test.ts). -->
+    <meta name="theme-color" content="#f4f1ec" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141312" media="(prefers-color-scheme: dark)" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <title>taskdeck</title>

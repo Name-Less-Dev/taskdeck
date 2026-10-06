@@ -253,6 +253,14 @@ export const ptBR: Dictionary = {
     exported: (n) => p(n, 'Calendário exportado com {n} tarefa.', 'Calendário exportado com {n} tarefas.'),
     downloaded: 'Arquivo baixado. Abra-o para adicionar ao calendário.',
   },
+  pwa: {
+    updateAvailable: 'Nova versão disponível',
+    update: 'Atualizar',
+    later: 'Depois',
+    heading: 'App',
+    offlineReady: 'Pronto para usar offline',
+    offlineNotReady: 'Uso offline ainda não está pronto neste navegador.',
+  },
   reminders: {
     soon: (title, when) => `Prazo chegando: ${title} (${when.toLowerCase()})`,
     overdue: (title) => `Venceu: ${title}`,

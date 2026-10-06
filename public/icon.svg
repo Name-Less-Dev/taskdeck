@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- taskdeck: a deck of two cards, the top one checked. Colors from the accent tokens. -->
+  <rect width="512" height="512" rx="112" fill="#3346c9"/>
+  <rect x="150" y="122" width="212" height="290" rx="28" fill="#9eacff" transform="rotate(-12 256 267)"/>
+  <rect x="150" y="110" width="212" height="290" rx="28" fill="#ffffff"/>
+  <rect x="186" y="156" width="140" height="22" rx="11" fill="#3346c9"/>
+  <rect x="186" y="200" width="96" height="18" rx="9" fill="#c4cbf2"/>
+  <path d="M206 316l34 34 70-78" fill="none" stroke="#3346c9" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

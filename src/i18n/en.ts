@@ -249,6 +249,14 @@ export const en: Dictionary = {
     exported: (n) => p(n, 'Calendar exported with {n} task.', 'Calendar exported with {n} tasks.'),
     downloaded: 'File downloaded. Open it to add it to your calendar.',
   },
+  pwa: {
+    updateAvailable: 'New version available',
+    update: 'Update',
+    later: 'Later',
+    heading: 'App',
+    offlineReady: 'Ready to use offline',
+    offlineNotReady: 'Offline use is not ready yet in this browser.',
+  },
   reminders: {
     soon: (title, when) => `Due soon: ${title} (${when.toLowerCase()})`,
     overdue: (title) => `Overdue: ${title}`,

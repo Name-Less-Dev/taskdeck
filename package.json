@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "icons": "pwa-assets-generator"
   },
   "dependencies": {
     "date-fns": "^4.4.0",
@@ -30,6 +31,7 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
+    "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-react": "^6.1.1",
     "@vitest/coverage-v8": "^5.0.3",
     "eslint": "^10.12.0",
@@ -40,6 +42,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.71.1",
     "vite": "^8.3.0",
+    "vite-plugin-pwa": "^2.0.0",
     "vitest": "^5.0.3"
   },
   "engines": {

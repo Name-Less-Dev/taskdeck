@@ -13,6 +13,9 @@ import { TagFilterBar } from './components/TagFilterBar.tsx'
 import { TOP_CARD_ATTRIBUTE } from './components/TaskCard.tsx'
 import { TaskFormSheet } from './components/TaskFormSheet.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
+import { UpdateToast } from './components/UpdateToast.tsx'
+import { usePwa } from './pwa/context.ts'
+import { shouldOfferUpdate } from './pwa/update.ts'
 import { createDemoTasks } from './demo/seed.ts'
 import { reportGesture, reportRender } from './dev/gestureDebug.ts'
 import { ZodError } from 'zod'
@@ -118,7 +121,11 @@ export default function App({
   const top = tasks[0] ?? null
 
   const meta = useMemo<Meta>(
-    () => ({ schemaVersion: SCHEMA_VERSION, settings: { activeDeckId: deckId, language, alarm }, lastBackupAt }),
+    () => ({
+      schemaVersion: SCHEMA_VERSION,
+      settings: { activeDeckId: deckId, language, alarm },
+      lastBackupAt,
+    }),
     [deckId, language, alarm, lastBackupAt],
   )
   const autosave = useAutosave(storage, state.present, meta)
@@ -172,6 +179,18 @@ export default function App({
     const card = region?.querySelector<HTMLElement>(`[${TOP_CARD_ATTRIBUTE}]`)
     ;(card ?? region)?.focus()
   }, [focusRequest])
+
+  // A new version waits for the user; never offered over an open sheet or form.
+  const pwa = usePwa()
+  const [updatePostponed, setUpdatePostponed] = useState(false)
+  const offerUpdate = shouldOfferUpdate({ needRefresh: pwa.needRefresh, sheetOpen: sheet !== null, postponed: updatePostponed })
+  const updateAnnounced = useRef(false)
+  useEffect(() => {
+    if (!offerUpdate || updateAnnounced.current) return
+    updateAnnounced.current = true
+    messageCounter.current += 1
+    setAnnouncement({ id: messageCounter.current, message: t.pwa.updateAvailable })
+  }, [offerUpdate, t])
 
   const announcedReminder = useRef(0)
   useEffect(() => {
@@ -614,6 +633,13 @@ export default function App({
         }
         onDismiss={dismissReminder}
       />
+      <UpdateToast
+        visible={offerUpdate}
+        onUpdate={pwa.update}
+        onLater={() => {
+          setUpdatePostponed(true)
+        }}
+      />
       <LiveRegion announcement={announcement} />
       {(sheet === 'add' || sheet === 'edit') && (
         <TaskFormSheet
@@ -652,6 +678,7 @@ export default function App({
           onExportCalendar={(activeDeckOnly) => {
             exportCalendar(activeDeckOnly ? deckTasks : allTasks)
           }}
+          offlineReady={pwa.offlineReady}
           onClose={closeSheet}
         />
       )}
