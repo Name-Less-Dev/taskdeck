@@ -67,3 +67,6 @@ export type { RecurrenceInput, TaskPatch } from './edit.ts'
 
 export { describeRecurrence, diffDueBands, dueBand } from './bands.ts'
 export type { BandChange, BandKey, RecurrenceDescription } from './bands.ts'
+
+export { availableTasks, dailyProgress, dormantTasks, isAvailable } from './availability.ts'
+export type { DailyProgress } from './availability.ts'
