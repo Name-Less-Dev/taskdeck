@@ -4,6 +4,14 @@ export const PRIORITIES = ['low', 'medium', 'high'] as const
 export const PrioritySchema = z.enum(PRIORITIES)
 export type Priority = z.infer<typeof PrioritySchema>
 
+/** A wall-clock time, "HH:mm" in 24 h (precision -1: no seconds); rejects 24:00 and 12:60. */
+export const TimeSchema = z.iso.time({ precision: -1 })
+
+/** True when `value` is a time the domain accepts in a due date. */
+export function isValidTime(value: string): boolean {
+  return TimeSchema.safeParse(value).success
+}
+
 /**
  * A deadline in local wall-clock time, with no time zone attached.
  * Without `time`, the deadline is the end of that local day.
@@ -12,8 +20,7 @@ export const DueSchema = z
   .object({
     // z.iso.date() only accepts real calendar days (rejects 2026-02-30).
     date: z.iso.date(),
-    // precision -1 means "HH:mm" exactly (no seconds); rejects 25:00.
-    time: z.iso.time({ precision: -1 }).optional(),
+    time: TimeSchema.optional(),
   })
   .readonly()
 export type Due = z.infer<typeof DueSchema>

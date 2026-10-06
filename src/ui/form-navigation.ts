@@ -37,17 +37,21 @@ function tabStops(form: HTMLFormElement): HTMLElement[] {
   })
 }
 
-/** The control after `current` in tab order, or null at the end. */
-export function nextTabStop(form: HTMLFormElement, current: HTMLElement): HTMLElement | null {
+/**
+ * The field after `current` in tab order, or null at the end. Buttons are
+ * skipped (time shortcuts, tag removal): Enter moves between fields, Tab
+ * still reaches every button.
+ */
+export function nextField(form: HTMLFormElement, current: HTMLElement): HTMLElement | null {
   const stops = tabStops(form)
   const index = stops.indexOf(current)
-  return index === -1 ? null : (stops[index + 1] ?? null)
+  if (index === -1) return null
+  return stops.slice(index + 1).find((stop) => !(stop instanceof HTMLButtonElement)) ?? null
 }
 
 /**
  * Enter behaves like "next" on mobile keyboards instead of submitting:
- * - in a single-line field (text, date, time, radio...) it moves to the next
- *   control, except on the field marked SUBMIT_ON_ENTER_ATTRIBUTE, which submits;
+ * - in a single-line field (text, date, radio...) it moves to the next field, except on the field marked SUBMIT_ON_ENTER_ATTRIBUTE, which submits;
  * - in a textarea it keeps inserting a new line;
  * - Ctrl/Cmd+Enter submits from anywhere in the form;
  * - Enter while an IME is composing text is left alone.
@@ -69,5 +73,5 @@ export function handleFormEnter(event: KeyboardEvent<HTMLFormElement>): void {
   if (!submitsImplicitly(target) || target.hasAttribute(SUBMIT_ON_ENTER_ATTRIBUTE)) return
 
   event.preventDefault()
-  nextTabStop(form, target)?.focus()
+  nextField(form, target)?.focus()
 }

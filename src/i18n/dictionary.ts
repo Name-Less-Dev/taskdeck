@@ -269,6 +269,9 @@ export interface Dictionary {
     readonly priorityLabel: string
     readonly dateLabel: string
     readonly timeLabel: string
+    readonly timePlaceholder: string
+    readonly timeHint: string
+    readonly timeShortcuts: string
     readonly optional: string
     readonly save: string
     readonly editTitle: string

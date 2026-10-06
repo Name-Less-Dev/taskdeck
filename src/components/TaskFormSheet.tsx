@@ -2,6 +2,7 @@ import { useId, useRef, useState, type SubmitEvent } from 'react'
 import { ZodError } from 'zod'
 import {
   createTask,
+  isValidTime,
   PRIORITIES,
   RECURRENCE_ANCHORS,
   RECURRENCE_UNITS,
@@ -18,6 +19,7 @@ import { useI18n } from '../i18n/index.tsx'
 import { TASK_FORM_FIELDS, taskFormErrors, type TaskFormErrors, type TaskFormField } from '../ui/form-errors.ts'
 import { handleFormEnter, SUBMIT_ON_ENTER_ATTRIBUTE } from '../ui/form-navigation.ts'
 import { addTags, type TagInputError } from '../ui/tags.ts'
+import { maskTimeInput, normalizeTime, TIME_SHORTCUTS } from '../ui/time-field.ts'
 import styles from './Form.module.css'
 import { AUTOFOCUS_ATTRIBUTE, Sheet } from './Sheet.tsx'
 import { TagInput, tagInputMessage } from './TagInput.tsx'
@@ -99,15 +101,20 @@ export function TaskFormSheet({
     event.preventDefault()
     // Text still in the tag field counts as a tag.
     const pending = addTags(values.tags, values.tagDraft)
-    const due: Due | null =
-      values.date === '' ? null : values.time === '' ? { date: values.date } : { date: values.date, time: values.time }
+    // Enter can submit from the time field without leaving it: complete "9:30" here too.
+    const time = normalizeTime(values.time)
+    const due: Due | null = values.date === '' ? null : time === '' ? { date: values.date } : { date: values.date, time }
     // A time alone is a UI-level mistake (the domain only sees due = null), so check it here.
     const every = Number(values.every)
     const everyValid = values.every.trim() !== '' && Number.isInteger(every) && every >= 1
     const recurrence: RecurrenceInput | null =
       values.repeat && everyValid ? { unit: values.unit, every, anchor: values.anchor } : null
     const uiErrors: TaskFormErrors = {
-      ...(values.date === '' && values.time !== '' ? { time: t.form.errors.timeWithoutDate } : {}),
+      ...(time !== '' && !isValidTime(time)
+        ? { time: t.form.errors.invalidTime }
+        : values.date === '' && time !== ''
+          ? { time: t.form.errors.timeWithoutDate }
+          : {}),
       ...(pending.error === null ? {} : { tags: tagInputMessage(pending.error, t) }),
       ...(values.repeat && due === null ? { date: t.form.errors.recurrenceNeedsDue } : {}),
       ...(values.repeat && !everyValid ? { every: t.repeat.everyInvalid } : {}),
@@ -138,6 +145,7 @@ export function TaskFormSheet({
     setTagError(null)
     setValues((current) => ({
       ...current,
+      time,
       tags: pending.tags,
       tagDraft: pending.error === null ? '' : current.tagDraft,
     }))
@@ -172,7 +180,25 @@ export function TaskFormSheet({
     )
   }
 
+  /** Leaving the time field completes it ("9:30" -> "09:30") and checks it right away. */
+  function leaveTime() {
+    const time = normalizeTime(values.time)
+    update('time', time)
+    setTimeError(time !== '' && !isValidTime(time) ? t.form.errors.invalidTime : undefined)
+  }
+
+  function setTimeError(message: string | undefined) {
+    setErrors((current) => {
+      const rest = { ...current }
+      delete rest.time
+      return message === undefined ? rest : { ...rest, time: message }
+    })
+  }
+
   const tagMessage = tagError === null ? errors.tags : tagInputMessage(tagError, t)
+  const timeDescription = [errors.time === undefined ? null : `${id}-time-error`, `${id}-time-hint`]
+    .filter((part) => part !== null)
+    .join(' ')
 
   return (
     <Sheet title={editing ? t.form.editTitle : t.form.title} onClose={onClose}>
@@ -269,38 +295,64 @@ export function TaskFormSheet({
           </div>
         </fieldset>
 
-        <div className={styles.row}>
-          <div className={styles.field}>
-            <label htmlFor={`${id}-date`}>
+        <div className={styles.field}>
+          <label htmlFor={`${id}-date`}>
               {t.form.dateLabel} <span className={styles.optional}>{t.form.optional}</span>
             </label>
-            <input
-              {...fieldProps('date')}
-              type="date"
-              enterKeyHint="next"
-              value={values.date}
-              onChange={(event) => {
-                update('date', event.target.value)
-              }}
-            />
-            {errorFor('date')}
-          </div>
-          <div className={styles.field}>
-            <label htmlFor={`${id}-time`}>
-              {t.form.timeLabel} <span className={styles.optional}>{t.form.optional}</span>
-            </label>
+          <input
+            {...fieldProps('date')}
+            type="date"
+            enterKeyHint="next"
+            value={values.date}
+            onChange={(event) => {
+              update('date', event.target.value)
+            }}
+          />
+          {errorFor('date')}
+        </div>
+
+        <div className={styles.field}>
+          <label htmlFor={`${id}-time`}>
+            {t.form.timeLabel} <span className={styles.optional}>{t.form.optional}</span>
+          </label>
+          {/* Text, not type="time": the native picker was cut off on an Android phone. */}
+          <div className={styles.timeRow}>
             <input
               {...fieldProps('time')}
               {...(values.repeat ? {} : { [SUBMIT_ON_ENTER_ATTRIBUTE]: true })}
-              type="time"
+              aria-describedby={timeDescription}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={5}
+              placeholder={t.form.timePlaceholder}
               enterKeyHint={values.repeat ? 'next' : 'done'}
               value={values.time}
               onChange={(event) => {
-                update('time', event.target.value)
+                update('time', maskTimeInput(values.time, event.target.value))
               }}
+              onBlur={leaveTime}
             />
-            {errorFor('time')}
+            <div className={styles.shortcuts} role="group" aria-label={t.form.timeShortcuts}>
+              {TIME_SHORTCUTS.map((shortcut) => (
+                <button
+                  key={shortcut}
+                  type="button"
+                  className={styles.shortcut}
+                  onClick={() => {
+                    update('time', shortcut)
+                    setTimeError(undefined)
+                  }}
+                >
+                  {shortcut}
+                </button>
+              ))}
+            </div>
           </div>
+          <p id={`${id}-time-hint`} className={styles.hint}>
+            {t.form.timeHint}
+          </p>
+          {errorFor('time')}
         </div>
 
         <fieldset className={styles.repeat}>

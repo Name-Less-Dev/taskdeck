@@ -2,6 +2,7 @@ export {
   createTask,
   DeckSchema,
   DueSchema,
+  isValidTime,
   PRIORITIES,
   PrioritySchema,
   RECURRENCE_ANCHORS,
@@ -13,6 +14,7 @@ export {
   TagsSchema,
   TASK_STATUSES,
   TaskSchema,
+  TimeSchema,
 } from './schemas.ts'
 export type { CreateTaskContext, Deck, Due, Priority, Recurrence, Task, TaskInput } from './schemas.ts'
 

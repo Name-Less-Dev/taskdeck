@@ -1,6 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { createTask } from '../domain/index.ts'
+import { createTask, type Task } from '../domain/index.ts'
 import { renderWithI18n } from '../test/render.tsx'
 import { TaskFormSheet, type TaskFormSheetProps } from './TaskFormSheet.tsx'
 
@@ -78,7 +78,7 @@ describe('TaskFormSheet: create', () => {
     await user.click(screen.getByRole('button', { name: 'Criar tarefa' }))
 
     expect(screen.getByLabelText('Título')).toHaveAccessibleDescription('Use no máximo 80 caracteres.')
-    expect(screen.getByLabelText(/Hora do prazo/)).toHaveAccessibleDescription('Escolha uma data para usar um horário.')
+    expect(screen.getByLabelText(/Hora do prazo/)).toHaveAccessibleDescription(/^Escolha uma data para usar um horário\./)
     expect(screen.getByLabelText(/Data do prazo/)).toHaveAttribute('aria-invalid', 'false')
     expect(onCreate).not.toHaveBeenCalled()
   })
@@ -454,5 +454,124 @@ describe('TaskFormSheet: repetition', () => {
     await user.click(screen.getByRole('radio', { name: /do prazo/ }))
     await user.keyboard('{Enter}')
     expect(onCreate).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('TaskFormSheet: time field', () => {
+  const timeField = () => screen.getByLabelText(/Hora do prazo/)
+
+  it('is a 24 h text field with a numeric keyboard, a description and no autocomplete', () => {
+    renderSheet()
+
+    expect(timeField()).toHaveAttribute('type', 'text')
+    expect(timeField()).toHaveAttribute('inputmode', 'numeric')
+    expect(timeField()).toHaveAttribute('autocomplete', 'off')
+    expect(timeField()).toHaveAttribute('maxlength', '5')
+    expect(timeField()).toHaveAccessibleDescription('Formato 24 h, como 09:30. Deixe vazio para o dia todo.')
+  })
+
+  it('masks "0930" to "09:30" and keeps only digits', async () => {
+    const { user } = renderSheet()
+
+    await user.type(timeField(), '0930')
+    expect(timeField()).toHaveValue('09:30')
+
+    await user.clear(timeField())
+    await user.type(timeField(), '1a8b45')
+    expect(timeField()).toHaveValue('18:45')
+  })
+
+  it('lets Backspace go back over the colon', async () => {
+    const { user } = renderSheet()
+
+    await user.type(timeField(), '093')
+    expect(timeField()).toHaveValue('09:3')
+    await user.keyboard('{Backspace}')
+    expect(timeField()).toHaveValue('09:')
+    await user.keyboard('{Backspace}')
+    expect(timeField()).toHaveValue('09')
+    await user.keyboard('{Backspace}')
+    expect(timeField()).toHaveValue('0')
+  })
+
+  it('completes "9:30" to "09:30" when leaving the field', async () => {
+    const { user } = renderSheet()
+
+    await user.type(timeField(), '9:30')
+    expect(timeField()).toHaveValue('9:30')
+    await user.tab()
+
+    expect(timeField()).toHaveValue('09:30')
+    expect(timeField()).toHaveAttribute('aria-invalid', 'false')
+  })
+
+  it('rejects "2460" with an accessible error, and focuses the field on submit', async () => {
+    const { user, onCreate } = renderSheet()
+    await user.type(screen.getByLabelText('Título'), 'Hora errada')
+    await user.type(screen.getByLabelText(/Data do prazo/), '2026-10-07')
+
+    await user.type(timeField(), '2460')
+    await user.tab()
+    expect(timeField()).toHaveValue('24:60')
+    expect(timeField()).toHaveAttribute('aria-invalid', 'true')
+    expect(timeField()).toHaveAccessibleDescription(/^Informe uma hora válida \(HH:mm\)\./)
+
+    await user.click(screen.getByRole('button', { name: 'Criar tarefa' }))
+    expect(timeField()).toHaveFocus()
+    expect(onCreate).not.toHaveBeenCalled()
+  })
+
+  it('fills the field from the shortcuts, which do not submit', async () => {
+    const { user, onCreate } = renderSheet()
+    const shortcuts = screen.getByRole('group', { name: 'Horários rápidos' })
+    expect(
+      [...shortcuts.querySelectorAll('button')].map((button) => [button.textContent, button.type]),
+    ).toEqual([
+      ['09:00', 'button'],
+      ['12:00', 'button'],
+      ['18:00', 'button'],
+    ])
+
+    await user.click(screen.getByRole('button', { name: '18:00' }))
+    expect(timeField()).toHaveValue('18:00')
+    await user.click(screen.getByRole('button', { name: '09:00' }))
+    expect(timeField()).toHaveValue('09:00')
+    expect(onCreate).not.toHaveBeenCalled()
+  })
+
+  it('accepts an empty time: the due date is the whole day', async () => {
+    const { user, onCreate } = renderSheet()
+    await user.type(screen.getByLabelText('Título'), 'Dia todo')
+    await user.type(screen.getByLabelText(/Data do prazo/), '2026-10-07')
+    await user.type(timeField(), '12')
+    await user.clear(timeField())
+
+    await user.click(screen.getByRole('button', { name: 'Criar tarefa' }))
+
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({ due: { date: '2026-10-07' } })
+    const [created] = onCreate.mock.calls[0] as [Task]
+    expect(created.due).not.toHaveProperty('time')
+  })
+
+  it('Enter moves from the date to the time field (not to a shortcut) without submitting', async () => {
+    const { user, onCreate } = renderSheet()
+    await user.type(screen.getByLabelText('Título'), 'Enter{Enter}')
+    expect(screen.getByLabelText(/Descrição/)).toHaveFocus()
+
+    await user.type(screen.getByLabelText(/Data do prazo/), '2026-10-07{Enter}')
+    expect(timeField()).toHaveFocus()
+    expect(onCreate).not.toHaveBeenCalled()
+  })
+
+  it('submits from the time field with Enter (no repetition), completing "9:30" first', async () => {
+    const { user, onCreate } = renderSheet()
+    await user.type(screen.getByLabelText('Título'), 'Reunião')
+    await user.type(screen.getByLabelText(/Data do prazo/), '2026-10-07')
+
+    expect(timeField()).toHaveAttribute('enterkeyhint', 'done')
+    await user.type(timeField(), '9:30{Enter}')
+
+    expect(onCreate).toHaveBeenCalledTimes(1)
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({ due: { date: '2026-10-07', time: '09:30' } })
   })
 })
