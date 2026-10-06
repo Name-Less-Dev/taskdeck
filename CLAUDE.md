@@ -91,6 +91,27 @@ strips `TZ` before it reaches Node.
 - New settings go into `meta.settings` with a zod default, so older meta still loads
   (as `alarm` did); a breaking change still needs `SCHEMA_VERSION` + a migration.
 
+## Availability and recurrence conventions (behaviour package 1)
+
+- `isAvailable(task, now)` (`src/domain/availability.ts`) is the ONLY visibility rule.
+  Anything that shows, counts, reminds or announces cards uses it (or
+  `availableTasks` / `dormantTasks`); never filter recurring tasks by hand. A future
+  "postpone to tomorrow" goes inside it, as its own field, without touching `due`.
+- Only recurring tasks are hidden before their day; one-off tasks with a future due
+  date stay on the deck.
+- `dailyProgress`: done = `completedAt` on the local day of `now`; remaining =
+  available. The header uses the active deck's tasks.
+- Card text for a date-only recurring task ("Today", "Pending for N days", neutral) is
+  mapped in `presentDue` (`src/ui/format.ts`); do not change `getDueStatus`.
+- Day rollover is detected by the pure `rolloverStep` (`src/ui/rollover.ts`) and
+  announced once; time-driven announcements of the same tick are joined.
+- `recurrence.weekdays`: 0 = Sunday, sorted, unique, not empty; only with unit week,
+  every 1, anchor due. createTask/updateTask align the due date; nextDue picks the
+  first valid day after max(due, today). `.ics`: `BYDAY`, checked with ical.js.
+- Interface preferences (e.g. tag filter open) live in `localStorage` through
+  `src/ui/preferences.ts` (guarded), never in IndexedDB or backups. Component tests
+  clear `localStorage` after each test (`src/test/setup.ts`).
+
 ## PWA and end-to-end conventions (stage 5)
 
 - The service worker exists only in the production build (vite-plugin-pwa,
@@ -125,15 +146,20 @@ recurrence/reminders/`.ics`, and stage 5 (installable PWA with offline precache 
 an update prompt, install button / iOS hint, HH:mm time field, post-export notice,
 Playwright e2e on CI, metadata). Deployed at https://taskdeck-flax.vercel.app.
 
-**DEFINITION OF DONE REACHED. Features are frozen**: only bug fixes (test first, fix in
-its own commit), dependency updates and documentation from now on.
+**DEFINITION OF DONE REACHED** at stage 5. After it, behaviour package 1 (requested
+explicitly) added: the shortcuts legend only on hover/fine-pointer devices, a
+collapsible tag filter, recurring cards only on their day (Scheduled sheet, daily
+progress, rollover announcement) and days of the week in recurrences. Otherwise:
+bug fixes (test first, fix in its own commit), dependency updates and documentation.
 
 Still manual (see the README): the phone QA checklists (gestures, persistence,
 calendar and reminders, PWA and time field), `public/og.png` (1200x630),
 `docs/screenshot-deck.png` and `docs/demo.gif`. Verified by hand so far: only an
 `.ics` imported into an Android calendar (time, daily repetition, alarm fired).
 
-## Roadmap
+## Roadmap (not started)
 
-6. Optional and future: Capacitor packaging for Android with local (system)
-   notifications. Not started.
+- "Postpone to tomorrow": its own field, checked in `isAvailable`, never touching the
+  due date.
+- Colour per deck.
+- Optional: Capacitor packaging for Android with local (system) notifications.

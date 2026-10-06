@@ -69,7 +69,7 @@ Playwright. Demonstração: <https://taskdeck-flax.vercel.app>.
 - **Recurrence in the form**: a "Repeat" block (every N days/weeks/months, counted from
   the due date or from completion) to set, change or remove a task's repetition; a
   repeating task needs a due date. Cards show a short badge ("Toda semana") and the full
-  rule on the back; completing one says "Rescheduled for <date>" (undoable).
+  rule on the back; completing one says "Done. Back on <date>" (undoable).
 - **Deadline escalation**: border and background follow the band (soon amber, overdue
   red), always with an icon and text; "soon" pulses gently unless reduced motion is on.
 - **In-app reminders**: when time moves a task into "soon" or "overdue" while the app is
@@ -78,6 +78,20 @@ Playwright. Demonstração: <https://taskdeck-flax.vercel.app>.
 - **Calendar export (.ics)**: "Calendar" on the back of a card exports that task;
   Settings exports every active task with a due date (or just the active deck), with
   an alarm setting (none, at the time, 15 min, 1 h, 1 day before; default 15 min).
+- **Recurring cards only on their day**: a repeating card leaves the deck when it is
+  completed and comes back on the day of its next date ("Done. Back on <date>").
+  One-off tasks are never hidden, whatever their due date. The header reads "X of Y
+  today"; "Scheduled (N)" opens a sheet with the waiting cards (next date, rule, deck;
+  Complete now, Edit, Delete, all undoable). With nothing left for today the deck says
+  "All done for today" (with a small CSS celebration, none with reduced motion) or
+  "Nothing for today", with "Upcoming (N)". When the day changes with the app open
+  (or on return to the tab), the cards that wake up are announced once.
+- **Days of the week**: a weekly repetition can run on chosen days (Mon/Wed/Fri,
+  weekdays, weekends...), with "First time: <date>" before saving; exported to
+  calendars as `BYDAY`.
+- **Collapsible tag filter**: "Filter by tag" opens the bar (collapsed by default,
+  remembered per browser); an active filter shows an indicator and a dismissible
+  "tag: X ×" chip.
 - **Time field**: a 24 h "HH:mm" text field with a numeric keyboard (the native time
   picker was cut off on an Android phone): typing mask, "9:30" completed to "09:30" on
   leaving the field, the domain's validation (rejects 24:00, 12:60), and 09:00 / 12:00 /
@@ -338,20 +352,43 @@ exporting a backup now and then is the recommended safety net.
 - **Postpone lasts until the end of the day**; `postponedDays` counts days, not swipes.
 - **Recurrence anchors** `'due'` (fixed schedule, skips missed occurrences) and
   `'completion'` (restarts from today); monthly `'due'` keeps `originDay`.
+- **One visibility rule: `isAvailable(task, now)`.** It is the only function that
+  decides whether a card is on the deck; the deck, the counts, the tag counts, the
+  reminders and the rollover announcement all go through it (and so will a future
+  "postpone to tomorrow"). A task is available when it is active and, **only if it
+  repeats**, when its due date is today or earlier (overdue repeating cards stay). A
+  one-off task with a future due date stays visible: a deadline is something to work
+  towards, while a repeating card is "for that day". `availableTasks`,
+  `dormantTasks` (the waiting repeating cards, soonest first) and `dailyProgress`
+  build on it.
+- **Daily progress**: `done` = tasks whose `completedAt` falls on the local day of
+  `now` (one-off and repeating); `remaining` = available tasks. The header shows
+  "done of done + remaining today" for the active deck (the tag filter does not change
+  it).
+- **On the card**, a repeating task with a date only reads "Today" or "Pending for N
+  days" in a neutral style (no red, no pulse); with a time it keeps the deadline
+  escalation. This mapping is presentation (`presentDue`); `getDueStatus` is unchanged.
+- **Days of the week** (`recurrence.weekdays`, 0 = Sunday like `getDay`, sorted, no
+  repeats, not empty) only exist for a fixed calendar: unit `week`, every 1, anchor
+  `due`; any other combination is rejected by the schema. The due date moves to the
+  first valid day (time kept) on create and edit; the next date is the first valid day
+  strictly after max(due date, today), so missed days are skipped and completing early
+  moves on from the due date. Additive field: `schemaVersion` stays 1 and older data
+  loads unchanged.
 - **Decks and edits.** `createDeck`/`renameDeck` reject duplicate names ignoring case;
   `removeDeck` removes the deck and its tasks and refuses the last one; `updateTask`
-  edits only title, description, tags, priority, due and deck, keeping recurrence and
+  edits title, description, tags, priority, due, deck and recurrence (with its invariants), keeping
   counters (and refuses to drop the due date of a recurring task).
 
 ## Testing notes
 
-Test pyramid (counts at the end of stage 5):
+Test pyramid (counts after the first behaviour package):
 
 | Layer | Runner | Tests |
 | --- | --- | ---: |
-| Unit (domain, state, storage, calendar, ui logic, i18n, pwa) | Vitest, `node` project | 626 |
-| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | 193 |
-| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | 23 × 2 = 46 |
+| Unit (domain, state, storage, calendar, ui logic, i18n, pwa) | Vitest, `node` project | 706 |
+| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | 224 |
+| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | 28 × 2 = 56 (2 skipped by design: the shortcuts legend is checked per project) |
 
 End-to-end specs (`e2e/`): layout (no horizontal scroll at 320 and 360 px, light and
 dark, in first run, deck, form, decks sheet and settings), gestures with real mouse
@@ -474,7 +511,10 @@ Calendar and reminders script:
 - [ ] Import the same file again: events are updated, not duplicated
 - [ ] A monthly task on the 31st repeats on the last day of shorter months; one on the 30th shows only the next date with the note
 - [ ] Change the phone's clock (or wait) to cross a deadline with the app open: the card changes to soon/overdue and the reminder appears once
-- [ ] Complete a recurring task: "Rescheduled for <date>", the card stays with the new date, Undo restores it
+- [ ] Complete a recurring task: "Done. Back on <date>", the card leaves the deck and is listed in "Scheduled", Undo restores it
+- [ ] Leave the app open past midnight (or come back the next day): the repeating card is back and "New cards for today" is announced once
+- [ ] Pick Mon/Wed/Fri in the form: "First time" shows the right day, and the calendar app repeats on those days only
+- [ ] Phone: the shortcuts legend is not shown; the tag filter opens and closes and stays as left after a reload
 
 PWA and time field script (on <https://taskdeck-flax.vercel.app>):
 
@@ -535,6 +575,9 @@ Checked against RFC 5545 (sections 3.1, 3.3.5, 3.3.10, 3.3.11, 3.6.1, 3.6.6, 3.8
   For all-day events relative triggers count from 00:00 of the day, so the alarm is set
   for 09:00 of the day (`PT9H`), or 09:00 of the day before for "1 day" (`-PT15H`).
 - **PRIORITY** 1 / 5 / 9 for high / medium / low (RFC: 1-4 high, 5 medium, 6-9 low).
+- **Days of the week** become `RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR` (INTERVAL defaults to
+  1, the only interval allowed with days); DTSTART is the first valid day. ical.js
+  expands 8 weeks of them exactly like the domain.
 - **Recurrence.** Due-anchored repetitions become `RRULE:FREQ=DAILY|WEEKLY|MONTHLY;INTERVAL=n`.
   Monthly: day 1-28 `BYMONTHDAY=n`; day 31 `BYMONTHDAY=-1` (the last day, which is exactly
   "31, or the last day of a shorter month"). For days 29 and 30 the RFC-exact form
@@ -560,8 +603,28 @@ visible); `src/ui/reminders.ts` applies the rules: nothing on load, grouped chan
 one summary for what changed while the tab was hidden, no repeats for the same task
 and band, and no reminder for a change caused by editing the due date.
 
+## Interface preferences
+
+Choices about the interface itself (for now: whether the tag filter is open) are kept
+**per browser in `localStorage`** (`taskdeck:ui:*`, `src/ui/preferences.ts`), never in
+IndexedDB and never in backups. Every access is guarded: if storage is blocked or
+missing, the default applies and the choice lasts for the session.
+
+The keyboard shortcuts legend only shows with `(hover: hover) and (pointer: fine)`
+(a mouse or trackpad); on touch devices it is `display: none`, which also removes it
+from the accessibility tree. The shortcuts keep working with a keyboard.
+
 ## Known limitations
 
+- **"Today" is the local civil day** of the device (midnight to midnight). There is no
+  configurable start of the day (e.g. 4:00 for night owls): a card completed at 00:30
+  counts for the new day.
+- **No history or streaks**: progress counts only today's completions; there is no
+  record of past days and no streak counter.
+- **Days of the week only every 1 week, on a fixed calendar** (anchored on the due
+  date). "Every 2 weeks on Monday" or "from completion" with days are not supported.
+- **Hidden repeating cards are counted per deck**: "Scheduled (N)" and the progress
+  follow the active deck; the tag filter only affects the deck itself.
 - **Alarms only through the calendar app.** taskdeck cannot alert when it is closed;
   the only alarm outside the app is the one in an imported `.ics` event.
 - **Reminders only with the app open** (and visible; a hidden tab gets one summary when
@@ -611,5 +674,12 @@ and band, and no reminder for a change caused by editing the due date.
 2. Card UI with gestures, buttons/keyboard and undo (done)
 3. Decks, tags, editing, local persistence and JSON backup (done)
 4. Due dates and recurrence in the UI, in-app reminders, `.ics` export (done)
-5. Installable PWA, offline, update prompt, HH:mm time field, Playwright end-to-end tests, metadata, deploy (done; **definition of done reached, features frozen**)
-6. Optional, future: Capacitor/Android packaging with local (system) notifications
+5. Installable PWA, offline, update prompt, HH:mm time field, Playwright end-to-end tests, metadata, deploy (done)
+6. Behaviour package 1 (done): shortcuts legend on pointer devices only, collapsible tag filter, repeating cards only on their day with a Scheduled sheet and daily progress, days of the week in recurrences
+
+Next (not started):
+
+- **"Postpone to tomorrow"**: its own field (e.g. `hiddenUntil`), checked inside
+  `isAvailable`, never touching the due date.
+- **Colour per deck**.
+- Optional: Capacitor/Android packaging with local (system) notifications.
