@@ -193,7 +193,7 @@ describe('TaskFormSheet: edit', () => {
     postponedDays: 2,
   }
 
-  it('opens prefilled, titled "Editar tarefa", with the recurrence shown read-only', () => {
+  it('opens prefilled, titled "Editar tarefa", with the repetition filled in', () => {
     renderSheet({ task: recurring })
 
     expect(screen.getByRole('dialog', { name: 'Editar tarefa' })).toBeInTheDocument()
@@ -204,7 +204,10 @@ describe('TaskFormSheet: edit', () => {
     expect(screen.getByLabelText(/Data do prazo/)).toHaveValue('2026-10-07')
     expect(screen.getByLabelText(/Hora do prazo/)).toHaveValue('09:00')
     expect(screen.getByRole('list', { name: 'Tags' })).toHaveTextContent('#casa')
-    expect(screen.getByText(/Repete: Toda semana/)).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Repetir esta tarefa' })).toBeChecked()
+    expect(screen.getByLabelText('A cada')).toHaveValue(1)
+    expect(screen.getByLabelText('Unidade')).toHaveValue('week')
+    expect(screen.getByRole('radio', { name: /do prazo/ })).toBeChecked()
   })
 
   it('saves the edited fields as a patch', async () => {
@@ -323,5 +326,133 @@ describe('TaskFormSheet: Enter key', () => {
 
     expect(title).toHaveFocus()
     expect(onCreate).not.toHaveBeenCalled()
+  })
+})
+
+describe('TaskFormSheet: repetition', () => {
+  const weekly = () =>
+    createTask(
+      {
+        deckId: 'deck-1',
+        title: 'Lavar a roupa',
+        due: { date: '2026-10-07' },
+        recurrence: { unit: 'week', every: 1, anchor: 'due' },
+      },
+      { id: 'w', now: new Date(2026, 9, 5, 10, 0) },
+    )
+
+  it('is off by default and shows its fields when turned on, with a hint for each anchor', async () => {
+    const { user } = renderSheet()
+    const toggle = screen.getByRole('checkbox', { name: 'Repetir esta tarefa' })
+    expect(toggle).not.toBeChecked()
+    expect(screen.queryByLabelText('A cada')).toBeNull()
+
+    await user.click(toggle)
+
+    expect(screen.getByLabelText('A cada')).toHaveValue(1)
+    expect(screen.getByLabelText('Unidade')).toHaveValue('week')
+    expect(screen.getByRole('radio', { name: /do prazo/ })).toHaveAccessibleDescription(/Calendário fixo/)
+    expect(screen.getByRole('radio', { name: /da conclusão/ })).toHaveAccessibleDescription(/Recomeça ao concluir/)
+  })
+
+  it('creates a recurring task', async () => {
+    const { user, onCreate } = renderSheet()
+
+    await user.type(screen.getByLabelText('Título'), 'Regar as plantas')
+    await user.type(screen.getByLabelText(/Data do prazo/), '2026-10-07')
+    await user.click(screen.getByRole('checkbox', { name: 'Repetir esta tarefa' }))
+    await user.clear(screen.getByLabelText('A cada'))
+    await user.type(screen.getByLabelText('A cada'), '3')
+    await user.selectOptions(screen.getByLabelText('Unidade'), 'day')
+    await user.click(screen.getByRole('radio', { name: /da conclusão/ }))
+    await user.click(screen.getByRole('button', { name: 'Criar tarefa' }))
+
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({
+      due: { date: '2026-10-07' },
+      recurrence: { unit: 'day', every: 3, anchor: 'completion' },
+    })
+  })
+
+  it('names the units with the right plural', async () => {
+    const { user } = renderSheet()
+    await user.click(screen.getByRole('checkbox', { name: 'Repetir esta tarefa' }))
+    const options = () => [...screen.getByLabelText('Unidade').querySelectorAll('option')].map((option) => option.textContent)
+
+    expect(options()).toEqual(['dia', 'semana', 'mês'])
+    await user.clear(screen.getByLabelText('A cada'))
+    await user.type(screen.getByLabelText('A cada'), '2')
+    expect(options()).toEqual(['dias', 'semanas', 'meses'])
+  })
+
+  it('requires a due date: accessible error on the date field, which gets focus', async () => {
+    const { user, onCreate } = renderSheet()
+
+    await user.type(screen.getByLabelText('Título'), 'Sem data')
+    await user.click(screen.getByRole('checkbox', { name: 'Repetir esta tarefa' }))
+    await user.click(screen.getByRole('button', { name: 'Criar tarefa' }))
+
+    const date = screen.getByLabelText(/Data do prazo/)
+    expect(date).toHaveAttribute('aria-invalid', 'true')
+    expect(date).toHaveAccessibleDescription('Uma tarefa recorrente precisa de uma data.')
+    expect(date).toHaveFocus()
+    expect(onCreate).not.toHaveBeenCalled()
+  })
+
+  it.each(['0', '1.5', ''])('rejects the interval "%s" with an accessible error', async (every) => {
+    const { user, onCreate } = renderSheet()
+
+    await user.type(screen.getByLabelText('Título'), 'Intervalo')
+    await user.type(screen.getByLabelText(/Data do prazo/), '2026-10-07')
+    await user.click(screen.getByRole('checkbox', { name: 'Repetir esta tarefa' }))
+    await user.clear(screen.getByLabelText('A cada'))
+    if (every !== '') await user.type(screen.getByLabelText('A cada'), every)
+    await user.click(screen.getByRole('button', { name: 'Criar tarefa' }))
+
+    expect(screen.getByLabelText('A cada')).toHaveAccessibleDescription('Use um número inteiro a partir de 1.')
+    expect(screen.getByLabelText('A cada')).toHaveFocus()
+    expect(onCreate).not.toHaveBeenCalled()
+  })
+
+  it('edits the repetition of a recurring task', async () => {
+    const { user, onUpdate } = renderSheet({ task: weekly() })
+
+    await user.clear(screen.getByLabelText('A cada'))
+    await user.type(screen.getByLabelText('A cada'), '2')
+    await user.click(screen.getByRole('radio', { name: /da conclusão/ }))
+    await user.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+
+    expect(onUpdate).toHaveBeenCalledWith(
+      'w',
+      expect.objectContaining({ recurrence: { unit: 'week', every: 2, anchor: 'completion' } }),
+    )
+  })
+
+  it('removes the repetition (and may remove the due date with it)', async () => {
+    const { user, onUpdate } = renderSheet({ task: weekly() })
+
+    await user.click(screen.getByRole('checkbox', { name: 'Repetir esta tarefa' }))
+    await user.clear(screen.getByLabelText(/Data do prazo/))
+    await user.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+
+    expect(onUpdate).toHaveBeenCalledWith('w', expect.objectContaining({ recurrence: null, due: null }))
+  })
+
+  it('keeps the Enter flow: time moves on to the toggle when repeating, and the anchor submits', async () => {
+    const { user, onCreate } = renderSheet()
+    await user.type(screen.getByLabelText('Título'), 'Enter')
+    await user.type(screen.getByLabelText(/Data do prazo/), '2026-10-07')
+    await user.click(screen.getByRole('checkbox', { name: 'Repetir esta tarefa' }))
+
+    expect(screen.getByLabelText(/Hora do prazo/)).toHaveAttribute('enterkeyhint', 'next')
+    await user.type(screen.getByLabelText(/Hora do prazo/), '{Enter}')
+    expect(screen.getByRole('checkbox', { name: 'Repetir esta tarefa' })).toHaveFocus()
+
+    await user.keyboard('{Enter}')
+    expect(screen.getByLabelText('A cada')).toHaveFocus()
+    expect(onCreate).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('radio', { name: /do prazo/ }))
+    await user.keyboard('{Enter}')
+    expect(onCreate).toHaveBeenCalledTimes(1)
   })
 })

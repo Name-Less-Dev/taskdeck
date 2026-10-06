@@ -222,6 +222,19 @@ export interface Dictionary {
     readonly reload: string
     readonly details: string
   }
+  readonly repeat: {
+    readonly legend: string
+    readonly toggle: string
+    readonly everyLabel: string
+    readonly unitLabel: string
+    readonly units: Readonly<Record<'day' | 'week' | 'month', (count: number) => string>>
+    readonly anchorLegend: string
+    readonly anchorDue: string
+    readonly anchorDueHint: string
+    readonly anchorCompletion: string
+    readonly anchorCompletionHint: string
+    readonly everyInvalid: string
+  }
   readonly form: {
     readonly title: string
     readonly titleLabel: string
@@ -234,7 +247,6 @@ export interface Dictionary {
     readonly editTitle: string
     readonly saveChanges: string
     readonly deckLabel: string
-    readonly recurrenceNote: (rule: string) => string
     readonly cancel: string
     readonly close: string
     readonly errors: {

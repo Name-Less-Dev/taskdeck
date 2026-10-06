@@ -229,6 +229,23 @@ export const en: Dictionary = {
     reload: 'Reload',
     details: 'Technical details',
   },
+  repeat: {
+    legend: 'Repetition',
+    toggle: 'Repeat this task',
+    everyLabel: 'Every',
+    unitLabel: 'Unit',
+    units: {
+      day: (n) => p(n, 'day', 'days'),
+      week: (n) => p(n, 'week', 'weeks'),
+      month: (n) => p(n, 'month', 'months'),
+    },
+    anchorLegend: 'Count from',
+    anchorDue: 'the due date',
+    anchorDueHint: 'Fixed schedule: the next date is the due date plus the interval, even if you finish late.',
+    anchorCompletion: 'completion',
+    anchorCompletionHint: 'Restarts when you finish: the next date is the completion day plus the interval.',
+    everyInvalid: 'Use a whole number of at least 1.',
+  },
   form: {
     title: 'New task',
     titleLabel: 'Title',
@@ -241,7 +258,6 @@ export const en: Dictionary = {
     editTitle: 'Edit task',
     saveChanges: 'Save changes',
     deckLabel: 'Deck',
-    recurrenceNote: (rule) => `Repeats: ${rule}. Editing the recurrence will come in a later version.`,
     cancel: 'Cancel',
     close: 'Close',
     errors: {

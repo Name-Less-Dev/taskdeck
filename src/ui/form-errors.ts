@@ -2,12 +2,12 @@ import type { ZodError } from 'zod'
 import { DUPLICATE_DECK_NAME } from '../domain/index.ts'
 import type { Dictionary } from '../i18n/dictionary.ts'
 
-export type TaskFormField = 'title' | 'description' | 'tags' | 'date' | 'time'
+export type TaskFormField = 'title' | 'description' | 'tags' | 'date' | 'time' | 'every'
 
 /** One message per field; `form` holds anything that does not map to a field. */
 export type TaskFormErrors = Partial<Record<TaskFormField | 'form', string>>
 
-export const TASK_FORM_FIELDS: readonly TaskFormField[] = ['title', 'description', 'tags', 'date', 'time']
+export const TASK_FORM_FIELDS: readonly TaskFormField[] = ['title', 'description', 'tags', 'date', 'time', 'every']
 
 /**
  * Translates the structured issues of a createTask ZodError into UI messages.

@@ -233,6 +233,23 @@ export const ptBR: Dictionary = {
     reload: 'Recarregar',
     details: 'Detalhes técnicos',
   },
+  repeat: {
+    legend: 'Repetição',
+    toggle: 'Repetir esta tarefa',
+    everyLabel: 'A cada',
+    unitLabel: 'Unidade',
+    units: {
+      day: (n) => p(n, 'dia', 'dias'),
+      week: (n) => p(n, 'semana', 'semanas'),
+      month: (n) => p(n, 'mês', 'meses'),
+    },
+    anchorLegend: 'Contar a partir',
+    anchorDue: 'do prazo',
+    anchorDueHint: 'Calendário fixo: a próxima data é o prazo mais o intervalo, mesmo se concluir atrasado.',
+    anchorCompletion: 'da conclusão',
+    anchorCompletionHint: 'Recomeça ao concluir: a próxima data é o dia da conclusão mais o intervalo.',
+    everyInvalid: 'Use um número inteiro a partir de 1.',
+  },
   form: {
     title: 'Nova tarefa',
     titleLabel: 'Título',
@@ -245,7 +262,6 @@ export const ptBR: Dictionary = {
     editTitle: 'Editar tarefa',
     saveChanges: 'Salvar alterações',
     deckLabel: 'Baralho',
-    recurrenceNote: (rule) => `Repete: ${rule}. A recorrência poderá ser editada numa próxima versão.`,
     cancel: 'Cancelar',
     close: 'Fechar',
     errors: {

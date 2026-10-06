@@ -18,7 +18,8 @@ export function isComposingKey(event: KeyboardEvent): boolean {
 
 /** Single-line controls where the browser would submit the form on Enter. */
 function submitsImplicitly(element: Element): element is HTMLInputElement {
-  return element instanceof HTMLInputElement && !['button', 'submit', 'reset', 'checkbox', 'file', 'hidden'].includes(element.type)
+  // Checkboxes are included: Enter moves on instead of submitting the form.
+  return element instanceof HTMLInputElement && !['button', 'submit', 'reset', 'file', 'hidden'].includes(element.type)
 }
 
 /** Tab-order stops inside `form`: a radio group counts once (its checked radio, or the first). */
