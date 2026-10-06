@@ -62,3 +62,6 @@ export type { TagCount } from './tags.ts'
 
 export { updateTask } from './edit.ts'
 export type { RecurrenceInput, TaskPatch } from './edit.ts'
+
+export { describeRecurrence, diffDueBands, dueBand } from './bands.ts'
+export type { BandChange, BandKey, RecurrenceDescription } from './bands.ts'
