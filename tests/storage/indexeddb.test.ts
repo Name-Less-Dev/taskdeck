@@ -129,8 +129,21 @@ describe('IndexedDB storage: validation and repair', () => {
 
     const loaded = ready(await storage.load())
 
-    expect(loaded.meta.settings).toEqual({ activeDeckId: null, language: 'auto' })
+    expect(loaded.meta.settings).toEqual({ activeDeckId: null, language: 'auto', alarm: '15m' })
     expect(loaded.quarantined).toBe(1)
+  })
+})
+
+describe('IndexedDB storage: settings added later', () => {
+  it('loads meta saved before the alarm setting existed, with the default alarm and nothing quarantined', async () => {
+    const storage = await createIndexedDbStorage(context())
+    await storage.save(sampleData(), sampleMeta)
+    await writeRaw({ meta: { schemaVersion: 1, settings: { activeDeckId: 'work', language: 'en' }, lastBackupAt: null } })
+
+    const loaded = ready(await storage.load())
+
+    expect(loaded.meta.settings).toEqual({ activeDeckId: 'work', language: 'en', alarm: '15m' })
+    expect(loaded.quarantined).toBe(0)
   })
 })
 

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { AppData } from '../domain/index.ts'
+import { ALARM_OPTIONS } from '../calendar/ics.ts'
 import type { MigrationRegistry } from './migrations.ts'
 
 /** Version of the persisted data format (not the IndexedDB structure version). */
@@ -11,6 +12,9 @@ export type Language = (typeof LANGUAGES)[number]
 export const SettingsSchema = z.object({
   activeDeckId: z.string().min(1).nullable(),
   language: z.enum(LANGUAGES),
+  // Added in stage 4 with a default, so meta saved before it still validates
+  // (no migration needed; older apps simply drop the unknown key).
+  alarm: z.enum(ALARM_OPTIONS).default('15m'),
 })
 export type Settings = z.infer<typeof SettingsSchema>
 
@@ -23,7 +27,7 @@ export type Meta = z.infer<typeof MetaSchema>
 
 export const DEFAULT_META: Meta = {
   schemaVersion: SCHEMA_VERSION,
-  settings: { activeDeckId: null, language: 'auto' },
+  settings: { activeDeckId: null, language: 'auto', alarm: '15m' },
   lastBackupAt: null,
 }
 

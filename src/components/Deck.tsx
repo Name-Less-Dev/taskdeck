@@ -34,6 +34,8 @@ export interface DeckProps {
   readonly deckNames?: ReadonlyMap<string, string>
   /** Opens the edit sheet for the top card. */
   readonly onEdit?: () => void
+  /** Exports the top card to a calendar file. */
+  readonly onAddToCalendar?: () => void
 }
 
 export function Deck({
@@ -50,6 +52,7 @@ export function Deck({
   emptyState,
   deckNames,
   onEdit,
+  onAddToCalendar,
 }: DeckProps) {
   const { t } = useI18n()
 
@@ -75,6 +78,7 @@ export function Deck({
                 onExitInterrupted?.(task.id)
               }}
               {...(depth === 0 && onEdit !== undefined ? { onEdit } : {})}
+              {...(depth === 0 && onAddToCalendar !== undefined ? { onAddToCalendar } : {})}
               {...(deckNames?.has(task.deckId) === true ? { deckName: deckNames.get(task.deckId) } : {})}
             />
           ))}

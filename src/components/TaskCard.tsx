@@ -46,6 +46,8 @@ export interface TaskCardProps {
   readonly deckName?: string
   /** Opens the edit sheet; shows an "Edit" button over the back of the top card. */
   readonly onEdit?: () => void
+  /** Exports this task to a calendar file; shown on the back when it has a due date. */
+  readonly onAddToCalendar?: () => void
 }
 
 /** Tags shown on the front; the rest are summarized as "+N" (all are on the back). */
@@ -89,6 +91,7 @@ export function TaskCard({
   onExitInterrupted,
   deckName,
   onEdit,
+  onAddToCalendar,
 }: TaskCardProps) {
   const { locale, t } = useI18n()
   const reduceMotion = useReducedMotion() === true
@@ -341,11 +344,26 @@ export function TaskCard({
               </motion.div>
             ))}
         </motion.div>
-        {isTop && flipped && exit === null && !dragging && onEdit !== undefined && (
-          <button type="button" className={styles.edit} aria-label={t.card.editLabel(task.title)} onClick={onEdit}>
-            <Icon name="pencil" size={18} />
-            <span aria-hidden="true">{t.card.edit}</span>
-          </button>
+        {isTop && flipped && exit === null && !dragging && (onEdit !== undefined || onAddToCalendar !== undefined) && (
+          <div className={styles.backActions}>
+            {onAddToCalendar !== undefined && task.due !== null && (
+              <button
+                type="button"
+                className={styles.backAction}
+                aria-label={t.calendar.addToCalendarLabel(task.title)}
+                onClick={onAddToCalendar}
+              >
+                <Icon name="calendar" size={18} />
+                <span aria-hidden="true">{t.calendar.addToCalendar}</span>
+              </button>
+            )}
+            {onEdit !== undefined && (
+              <button type="button" className={styles.edit} aria-label={t.card.editLabel(task.title)} onClick={onEdit}>
+                <Icon name="pencil" size={18} />
+                <span aria-hidden="true">{t.card.edit}</span>
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

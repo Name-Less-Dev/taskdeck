@@ -271,11 +271,38 @@
   font-weight: 600;
 }
 
-.edit {
+/* Buttons over the back of the top card: siblings of the role=button card, never inside it. */
+.backActions {
   position: absolute;
   right: var(--space-4);
   bottom: var(--space-4);
+  left: var(--space-4);
   z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.backActions > * {
+  pointer-events: auto;
+}
+
+.backAction {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.edit {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);

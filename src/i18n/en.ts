@@ -232,6 +232,22 @@ export const en: Dictionary = {
     reload: 'Reload',
     details: 'Technical details',
   },
+  calendar: {
+    addToCalendar: 'Calendar',
+    addToCalendarLabel: (title) => `Add “${title}” to the calendar`,
+    heading: 'Calendar',
+    alarmLabel: 'Event alarm',
+    alarms: { none: 'None', 'at-time': 'At the time', '15m': '15 min before', '1h': '1 h before', '1d': '1 day before' },
+    activeDeckOnly: 'Active deck only',
+    export: 'Export tasks with a due date (.ics)',
+    exportable: (n) => p(n, '{n} active task with a due date', '{n} active tasks with a due date'),
+    nothingToExport: 'No active task with a due date to export.',
+    limits:
+      'Tasks without a due date are left out. Tasks that repeat from completion (or monthly on the 29th or 30th) only get their next date. Date-only dues become all-day events, with the alarm at 9 am.',
+    completionNote: 'Repeats from completion: only the next date was exported.',
+    monthEndNote: (day) => `Repeats every month on day ${day} (or the last day of the month): only the next date was exported.`,
+    exported: (n) => p(n, 'Calendar exported with {n} task.', 'Calendar exported with {n} tasks.'),
+  },
   reminders: {
     soon: (title, when) => `Due soon: ${title} (${when.toLowerCase()})`,
     overdue: (title) => `Overdue: ${title}`,

@@ -225,6 +225,21 @@ export interface Dictionary {
     readonly reload: string
     readonly details: string
   }
+  readonly calendar: {
+    readonly addToCalendar: string
+    readonly addToCalendarLabel: (title: string) => string
+    readonly heading: string
+    readonly alarmLabel: string
+    readonly alarms: Readonly<Record<'none' | 'at-time' | '15m' | '1h' | '1d', string>>
+    readonly activeDeckOnly: string
+    readonly export: string
+    readonly exportable: (count: number) => string
+    readonly nothingToExport: string
+    readonly limits: string
+    readonly completionNote: string
+    readonly monthEndNote: (day: number) => string
+    readonly exported: (count: number) => string
+  }
   readonly reminders: {
     readonly soon: (title: string, when: string) => string
     readonly overdue: (title: string) => string

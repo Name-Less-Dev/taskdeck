@@ -25,6 +25,7 @@ import {
   getDueStatus,
   orderDeck,
   renameDeck,
+  toDayKey,
   type AppData,
   type Task,
   type TaskPatch,
@@ -44,7 +45,8 @@ import {
   type Language,
   type Meta,
 } from './storage/index.ts'
-import { downloadBlob, jsonBlob, type Download } from './ui/download.ts'
+import { calendarBlob, downloadBlob, jsonBlob, type Download } from './ui/download.ts'
+import { buildIcs, exportableCount, icsFileName, type AlarmOption } from './calendar/ics.ts'
 import { deckNameError } from './ui/form-errors.ts'
 import { EXIT_TIMEOUT_MS, exitReducer, IDLE, isExiting, type ExitEvent, type ExitState } from './ui/exitState.ts'
 import type { SwipeAction } from './ui/gestures.ts'
@@ -98,6 +100,7 @@ export default function App({
   // UI state outside the undo history. activeDeckId is persisted in meta.
   const [activeDeckId, setActiveDeckId] = useState<string | null>(initialMeta.settings.activeDeckId)
   const [lastBackupAt, setLastBackupAt] = useState<string | null>(initialMeta.lastBackupAt)
+  const [alarm, setAlarm] = useState<AlarmOption>(initialMeta.settings.alarm)
   const [firstRun, setFirstRun] = useState(initialFirstRun)
   // Tag filter: session only, never persisted.
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -115,8 +118,8 @@ export default function App({
   const top = tasks[0] ?? null
 
   const meta = useMemo<Meta>(
-    () => ({ schemaVersion: SCHEMA_VERSION, settings: { activeDeckId: deckId, language }, lastBackupAt }),
-    [deckId, language, lastBackupAt],
+    () => ({ schemaVersion: SCHEMA_VERSION, settings: { activeDeckId: deckId, language, alarm }, lastBackupAt }),
+    [deckId, language, alarm, lastBackupAt],
   )
   const autosave = useAutosave(storage, state.present, meta)
   const { state: persistenceState, requestOnce: requestPersistence } = usePersistence(
@@ -414,6 +417,25 @@ export default function App({
     announce(t.announce.languageChanged)
   }
 
+  /** Downloads an .ics with the given tasks (only active ones with a due date end up in it). */
+  function exportCalendar(tasks: readonly Task[]) {
+    const now = new Date()
+    const text = buildIcs(tasks, {
+      now,
+      alarm,
+      labels: {
+        priority: t.priority.label,
+        priorities: { low: t.priority.low, medium: t.priority.medium, high: t.priority.high },
+        deck: t.decks.cardLabel,
+        completionRecurrenceNote: t.calendar.completionNote,
+        monthEndRecurrenceNote: t.calendar.monthEndNote,
+      },
+      deckName: (id) => decks.find((deck) => deck.id === id)?.name,
+    })
+    download(calendarBlob(text), icsFileName(toDayKey(now)))
+    announce(t.calendar.exported(exportableCount(tasks)))
+  }
+
   function toggleFlip() {
     if (top === null) return
     setFlippedId((current) => (current === top.id ? null : top.id))
@@ -566,6 +588,9 @@ export default function App({
             regionRef={regionRef}
             emptyState={emptyState}
             onEdit={openEdit}
+            onAddToCalendar={() => {
+              if (top !== null) exportCalendar([top])
+            }}
             {...(deckNames === undefined ? {} : { deckNames })}
           />
         </main>
@@ -618,6 +643,14 @@ export default function App({
           onExport={exportBackup}
           parseImport={parseImport}
           onImport={importData}
+          alarm={alarm}
+          onAlarmChange={setAlarm}
+          activeDeckName={decks.find((deck) => deck.id === deckId)?.name ?? null}
+          exportableAll={exportableCount(allTasks)}
+          exportableActiveDeck={exportableCount(deckTasks)}
+          onExportCalendar={(activeDeckOnly) => {
+            exportCalendar(activeDeckOnly ? deckTasks : allTasks)
+          }}
           onClose={closeSheet}
         />
       )}

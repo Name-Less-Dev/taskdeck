@@ -97,7 +97,7 @@ describe('startup', () => {
     const storage = await createIndexedDbStorage({ createId: () => 'x', names })
     await storage.save({ decks: [{ id: 'd', name: 'Casa' }], tasks: [] }, {
       schemaVersion: 2,
-      settings: { activeDeckId: null, language: 'auto' },
+      settings: { activeDeckId: null, language: 'auto', alarm: '15m' },
       lastBackupAt: null,
     })
     const { user, download } = renderRoot()

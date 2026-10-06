@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
+import { ALARM_OPTIONS, type AlarmOption } from '../calendar/ics.ts'
 import type { AppData } from '../domain/index.ts'
 import { useI18n, type Dictionary } from '../i18n/index.tsx'
 import type { BackupError, BackupWarning, Language, ParseBackupResult, PersistenceState } from '../storage/index.ts'
@@ -22,6 +23,14 @@ export interface SettingsSheetProps {
   readonly onExport: () => void
   readonly parseImport: (text: string) => ParseBackupResult
   readonly onImport: (data: AppData) => void
+  readonly alarm: AlarmOption
+  readonly onAlarmChange: (alarm: AlarmOption) => void
+  /** Name of the active deck, or null in "All decks". */
+  readonly activeDeckName: string | null
+  /** Active tasks with a due date, in all decks and in the active deck. */
+  readonly exportableAll: number
+  readonly exportableActiveDeck: number
+  readonly onExportCalendar: (activeDeckOnly: boolean) => void
   readonly onClose: () => void
 }
 
@@ -68,11 +77,20 @@ export function SettingsSheet({
   onExport,
   parseImport,
   onImport,
+  alarm,
+  onAlarmChange,
+  activeDeckName,
+  exportableAll,
+  exportableActiveDeck,
+  onExportCalendar,
   onClose,
 }: SettingsSheetProps) {
   const { locale, t } = useI18n()
   const id = useId()
   const [importState, setImportState] = useState<ImportState>({ kind: 'idle' })
+  const [activeDeckOnly, setActiveDeckOnly] = useState(false)
+  const onlyActiveDeck = activeDeckOnly && activeDeckName !== null
+  const exportable = onlyActiveDeck ? exportableActiveDeck : exportableAll
   const reviewCancelRef = useRef<HTMLButtonElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -145,6 +163,60 @@ export function SettingsSheet({
           </div>
           {languageForcedByUrl && <p className={form.hint}>{t.settings.languageForcedByUrl}</p>}
         </fieldset>
+
+        <section className={styles.section} aria-labelledby={`${id}-calendar`}>
+          <h3 id={`${id}-calendar`} className={styles.heading}>
+            {t.calendar.heading}
+          </h3>
+          <div className={form.field}>
+            <label htmlFor={`${id}-alarm`}>{t.calendar.alarmLabel}</label>
+            <select
+              id={`${id}-alarm`}
+              value={alarm}
+              onChange={(event) => {
+                const next = ALARM_OPTIONS.find((option) => option === event.target.value)
+                if (next !== undefined) onAlarmChange(next)
+              }}
+            >
+              {ALARM_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {t.calendar.alarms[option]}
+                </option>
+              ))}
+            </select>
+          </div>
+          {activeDeckName !== null && (
+            <label className={styles.option}>
+              <input
+                type="checkbox"
+                checked={activeDeckOnly}
+                onChange={(event) => {
+                  setActiveDeckOnly(event.target.checked)
+                }}
+              />
+              <span>
+                {t.calendar.activeDeckOnly} ({activeDeckName})
+              </span>
+            </label>
+          )}
+          <p id={`${id}-exportable`} className={form.hint} data-testid="exportable-count">
+            {exportable === 0 ? t.calendar.nothingToExport : t.calendar.exportable(exportable)}
+          </p>
+          <button
+            type="button"
+            className={form.primary}
+            disabled={exportable === 0}
+            aria-describedby={`${id}-exportable ${id}-calendar-limits`}
+            onClick={() => {
+              onExportCalendar(onlyActiveDeck)
+            }}
+          >
+            {t.calendar.export}
+          </button>
+          <p id={`${id}-calendar-limits`} className={form.hint}>
+            {t.calendar.limits}
+          </p>
+        </section>
 
         <section className={styles.section} aria-labelledby={`${id}-storage`}>
           <h3 id={`${id}-storage`} className={styles.heading}>

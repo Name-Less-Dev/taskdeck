@@ -17,6 +17,11 @@ export function downloadBlob(blob: Blob, fileName: string): void {
 
 export type Download = (blob: Blob, fileName: string) => void
 
+/** iCalendar text; the content is UTF-8. */
+export function calendarBlob(text: string): Blob {
+  return new Blob([text], { type: 'text/calendar;charset=utf-8' })
+}
+
 export function jsonBlob(text: string): Blob {
   return new Blob([text], { type: 'application/json' })
 }

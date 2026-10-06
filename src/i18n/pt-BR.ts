@@ -236,6 +236,22 @@ export const ptBR: Dictionary = {
     reload: 'Recarregar',
     details: 'Detalhes técnicos',
   },
+  calendar: {
+    addToCalendar: 'Calendário',
+    addToCalendarLabel: (title) => `Adicionar “${title}” ao calendário`,
+    heading: 'Calendário',
+    alarmLabel: 'Alarme dos eventos',
+    alarms: { none: 'Nenhum', 'at-time': 'No horário', '15m': '15 min antes', '1h': '1 h antes', '1d': '1 dia antes' },
+    activeDeckOnly: 'Só o baralho ativo',
+    export: 'Exportar tarefas com prazo (.ics)',
+    exportable: (n) => p(n, '{n} tarefa ativa com prazo', '{n} tarefas ativas com prazo'),
+    nothingToExport: 'Nenhuma tarefa ativa com prazo para exportar.',
+    limits:
+      'Tarefas sem prazo não entram. Tarefas que repetem a partir da conclusão (ou todo mês no dia 29 ou 30) vão só com a próxima data. Prazos só com data viram eventos de dia inteiro, com alarme às 9h.',
+    completionNote: 'Repete a partir da conclusão: só a próxima data foi exportada.',
+    monthEndNote: (day) => `Repete todo mês no dia ${day} (ou no último dia do mês): só a próxima data foi exportada.`,
+    exported: (n) => p(n, 'Calendário exportado com {n} tarefa.', 'Calendário exportado com {n} tarefas.'),
+  },
   reminders: {
     soon: (title, when) => `Prazo chegando: ${title} (${when.toLowerCase()})`,
     overdue: (title) => `Venceu: ${title}`,

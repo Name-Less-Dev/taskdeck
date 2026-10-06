@@ -50,7 +50,7 @@ export function sampleData(): AppData {
 
 export const sampleMeta: Meta = {
   schemaVersion: 1,
-  settings: { activeDeckId: 'work', language: 'en' },
+  settings: { activeDeckId: 'work', language: 'en', alarm: '1h' },
   lastBackupAt: null,
 }
 
