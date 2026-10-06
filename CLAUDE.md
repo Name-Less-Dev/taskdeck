@@ -24,7 +24,9 @@ npm test               # Vitest once: "node" and "dom" (jsdom) projects
 npm run test:coverage  # V8 coverage, >= 90% lines required in src/domain, src/state, src/storage
 npm run lint           # ESLint (type-checked)
 npm run typecheck      # tsc --noEmit for app, tooling and tests
-npm run build          # tsc -b && vite build
+npm run build          # tsc -b && vite build (also emits sw.js + manifest)
+npm run e2e            # Playwright (builds, serves on :4173, desktop + Pixel 7)
+npm run icons          # regenerate public/*.png from public/icon.svg
 ```
 
 On Windows, run time-zone checks from PowerShell (`$env:TZ='UTC'; npm test`); Git Bash
@@ -59,7 +61,7 @@ strips `TZ` before it reaches Node.
   `vw`. `overflow-x: clip` on html/body is only a safety net: never rely on it. jsdom
   cannot catch overflow, so check a real browser at 320/360 px
   (`document.documentElement.scrollWidth <= clientWidth`, and no element whose right
-  edge passes `innerWidth`) until the Playwright check exists.
+  edge passes `innerWidth`); `e2e/layout.spec.ts` checks it in the main states.
 - Styling: CSS Modules + tokens from `src/index.css`; `vh` fallback before `dvh`. New
   text/background token pairs go into `tests/ui/contrast.test.ts` (WCAG AA, both themes).
 - Ids: always `createId()` from `src/lib/id.ts`, never `crypto.randomUUID` (missing in
@@ -89,6 +91,22 @@ strips `TZ` before it reaches Node.
 - New settings go into `meta.settings` with a zod default, so older meta still loads
   (as `alarm` did); a breaking change still needs `SCHEMA_VERSION` + a migration.
 
+## PWA and end-to-end conventions (stage 5)
+
+- The service worker exists only in the production build (vite-plugin-pwa,
+  `registerType: 'prompt'`). Never reload on the user's behalf; the update toast is
+  hidden while a sheet is open (`shouldOfferUpdate`).
+- PWA state reaches the app through `PwaContext` (`src/pwa/context.ts`); only
+  `PwaProvider.tsx` imports `virtual:pwa-register/react`, so tests use `NO_PWA` or
+  their own context value.
+- Install and update decisions are pure (`src/pwa/install.ts`, `src/pwa/update.ts`).
+- New icons: edit `public/icon.svg`, run `npm run icons`, commit the PNGs.
+- Playwright: one fresh context per test, start from the first-run screen, web-first
+  assertions only (no `waitForTimeout`). Specs live in `e2e/` and are not part of
+  Vitest.
+- IndexedDB saves call `tx.commit()` after queuing every write: a save started on
+  `pagehide` must survive an immediate reload.
+
 ## Storage conventions (stage 3)
 
 - Everything goes through `AppStorage` (`src/storage`); never touch IndexedDB elsewhere.
@@ -102,15 +120,20 @@ strips `TZ` before it reaches Node.
 
 ## Current state
 
-Stages 1 (domain core), 2 (card UI), 3 (decks, tags, editing, IndexedDB persistence,
-JSON backup, settings) and 4 (recurrence editing in the form, recurrence badges,
-deadline escalation, in-app reminders, `.ics` export with alarms) are done. The manual
-phone QA checklists in the README (gestures, persistence, calendar and reminders) are
-still open.
+Stages 1 to 5 are done: domain core, card UI, decks/tags/editing/IndexedDB/backup,
+recurrence/reminders/`.ics`, and stage 5 (installable PWA with offline precache and
+an update prompt, install button / iOS hint, HH:mm time field, post-export notice,
+Playwright e2e on CI, metadata). Deployed at https://taskdeck-flax.vercel.app.
 
-## Roadmap (remaining)
+**DEFINITION OF DONE REACHED. Features are frozen**: only bug fixes (test first, fix in
+its own commit), dependency updates and documentation from now on.
 
-5. Installable PWA, offline (service worker), backup reminders, Playwright end-to-end
-   tests (including real drag gestures, and `scrollWidth <= clientWidth` at 320 and
-   360 px viewports in every main state), deploy (Vercel, HTTPS).
-6. Optional: Capacitor packaging for Android with local (system) notifications.
+Still manual (see the README): the phone QA checklists (gestures, persistence,
+calendar and reminders, PWA and time field), `public/og.png` (1200x630),
+`docs/screenshot-deck.png` and `docs/demo.gif`. Verified by hand so far: only an
+`.ics` imported into an Android calendar (time, daily repetition, alarm fired).
+
+## Roadmap
+
+6. Optional and future: Capacitor packaging for Android with local (system)
+   notifications. Not started.
