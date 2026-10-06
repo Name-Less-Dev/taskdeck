@@ -215,7 +215,7 @@ describe('App empty state', () => {
 
     await user.click(screen.getByRole('button', { name: 'Concluir' }))
 
-    expect(await screen.findByRole('heading', { name: 'Tudo em dia!' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Tudo feito por hoje' })).toBeInTheDocument()
     expect(liveRegion()).toHaveTextContent(
       'Tarefa concluída: Enviar relatório. Desfazer disponível. Nenhuma tarefa no baralho.',
     )

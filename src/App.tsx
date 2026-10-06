@@ -7,6 +7,7 @@ import { EmptyState, emptyStateButton } from './components/EmptyState.tsx'
 import { Icon } from './components/Icon.tsx'
 import { LiveRegion, type Announcement } from './components/LiveRegion.tsx'
 import { ReminderToast } from './components/ReminderToast.tsx'
+import { ScheduledSheet } from './components/ScheduledSheet.tsx'
 import { SettingsSheet } from './components/SettingsSheet.tsx'
 import { StorageBanner } from './components/StorageBanner.tsx'
 import { TagFilterBar } from './components/TagFilterBar.tsx'
@@ -26,6 +27,7 @@ import {
   canUndo,
   collectTags,
   dailyProgress,
+  dormantTasks,
   createDeck,
   filterByTag,
   getDueStatus,
@@ -81,7 +83,7 @@ export interface AppProps {
   readonly download?: Download
 }
 
-type SheetKind = 'add' | 'edit' | 'decks' | 'settings'
+type SheetKind = 'add' | 'edit' | 'decks' | 'settings' | 'scheduled'
 
 // Toast and announcement keys per action (same names in both dictionary sections).
 const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
@@ -127,6 +129,7 @@ export default function App({
   const visibleTasks = useMemo(() => filterByTag(deckAvailable, activeTag), [deckAvailable, activeTag])
   const tasks = useMemo(() => orderDeck(visibleTasks, now), [visibleTasks, now])
   const progress = dailyProgress(deckTasks, now)
+  const dormant = useMemo(() => dormantTasks(deckTasks, now), [deckTasks, now])
   const top = tasks[0] ?? null
 
   const meta = useMemo<Meta>(
@@ -409,6 +412,29 @@ export default function App({
     openSheet('edit', null)
   }
 
+  /** "Complete now" on a scheduled card: completes it early (its next date moves on), undoable. */
+  function completeScheduled(id: string) {
+    const task = allTasks.find((candidate) => candidate.id === id)
+    if (task === undefined) return
+    const action = { type: 'complete' as const, id, now: new Date() }
+    const after = deckReducer(state, action).present.tasks.find((candidate) => candidate.id === id)
+    if (after?.due == null) return
+    const date = formatDueDate(after.due, locale, t)
+    if (apply(action, t.announce.completedUntil(task.title, date))) showToast(t.toast.completedUntil(date))
+  }
+
+  function removeScheduled(id: string) {
+    const task = allTasks.find((candidate) => candidate.id === id)
+    if (task === undefined) return
+    if (apply({ type: 'remove', id, now: new Date() }, t.announce.removed(task.title))) showToast(t.toast.removed)
+  }
+
+  function editScheduled(id: string) {
+    setEditingId(id)
+    returnFocus.current = null
+    setSheet('edit')
+  }
+
   function updateTaskById(id: string, patch: TaskPatch) {
     const title = patch.title?.trim() ?? allTasks.find((task) => task.id === id)?.title ?? ''
     returnFocus.current = null
@@ -543,6 +569,26 @@ export default function App({
           {t.firstRun.startEmpty}
         </button>
       </EmptyState>
+    ) : activeTag === null && tasks.length === 0 && (progress.done > 0 || dormant.length > 0) ? (
+      <EmptyState
+        title={progress.done > 0 ? t.day.doneTitle : t.day.nothingTitle}
+        body={progress.done > 0 ? t.day.doneBody : t.day.nothingBody}
+        icon={progress.done > 0 ? 'check' : 'calendar'}
+        celebrate={progress.done > 0}
+      >
+        {dormant.length > 0 && (
+          <button
+            type="button"
+            className={emptyStateButton.secondary}
+            aria-haspopup="dialog"
+            onClick={(event) => {
+              openSheet('scheduled', event.currentTarget)
+            }}
+          >
+            {t.day.upcoming(dormant.length)}
+          </button>
+        )}
+      </EmptyState>
     ) : activeTag !== null ? (
       <EmptyState title={t.tags.emptyTitle(activeTag)} body={t.tags.emptyBody} icon="folder">
         <button
@@ -595,9 +641,25 @@ export default function App({
           >
             <Icon name="settings" size={20} />
           </button>
-          <p className={styles.progress} data-testid="daily-progress">
-            {t.progress.today(progress.done, progress.done + progress.remaining)}
-          </p>
+          <div className={styles.dayBar}>
+            <p className={styles.progress} data-testid="daily-progress">
+              {t.progress.today(progress.done, progress.done + progress.remaining)}
+            </p>
+            {dormant.length > 0 && (
+              <button
+                type="button"
+                className={styles.scheduledButton}
+                aria-haspopup="dialog"
+                aria-label={t.scheduled.openLabel(dormant.length)}
+                onClick={(event) => {
+                  openSheet('scheduled', event.currentTarget)
+                }}
+              >
+                <Icon name="calendar" size={16} />
+                <span aria-hidden="true">{t.scheduled.open(dormant.length)}</span>
+              </button>
+            )}
+          </div>
           <button
             type="button"
             className={styles.addButton}
@@ -713,6 +775,16 @@ export default function App({
             setInstallHintDismissed(true)
           }}
           offlineReady={pwa.offlineReady}
+          onClose={closeSheet}
+        />
+      )}
+      {sheet === 'scheduled' && (
+        <ScheduledSheet
+          tasks={dormant}
+          deckNames={new Map(decks.map((deck) => [deck.id, deck.name]))}
+          onCompleteNow={completeScheduled}
+          onEdit={editScheduled}
+          onRemove={removeScheduled}
           onClose={closeSheet}
         />
       )}

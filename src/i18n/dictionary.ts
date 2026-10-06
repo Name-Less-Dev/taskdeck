@@ -107,6 +107,23 @@ export interface Dictionary {
     readonly title: string
     readonly body: string
   }
+  readonly scheduled: {
+    readonly open: (count: number) => string
+    readonly openLabel: (count: number) => string
+    readonly title: string
+    readonly empty: string
+    readonly next: (date: string) => string
+    readonly completeNow: string
+    readonly completeNowLabel: (title: string) => string
+    readonly removeLabel: (title: string) => string
+  }
+  readonly day: {
+    readonly doneTitle: string
+    readonly doneBody: string
+    readonly nothingTitle: string
+    readonly nothingBody: string
+    readonly upcoming: (count: number) => string
+  }
   readonly progress: {
     readonly today: (done: number, total: number) => string
   }

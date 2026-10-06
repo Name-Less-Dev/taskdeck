@@ -109,6 +109,23 @@ export const ptBR: Dictionary = {
     title: 'Tudo em dia!',
     body: 'Nenhuma tarefa no baralho. Crie uma com o botão Nova tarefa.',
   },
+  scheduled: {
+    open: (n) => `Agendadas (${n})`,
+    openLabel: (n) => p(n, 'Agendadas: {n} carta', 'Agendadas: {n} cartas'),
+    title: 'Agendadas',
+    empty: 'Nenhuma carta agendada.',
+    next: (date) => `Próxima: ${date}`,
+    completeNow: 'Concluir agora',
+    completeNowLabel: (title) => `Concluir agora: ${title}`,
+    removeLabel: (title) => `Apagar ${title}`,
+  },
+  day: {
+    doneTitle: 'Tudo feito por hoje',
+    doneBody: 'As cartas que repetem voltam no dia delas.',
+    nothingTitle: 'Nada para hoje',
+    nothingBody: 'Nenhuma carta para hoje. As que repetem aparecem no dia delas.',
+    upcoming: (n) => `Próximas (${n})`,
+  },
   progress: {
     today: (done, total) => `${done} de ${total} hoje`,
   },

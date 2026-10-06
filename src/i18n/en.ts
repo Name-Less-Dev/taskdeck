@@ -106,6 +106,23 @@ export const en: Dictionary = {
     title: 'All caught up!',
     body: 'There are no tasks in the deck. Create one with the New task button.',
   },
+  scheduled: {
+    open: (n) => `Scheduled (${n})`,
+    openLabel: (n) => p(n, 'Scheduled: {n} card', 'Scheduled: {n} cards'),
+    title: 'Scheduled',
+    empty: 'No scheduled cards.',
+    next: (date) => `Next: ${date}`,
+    completeNow: 'Complete now',
+    completeNowLabel: (title) => `Complete now: ${title}`,
+    removeLabel: (title) => `Delete ${title}`,
+  },
+  day: {
+    doneTitle: 'All done for today',
+    doneBody: 'Repeating cards come back on their day.',
+    nothingTitle: 'Nothing for today',
+    nothingBody: 'No cards for today. Repeating ones show up on their day.',
+    upcoming: (n) => `Upcoming (${n})`,
+  },
   progress: {
     today: (done, total) => `${done} of ${total} today`,
   },

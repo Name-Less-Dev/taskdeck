@@ -58,15 +58,40 @@
   white-space: nowrap;
 }
 
-/* "2 of 5 today": its own line under the header buttons (order puts it last). */
-.progress {
+/* "2 of 5 today" and "Scheduled (N)": their own line under the header buttons. */
+.dayBar {
+  display: flex;
   flex: 1 0 100%;
+  flex-wrap: wrap;
   order: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-2);
+  min-width: 0;
+}
+
+.progress {
   margin: 0;
   padding: 0 var(--space-2);
   color: var(--color-text-muted);
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.scheduledButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .main {

@@ -9,16 +9,18 @@ export interface EmptyStateProps {
   readonly icon?: IconName
   /** Buttons offered with the message (first run, clear filter...). */
   readonly children?: ReactNode
+  /** A small CSS-only celebration (skipped with prefers-reduced-motion). */
+  readonly celebrate?: boolean
 }
 
 /** Button classes for actions passed as children. */
 export const emptyStateButton = { primary: styles.primary, secondary: styles.secondary }
 
 /** Message shown instead of the cards. Defaults to "all caught up". */
-export function EmptyState({ title, body, icon = 'check', children }: EmptyStateProps) {
+export function EmptyState({ title, body, icon = 'check', children, celebrate = false }: EmptyStateProps) {
   const { t } = useI18n()
   return (
-    <div className={styles.empty}>
+    <div className={styles.empty} data-celebrate={celebrate || undefined}>
       <span className={styles.icon}>
         <Icon name={icon} size={40} />
       </span>
