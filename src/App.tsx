@@ -212,21 +212,30 @@ export default function App({
   }, [offerUpdate, t])
 
   // Day rollover: cards that wake up on a new day are announced once (never on load).
+  // Time-driven announcements (rollover, reminders) from the same clock tick are
+  // joined into one message: the live region only reads the latest one.
+  const tickAnnouncement = useRef<{ tick: number; message: string } | null>(null)
+  function announceOnTick(message: string) {
+    const tick = now.getTime()
+    const previous = tickAnnouncement.current
+    const combined = previous?.tick === tick ? `${previous.message} ${message}` : message
+    tickAnnouncement.current = { tick, message: combined }
+    messageCounter.current += 1
+    setAnnouncement({ id: messageCounter.current, message: combined })
+  }
+
   const rollover = useRef<RolloverState | null>(null)
   useEffect(() => {
     const { state: next, appeared } = rolloverStep(rollover.current, deckTasks, now)
     rollover.current = next
-    if (appeared === 0) return
-    messageCounter.current += 1
-    setAnnouncement({ id: messageCounter.current, message: t.announce.newCards(appeared) })
+    if (appeared > 0) announceOnTick(t.announce.newCards(appeared))
   }, [deckTasks, now, t])
 
   const announcedReminder = useRef(0)
   useEffect(() => {
     if (reminderNotice === null || reminderNotice.id === announcedReminder.current) return
     announcedReminder.current = reminderNotice.id
-    messageCounter.current += 1
-    setAnnouncement({ id: messageCounter.current, message: reminderMessage })
+    announceOnTick(reminderMessage)
   }, [reminderNotice, reminderMessage])
 
   const busy = exiting !== null

@@ -219,6 +219,17 @@ describe('day rollover', () => {
     expect(liveRegion()).toHaveTextContent('Novas cartas para hoje: 1.')
   })
 
+  it('joins the rollover and a reminder from the same tick into one announcement', () => {
+    // "Enviar relatório" (due today, date only) becomes overdue at the same midnight.
+    renderAt([tomorrow, report])
+
+    act(() => {
+      vi.advanceTimersByTime(30_000)
+    })
+
+    expect(liveRegion()).toHaveTextContent('Novas cartas para hoje: 1. Venceu: Enviar relatório')
+  })
+
   it('a dormant card never reminds, even when its time is near', () => {
     // Due tomorrow at 00:30: "soon" by the clock, but not on the deck yet.
     const early = task('e', { title: 'Plantão', due: { date: '2026-10-06', time: '00:30' }, recurrence: WEEKLY })
