@@ -61,7 +61,12 @@ describe('add one task to the calendar', () => {
     expect(file.text).toContain('SUMMARY:Pagar a luz')
     expect(file.text).toContain('TRIGGER:-PT15M')
     expect(button).toHaveFocus()
-    expect(screen.getByText('Calendário exportado com 1 tarefa.')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Calendário exportado com 1 tarefa. Arquivo baixado. Abra-o para adicionar ao calendário.',
+    )
+    const notice = screen.getByTestId('undo-toast')
+    expect(notice).toHaveTextContent('Arquivo baixado. Abra-o para adicionar ao calendário.')
+    expect(within(notice).queryByRole('button', { name: 'Desfazer' })).toBeNull()
   })
 
   it('is not offered for a task without a due date', async () => {
@@ -87,6 +92,8 @@ describe('export from settings', () => {
     expect(within(dialog).getByTestId('exportable-count')).toHaveTextContent('2 tarefas ativas com prazo')
     await user.click(within(dialog).getByRole('button', { name: 'Exportar tarefas com prazo (.ics)' }))
     expect(uids((await downloaded(download, 0)).text)).toEqual(['a@taskdeck', 'b@taskdeck'])
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent('Arquivo baixado. Abra-o para adicionar ao calendário.')
+    expect(screen.getByRole('status')).toHaveTextContent('Calendário exportado com 2 tarefas. Arquivo baixado.')
 
     await user.click(within(dialog).getByRole('checkbox', { name: 'Só o baralho ativo (Casa)' }))
     expect(within(dialog).getByTestId('exportable-count')).toHaveTextContent('1 tarefa ativa com prazo')

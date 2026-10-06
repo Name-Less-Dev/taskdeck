@@ -9,6 +9,8 @@ export interface ToastData {
   /** Changes for every new toast so the timer restarts. */
   readonly id: number
   readonly message: string
+  /** false for plain notices (e.g. a finished download): no Undo button. */
+  readonly undoable?: boolean
 }
 
 export interface UndoToastProps {
@@ -73,10 +75,14 @@ export function UndoToast({ toast, onUndo, onDismiss, placement = 'bottom' }: Un
       }}
     >
       <span className={styles.message}>{toast.message}</span>
-      <span aria-hidden="true">·</span>
-      <button type="button" className={styles.undo} onClick={onUndo}>
-        {t.actions.undo}
-      </button>
+      {toast.undoable !== false && (
+        <>
+          <span aria-hidden="true">·</span>
+          <button type="button" className={styles.undo} onClick={onUndo}>
+            {t.actions.undo}
+          </button>
+        </>
+      )}
     </div>
   )
 }

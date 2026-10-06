@@ -251,6 +251,7 @@ export const ptBR: Dictionary = {
     completionNote: 'Repete a partir da conclusão: só a próxima data foi exportada.',
     monthEndNote: (day) => `Repete todo mês no dia ${day} (ou no último dia do mês): só a próxima data foi exportada.`,
     exported: (n) => p(n, 'Calendário exportado com {n} tarefa.', 'Calendário exportado com {n} tarefas.'),
+    downloaded: 'Arquivo baixado. Abra-o para adicionar ao calendário.',
   },
   reminders: {
     soon: (title, when) => `Prazo chegando: ${title} (${when.toLowerCase()})`,

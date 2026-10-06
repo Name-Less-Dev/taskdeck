@@ -275,8 +275,8 @@ export default function App({
     setToast(null)
   }
 
-  function showToast(message: string) {
-    setToast({ id: messageCounter.current, message })
+  function showToast(message: string, undoable = true) {
+    setToast({ id: messageCounter.current, message, undoable })
   }
 
   function openSheet(kind: SheetKind, opener: HTMLElement | null) {
@@ -433,7 +433,8 @@ export default function App({
       deckName: (id) => decks.find((deck) => deck.id === id)?.name,
     })
     download(calendarBlob(text), icsFileName(toDayKey(now)))
-    announce(t.calendar.exported(exportableCount(tasks)))
+    announce(`${t.calendar.exported(exportableCount(tasks))} ${t.calendar.downloaded}`)
+    showToast(t.calendar.downloaded, false)
   }
 
   function toggleFlip() {

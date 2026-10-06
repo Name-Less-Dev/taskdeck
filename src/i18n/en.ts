@@ -247,6 +247,7 @@ export const en: Dictionary = {
     completionNote: 'Repeats from completion: only the next date was exported.',
     monthEndNote: (day) => `Repeats every month on day ${day} (or the last day of the month): only the next date was exported.`,
     exported: (n) => p(n, 'Calendar exported with {n} task.', 'Calendar exported with {n} tasks.'),
+    downloaded: 'File downloaded. Open it to add it to your calendar.',
   },
   reminders: {
     soon: (title, when) => `Due soon: ${title} (${when.toLowerCase()})`,

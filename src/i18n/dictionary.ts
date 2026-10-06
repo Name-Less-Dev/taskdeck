@@ -239,6 +239,7 @@ export interface Dictionary {
     readonly completionNote: string
     readonly monthEndNote: (day: number) => string
     readonly exported: (count: number) => string
+    readonly downloaded: string
   }
   readonly reminders: {
     readonly soon: (title: string, when: string) => string

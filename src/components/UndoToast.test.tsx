@@ -39,6 +39,13 @@ describe('UndoToast', () => {
     expect(onUndo).toHaveBeenCalledTimes(1)
   })
 
+  it('shows a plain notice without the Undo button when not undoable', () => {
+    renderToast({ id: 2, message: 'Arquivo baixado.', undoable: false })
+
+    expect(screen.getByTestId('undo-toast')).toHaveTextContent('Arquivo baixado.')
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+
   it('renders nothing without a toast', () => {
     renderToast(null)
 
