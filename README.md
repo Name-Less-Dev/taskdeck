@@ -4,19 +4,22 @@ A mobile-first to-do app where tasks are cards in a deck: swipe right to complet
 left to send the card to the bottom, up to delete, tap to see the back. It runs
 entirely in the browser (PWA, no backend).
 
-**Current state: stage 3, decks, tags, editing and local persistence.** Several decks,
-tags with a filter, task editing, data saved in IndexedDB (validated, versioned,
-with an in-memory fallback) and JSON backup export/import, on top of the card UI
-from stage 2 and the pure domain core from stage 1. No due-date/recurrence editor
-yet (stage 4), no PWA or service worker (stage 5), no sync between devices.
+**Current state: stage 4, deadlines, recurrence, reminders and calendar export.**
+Recurrence can be set, edited and removed in the task form; cards show their
+repetition and escalate as deadlines approach; in-app reminders announce tasks that
+become due while the app is open; tasks with a due date export to `.ics` (one or
+all). Built on stage 3 (decks, tags, editing, IndexedDB, JSON backup), stage 2 (card
+UI) and stage 1 (pure domain). No PWA or service worker (stage 5), no system
+notifications (stage 6), no backend.
 
 ## Resumo em português
 
 taskdeck é um app de tarefas em formato de cartas (arrastar para concluir, adiar ou
 apagar; tocar para ver o verso), mobile-first e 100% no navegador, sem backend. A
-etapa 3 traz vários baralhos, tags com filtro, edição de tarefas, gravação local no
-IndexedDB (validada, versionada e com modo em memória se o banco falhar) e backup em
-JSON para exportar e importar. Recorrência na interface e PWA vêm nas próximas etapas.
+etapa 4 traz recorrência editável no formulário, cartas que mudam de cor (sempre com
+ícone e texto) conforme o prazo se aproxima, avisos com o app aberto quando uma tarefa
+fica perto do prazo ou vence, e exportação para o calendário (.ics) com alarme. PWA e
+notificações do sistema vêm nas próximas etapas.
 
 ## Features
 
@@ -46,6 +49,18 @@ JSON para exportar e importar. Recorrência na interface e PWA vêm nas próxima
 - **Accessibility**: live region announcements, focus returned to the opener (or the
   deck) when sheets close, focus trapped in sheets, visible focus, AA contrast checked
   by a test, never colour alone, reduced-motion support.
+- **Recurrence in the form**: a "Repeat" block (every N days/weeks/months, counted from
+  the due date or from completion) to set, change or remove a task's repetition; a
+  repeating task needs a due date. Cards show a short badge ("Toda semana") and the full
+  rule on the back; completing one says "Rescheduled for <date>" (undoable).
+- **Deadline escalation**: border and background follow the band (soon amber, overdue
+  red), always with an icon and text; "soon" pulses gently unless reduced motion is on.
+- **In-app reminders**: when time moves a task into "soon" or "overdue" while the app is
+  open, a discreet notice appears and is announced (grouped when several change; one
+  summary after returning to a hidden tab; never repeated; Esc or button to dismiss).
+- **Calendar export (.ics)**: "Calendar" on the back of a card exports that task;
+  Settings exports every active task with a due date (or just the active deck), with
+  an alarm setting (none, at the time, 15 min, 1 h, 1 day before; default 15 min).
 - **i18n**: pt-BR (default) and en; `?lang=en|pt-BR` in the address wins over the
   saved choice.
 
@@ -312,6 +327,15 @@ Gestures and layout:
 - [ ] Screen reader (TalkBack / VoiceOver): card name, flip state, actions and
       announcements are read
 
+Calendar and reminders script:
+
+- [ ] Export one task (back of the card) and all tasks (Settings) and open the downloaded `.ics` from the phone's downloads
+- [ ] Import it into the phone's calendar app (Google Calendar or Apple Calendar): the time is the one shown in the app, the all-day tasks are all-day, the alarm fires at the chosen time (09:00 for all-day), and a weekly task repeats
+- [ ] Import the same file again: events are updated, not duplicated
+- [ ] A monthly task on the 31st repeats on the last day of shorter months; one on the 30th shows only the next date with the note
+- [ ] Change the phone's clock (or wait) to cross a deadline with the app open: the card changes to soon/overdue and the reminder appears once
+- [ ] Complete a recurring task: "Rescheduled for <date>", the card stays with the new date, Undo restores it
+
 Persistence script:
 
 - [ ] Create a task, reload the page: the task is there
@@ -341,6 +365,48 @@ Vite down-compiles syntax but does not polyfill APIs or CSS. Newer features in u
 | `structuredClone` | memory storage | Chrome 98+, Safari 15.4+, Firefox 94+ |
 | `Blob.text()` | backup import | Widely available |
 
+## Calendar export (.ics) design
+
+Checked against RFC 5545 (sections 3.1, 3.3.5, 3.3.10, 3.3.11, 3.6.1, 3.6.6, 3.8.1.9,
+3.8.4.7, 3.8.6.3, 3.8.7.2) before writing the builder (`src/calendar/ics.ts`, pure).
+
+- **VEVENT, not VTODO.** Phone calendar apps show and alert on events; most ignore
+  VTODO. The trade-off: the calendar does not know the task is "done", and completing a
+  task does not remove it there (export again to update it).
+- **Stable UID** `<task id>@taskdeck`: importing again updates the event instead of
+  duplicating it (in apps that honor UID). **DTSTAMP** is the export time, in UTC.
+- **Floating local time.** A due with a time becomes `DTSTART:20261007T093000` (no `Z`,
+  no `TZID`) lasting 15 minutes: "09:30 wherever the device is", the same wall-clock
+  meaning as in the app. A date-only due becomes an all-day event (`VALUE=DATE`).
+- **Alarms** are `DISPLAY` alarms relative to the start (`-PT15M`, `-PT1H`, `-P1D`, `PT0S`).
+  For all-day events relative triggers count from 00:00 of the day, so the alarm is set
+  for 09:00 of the day (`PT9H`), or 09:00 of the day before for "1 day" (`-PT15H`).
+- **PRIORITY** 1 / 5 / 9 for high / medium / low (RFC: 1-4 high, 5 medium, 6-9 low).
+- **Recurrence.** Due-anchored repetitions become `RRULE:FREQ=DAILY|WEEKLY|MONTHLY;INTERVAL=n`.
+  Monthly: day 1-28 `BYMONTHDAY=n`; day 31 `BYMONTHDAY=-1` (the last day, which is exactly
+  "31, or the last day of a shorter month"). For days 29 and 30 the RFC-exact form
+  (`BYMONTHDAY=28,..,n;BYSETPOS=-1`) exists, but ical.js ignores `BYSETPOS` there and
+  would create several events a month, so those export **only the next date**, with a
+  note in the description. Repetitions counted **from completion** have no calendar
+  equivalent: only the next date is exported, and the description says so.
+- **Format**: CRLF line ends, folding at 75 octets that never splits a UTF-8 character
+  (accents, emoji), TEXT escaping of backslash, `;`, `,` and newlines, events ordered by task id.
+- **Validation with an independent parser**: [ical.js](https://github.com/kewisch/ical.js)
+  (devDependency, v2.2.1; maintained by the Thunderbird calendar maintainer, ships
+  TypeScript types) parses a varied sample and every field must match: text with
+  special characters, start, duration, all-day dates, alarm, priority, categories and
+  rules. It also expands the rules, and the dates are compared with the domain's own
+  `nextDue`. It is what revealed the `BYSETPOS` problem above.
+
+## Reminders design
+
+Reminders work **only while the app is open** (no service worker or system
+notifications yet). `diffDueBands` (domain) compares each task's urgency band with the
+previous snapshot as the clock ticks (`useNow`: every 30 s and when the tab becomes
+visible); `src/ui/reminders.ts` applies the rules: nothing on load, grouped changes,
+one summary for what changed while the tab was hidden, no repeats for the same task
+and band, and no reminder for a change caused by editing the due date.
+
 ## Known limitations
 
 - **The undo history is not saved.** Reloading keeps the data but forgets what can be
@@ -357,18 +423,28 @@ Vite down-compiles syntax but does not polyfill APIs or CSS. Newer features in u
   (see "Manual QA").
 - The bundle is about 160 kB gzip (React + Motion + zod + idb). Motion's `LazyMotion`
   and code-splitting the sheets could cut it later.
-- Wall-clock due dates follow the device's zone; DST gaps/overlaps are resolved by
-  JavaScript `Date` and not specifically tested.
+- **No alarm when the app is closed.** In-app reminders need the app open; calendar
+  alarms only exist once the `.ics` is imported into a calendar app. System
+  notifications are stage 6.
+- **DST.** Wall-clock due dates follow the device's zone. A local time that does not
+  exist (the hour skipped when DST starts) or happens twice is resolved by JavaScript
+  `Date` in the app, and by each calendar app for the floating times in the `.ics`
+  (usually the next valid time / the first occurrence). Not specifically tested.
+- **Monthly on the 29th or 30th** exports only the next date to calendars (see the
+  calendar design above); the 31st exports as "last day of the month". Inside the app
+  all of them repeat correctly.
+- An `.ics` with no task has no event, which parsers accept but the RFC grammar does
+  not (it asks for at least one component), so the app never offers that download.
+- Exported events are snapshots: completing, editing or deleting a task in the app does
+  not change the calendar until the file is exported and imported again.
 - Monthly recurrences anchored on `'completion'` use plain month addition (31 Jan →
   28 Feb → 28 Mar).
-- Recurrence itself cannot be edited in the UI yet (stage 4); the edit form shows it
-  read-only.
 
 ## Roadmap
 
 1. Domain core (done)
 2. Card UI with gestures, buttons/keyboard and undo (done)
 3. Decks, tags, editing, local persistence and JSON backup (done)
-4. Due dates and recurrence in the UI, `.ics` export
+4. Due dates and recurrence in the UI, in-app reminders, `.ics` export (done)
 5. Installable PWA, offline, Playwright end-to-end tests (real drag, and no horizontal overflow at 320/360 px), deploy
-6. Optional: Capacitor/Android packaging
+6. Optional: Capacitor/Android packaging with local notifications

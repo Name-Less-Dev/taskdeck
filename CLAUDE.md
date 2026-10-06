@@ -78,6 +78,17 @@ strips `TZ` before it reaches Node.
 - Do not simulate drag in jsdom. Component tests fake only `Date`
   (`vi.useFakeTimers({ toFake: ['Date'] })`); fake timers also freeze fake-indexeddb.
 
+## Calendar and reminders conventions (stage 4)
+
+- `src/calendar` is pure (same ESLint rules as the domain): text comes in as labels,
+  time as `now`. Any change to the `.ics` output must keep `tests/calendar/ics.parser.test.ts`
+  (ical.js) passing; do not emit rules ical.js expands differently from `nextDue`.
+- Floating local times in `.ics` (no Z, no TZID), like due dates in the app.
+- Reminder rules live in `src/ui/reminders.ts` (pure, on top of `diffDueBands`); the
+  hook only feeds it tasks, `now` and page visibility.
+- New settings go into `meta.settings` with a zod default, so older meta still loads
+  (as `alarm` did); a breaking change still needs `SCHEMA_VERSION` + a migration.
+
 ## Storage conventions (stage 3)
 
 - Everything goes through `AppStorage` (`src/storage`); never touch IndexedDB elsewhere.
@@ -91,15 +102,15 @@ strips `TZ` before it reaches Node.
 
 ## Current state
 
-Stages 1 (domain core), 2 (card UI) and 3 (decks, tags, editing, IndexedDB
-persistence with validation/quarantine/migrations, JSON backup, settings) are done.
-The manual phone QA checklist (gestures and persistence) in the README is still open.
+Stages 1 (domain core), 2 (card UI), 3 (decks, tags, editing, IndexedDB persistence,
+JSON backup, settings) and 4 (recurrence editing in the form, recurrence badges,
+deadline escalation, in-app reminders, `.ics` export with alarms) are done. The manual
+phone QA checklists in the README (gestures, persistence, calendar and reminders) are
+still open.
 
 ## Roadmap (remaining)
 
-4. Due dates and recurrence in the UI (editing `originDay` already follows the due
-   date in `updateTask`), `.ics` export.
-5. Installable PWA, offline (service worker), Playwright end-to-end tests (including
-   real drag gestures, and `scrollWidth <= clientWidth` at 320 and 360 px viewports in
-   every main state), deploy (Vercel, HTTPS).
-6. Optional: Capacitor packaging for Android.
+5. Installable PWA, offline (service worker), backup reminders, Playwright end-to-end
+   tests (including real drag gestures, and `scrollWidth <= clientWidth` at 320 and
+   360 px viewports in every main state), deploy (Vercel, HTTPS).
+6. Optional: Capacitor packaging for Android with local (system) notifications.
