@@ -53,6 +53,10 @@ export interface Dictionary {
     readonly every: (unit: Recurrence['unit'], every: number) => string
     readonly fromCompletion: string
     readonly fromDue: string
+    readonly workdays: string
+    readonly weekend: string
+    readonly everyDay: string
+    readonly onDays: (days: string) => string
   }
   readonly card: {
     readonly front: string
@@ -297,6 +301,12 @@ export interface Dictionary {
     readonly anchorCompletion: string
     readonly anchorCompletionHint: string
     readonly everyInvalid: string
+    readonly weekdaysLegend: string
+    readonly weekdaysHint: string
+    readonly workdays: string
+    readonly weekend: string
+    readonly anchorLockedHint: string
+    readonly firstTime: (date: string) => string
   }
   readonly form: {
     readonly title: string

@@ -50,6 +50,10 @@ export const en: Dictionary = {
     },
     fromCompletion: ', counted from completion',
     fromDue: ', counted from the due date',
+    workdays: 'Weekdays',
+    weekend: 'Weekends',
+    everyDay: 'Every day',
+    onDays: (days) => `Every week: ${days}`,
   },
   card: {
     front: 'Front',
@@ -309,6 +313,12 @@ export const en: Dictionary = {
     anchorCompletion: 'completion',
     anchorCompletionHint: 'Restarts when you finish: the next date is the completion day plus the interval.',
     everyInvalid: 'Use a whole number of at least 1.',
+    weekdaysLegend: 'Days of the week',
+    weekdaysHint: 'Optional: choose the days the task repeats on.',
+    workdays: 'Weekdays',
+    weekend: 'Weekends',
+    anchorLockedHint: 'With days of the week chosen, the repetition follows the calendar and counts from the due date.',
+    firstTime: (date) => `First time: ${date}`,
   },
   form: {
     title: 'New task',

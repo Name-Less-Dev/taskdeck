@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type SubmitEvent } from 'react'
 import { ZodError } from 'zod'
 import {
+  alignToWeekdays,
   createTask,
   isValidTime,
   PRIORITIES,
@@ -20,6 +21,7 @@ import { TASK_FORM_FIELDS, taskFormErrors, type TaskFormErrors, type TaskFormFie
 import { handleFormEnter, SUBMIT_ON_ENTER_ATTRIBUTE } from '../ui/form-navigation.ts'
 import { addTags, type TagInputError } from '../ui/tags.ts'
 import { maskTimeInput, normalizeTime, TIME_SHORTCUTS } from '../ui/time-field.ts'
+import { formatDueDate, WEEK_DAYS, WEEKEND, weekdayName, WORKDAYS } from '../ui/format.ts'
 import styles from './Form.module.css'
 import { AUTOFOCUS_ATTRIBUTE, Sheet } from './Sheet.tsx'
 import { TagInput, tagInputMessage } from './TagInput.tsx'
@@ -50,6 +52,8 @@ interface FormValues {
   every: string
   unit: Recurrence['unit']
   anchor: Recurrence['anchor']
+  /** Chosen days of the week (0 = Sunday), only for "every 1 week". */
+  weekdays: number[]
 }
 
 function initialValues(task: Task | undefined, deckId: string): FormValues {
@@ -66,6 +70,7 @@ function initialValues(task: Task | undefined, deckId: string): FormValues {
     every: String(task?.recurrence?.every ?? 1),
     unit: task?.recurrence?.unit ?? 'week',
     anchor: task?.recurrence?.anchor ?? 'due',
+    weekdays: [...(task?.recurrence?.weekdays ?? [])],
   }
 }
 
@@ -85,7 +90,7 @@ export function TaskFormSheet({
   onUpdate,
   onClose,
 }: TaskFormSheetProps) {
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
   const id = useId()
   const [values, setValues] = useState<FormValues>(() => initialValues(task, defaultDeckId))
   const [errors, setErrors] = useState<TaskFormErrors>({})
@@ -95,6 +100,23 @@ export function TaskFormSheet({
 
   function update<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
+  }
+
+  // Days of the week only exist for "every 1 week" (a fixed calendar).
+  const weekdaysAvailable = values.repeat && values.unit === 'week' && values.every.trim() === '1'
+  const weekdays = weekdaysAvailable ? values.weekdays : []
+  const firstTime =
+    weekdays.length > 0 && values.date !== ''
+      ? formatDueDate({ date: alignToWeekdays(values.date, weekdays) }, locale, t)
+      : null
+
+  function setWeekdays(days: readonly number[]) {
+    // Choosing days pins the anchor to the due date (completion is not allowed with them).
+    setValues((current) => ({ ...current, weekdays: [...days].sort((a, b) => a - b), ...(days.length > 0 ? { anchor: 'due' } : {}) }))
+  }
+
+  function toggleWeekday(day: number) {
+    setWeekdays(weekdays.includes(day) ? weekdays.filter((chosen) => chosen !== day) : [...weekdays, day])
   }
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -108,7 +130,9 @@ export function TaskFormSheet({
     const every = Number(values.every)
     const everyValid = values.every.trim() !== '' && Number.isInteger(every) && every >= 1
     const recurrence: RecurrenceInput | null =
-      values.repeat && everyValid ? { unit: values.unit, every, anchor: values.anchor } : null
+      values.repeat && everyValid
+        ? { unit: values.unit, every, anchor: values.anchor, ...(weekdays.length > 0 ? { weekdays } : {}) }
+        : null
     const uiErrors: TaskFormErrors = {
       ...(time !== '' && !isValidTime(time)
         ? { time: t.form.errors.invalidTime }
@@ -382,7 +406,8 @@ export function TaskFormSheet({
                     enterKeyHint="next"
                     value={values.every}
                     onChange={(event) => {
-                      update('every', event.target.value)
+                      // Changing the interval clears the chosen days.
+                      setValues((current) => ({ ...current, every: event.target.value, weekdays: [] }))
                     }}
                   />
                   {errorFor('every')}
@@ -394,7 +419,8 @@ export function TaskFormSheet({
                     value={values.unit}
                     onChange={(event) => {
                       const unit = RECURRENCE_UNITS.find((candidate) => candidate === event.target.value)
-                      if (unit !== undefined) update('unit', unit)
+                      // Changing the unit clears the chosen days.
+                      if (unit !== undefined) setValues((current) => ({ ...current, unit, weekdays: [] }))
                     }}
                   >
                     {RECURRENCE_UNITS.map((unit) => (
@@ -406,6 +432,56 @@ export function TaskFormSheet({
                 </div>
               </div>
 
+              {weekdaysAvailable && (
+                <fieldset className={styles.weekdays}>
+                  <legend>{t.repeat.weekdaysLegend}</legend>
+                  <p id={`${id}-weekdays-hint`} className={styles.hint}>
+                    {t.repeat.weekdaysHint}
+                  </p>
+                  <div className={styles.dayToggles} role="group" aria-describedby={`${id}-weekdays-hint`}>
+                    {WEEK_DAYS.map((day) => (
+                      <button
+                        key={day}
+                        type="button"
+                        className={styles.dayToggle}
+                        aria-pressed={weekdays.includes(day)}
+                        aria-label={weekdayName(day, locale, 'long')}
+                        onClick={() => {
+                          toggleWeekday(day)
+                        }}
+                      >
+                        {weekdayName(day, locale, 'short')}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={styles.dayShortcuts}>
+                    <button
+                      type="button"
+                      className={styles.dayShortcut}
+                      onClick={() => {
+                        setWeekdays(WORKDAYS)
+                      }}
+                    >
+                      {t.repeat.workdays}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.dayShortcut}
+                      onClick={() => {
+                        setWeekdays(WEEKEND)
+                      }}
+                    >
+                      {t.repeat.weekend}
+                    </button>
+                  </div>
+                  {firstTime !== null && (
+                    <p className={styles.firstTime} data-testid="first-time">
+                      {t.repeat.firstTime(firstTime)}
+                    </p>
+                  )}
+                </fieldset>
+              )}
+
               <fieldset className={styles.anchors}>
                 <legend>{t.repeat.anchorLegend}</legend>
                 {RECURRENCE_ANCHORS.map((anchor) => (
@@ -415,7 +491,12 @@ export function TaskFormSheet({
                       name={`${id}-anchor`}
                       value={anchor}
                       checked={values.anchor === anchor}
-                      aria-describedby={`${id}-anchor-${anchor}`}
+                      disabled={anchor === 'completion' && weekdays.length > 0}
+                      aria-describedby={
+                        anchor === 'completion' && weekdays.length > 0
+                          ? `${id}-anchor-${anchor} ${id}-anchor-locked`
+                          : `${id}-anchor-${anchor}`
+                      }
                       enterKeyHint="done"
                       {...{ [SUBMIT_ON_ENTER_ATTRIBUTE]: true }}
                       onChange={() => {
@@ -432,6 +513,11 @@ export function TaskFormSheet({
                     </span>
                   </label>
                 ))}
+                {weekdays.length > 0 && (
+                  <p id={`${id}-anchor-locked`} className={styles.hint}>
+                    {t.repeat.anchorLockedHint}
+                  </p>
+                )}
               </fieldset>
             </>
           )}

@@ -53,6 +53,10 @@ export const ptBR: Dictionary = {
     },
     fromCompletion: ', contando da conclusão',
     fromDue: ', contando do prazo',
+    workdays: 'Dias úteis',
+    weekend: 'Fins de semana',
+    everyDay: 'Todos os dias',
+    onDays: (days) => `Toda semana: ${days}`,
   },
   card: {
     front: 'Frente',
@@ -314,6 +318,12 @@ export const ptBR: Dictionary = {
     anchorCompletion: 'da conclusão',
     anchorCompletionHint: 'Recomeça ao concluir: a próxima data é o dia da conclusão mais o intervalo.',
     everyInvalid: 'Use um número inteiro a partir de 1.',
+    weekdaysLegend: 'Dias da semana',
+    weekdaysHint: 'Opcional: escolha os dias em que a tarefa repete.',
+    workdays: 'Dias úteis',
+    weekend: 'Fins de semana',
+    anchorLockedHint: 'Com dias da semana escolhidos, a repetição segue o calendário e conta do prazo.',
+    firstTime: (date) => `Primeira vez: ${date}`,
   },
   form: {
     title: 'Nova tarefa',

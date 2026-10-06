@@ -1,7 +1,9 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { createTask, type Task } from '../domain/index.ts'
+import { ptBR } from '../i18n/pt-BR.ts'
 import { renderWithI18n } from '../test/render.tsx'
+import { formatDueDate } from '../ui/format.ts'
 import { TaskFormSheet, type TaskFormSheetProps } from './TaskFormSheet.tsx'
 
 const DECKS = [
@@ -573,5 +575,141 @@ describe('TaskFormSheet: time field', () => {
 
     expect(onCreate).toHaveBeenCalledTimes(1)
     expect(onCreate.mock.calls[0]?.[0]).toMatchObject({ due: { date: '2026-10-07', time: '09:30' } })
+  })
+})
+
+describe('TaskFormSheet: days of the week', () => {
+  async function weeklyForm() {
+    const result = renderSheet()
+    await result.user.type(screen.getByLabelText('Título'), 'Academia')
+    await result.user.type(screen.getByLabelText(/Data do prazo/), '2026-10-06')
+    await result.user.click(screen.getByRole('checkbox', { name: 'Repetir esta tarefa' }))
+    return result
+  }
+
+  const day = (name: string) => screen.getByRole('button', { name })
+
+  it('shows 7 toggles with a short visible name and the full accessible name, only for every 1 week', async () => {
+    const { user } = await weeklyForm()
+
+    const group = screen.getByRole('group', { name: 'Dias da semana' })
+    const toggles = within(group).getAllByRole('button', { pressed: false })
+    expect(toggles.map((button) => button.getAttribute('aria-label'))).toEqual([
+      'domingo',
+      'segunda-feira',
+      'terça-feira',
+      'quarta-feira',
+      'quinta-feira',
+      'sexta-feira',
+      'sábado',
+    ])
+    expect(day('segunda-feira')).toHaveTextContent('seg.')
+
+    await user.selectOptions(screen.getByLabelText('Unidade'), 'day')
+    expect(screen.queryByRole('group', { name: 'Dias da semana' })).toBeNull()
+    await user.selectOptions(screen.getByLabelText('Unidade'), 'week')
+    await user.clear(screen.getByLabelText('A cada'))
+    await user.type(screen.getByLabelText('A cada'), '2')
+    expect(screen.queryByRole('group', { name: 'Dias da semana' })).toBeNull()
+  })
+
+  it('creates a Mon/Wed/Fri task: toggles, "Primeira vez", and the due date moved to Wednesday', async () => {
+    const { user, onCreate } = await weeklyForm()
+
+    for (const name of ['segunda-feira', 'quarta-feira', 'sexta-feira']) await user.click(day(name))
+
+    expect(day('quarta-feira')).toHaveAttribute('aria-pressed', 'true')
+    expect(day('terça-feira')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('first-time')).toHaveTextContent(
+      `Primeira vez: ${formatDueDate({ date: '2026-10-07' }, 'pt-BR', ptBR)}`,
+    )
+    await user.click(screen.getByRole('button', { name: 'Criar tarefa' }))
+
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({
+      due: { date: '2026-10-07' },
+      recurrence: { unit: 'week', every: 1, anchor: 'due', weekdays: [1, 3, 5] },
+    })
+  })
+
+  it('offers "Dias úteis" and "Fins de semana" shortcuts, and toggling again removes a day', async () => {
+    const { user } = await weeklyForm()
+
+    await user.click(screen.getByRole('button', { name: 'Dias úteis' }))
+    expect(screen.getAllByRole('button', { pressed: true }).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'segunda-feira',
+      'terça-feira',
+      'quarta-feira',
+      'quinta-feira',
+      'sexta-feira',
+    ])
+    await user.click(day('sexta-feira'))
+    expect(day('sexta-feira')).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(screen.getByRole('button', { name: 'Fins de semana' }))
+    expect(screen.getAllByRole('button', { pressed: true }).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'domingo',
+      'sábado',
+    ])
+  })
+
+  it('with days chosen, "da conclusão" is disabled and explained', async () => {
+    const { user } = await weeklyForm()
+    await user.click(screen.getByRole('radio', { name: /da conclusão/ }))
+
+    await user.click(day('segunda-feira'))
+
+    const completion = screen.getByRole('radio', { name: /da conclusão/ })
+    expect(completion).toBeDisabled()
+    expect(completion).toHaveAccessibleDescription(/a repetição segue o calendário e conta do prazo/)
+    expect(screen.getByRole('radio', { name: /do prazo/ })).toBeChecked()
+  })
+
+  it('changing the unit or the interval clears the days', async () => {
+    const { user } = await weeklyForm()
+    await user.click(day('segunda-feira'))
+
+    await user.selectOptions(screen.getByLabelText('Unidade'), 'month')
+    await user.selectOptions(screen.getByLabelText('Unidade'), 'week')
+    expect(day('segunda-feira')).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(day('terça-feira'))
+    await user.clear(screen.getByLabelText('A cada'))
+    await user.type(screen.getByLabelText('A cada'), '1')
+    expect(day('terça-feira')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('loads the days when editing, and saves the change', async () => {
+    const task = createTask(
+      {
+        deckId: 'deck-1',
+        title: 'Academia',
+        due: { date: '2026-10-05' },
+        recurrence: { unit: 'week', every: 1, anchor: 'due', weekdays: [1, 3, 5] },
+      },
+      { id: 'g', now: new Date(2026, 9, 5, 10, 0) },
+    )
+    const { user, onUpdate } = renderSheet({ task })
+
+    expect(day('quarta-feira')).toHaveAttribute('aria-pressed', 'true')
+    await user.click(day('quarta-feira'))
+    await user.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+
+    expect(onUpdate).toHaveBeenCalledWith(
+      'g',
+      expect.objectContaining({ recurrence: { unit: 'week', every: 1, anchor: 'due', weekdays: [1, 5] } }),
+    )
+  })
+
+  it('keeps the Enter flow: Enter skips the day toggles and the anchor submits', async () => {
+    const { user, onCreate } = await weeklyForm()
+    await user.click(day('segunda-feira'))
+
+    screen.getByLabelText('A cada').focus()
+    await user.keyboard('{Enter}')
+    expect(screen.getByLabelText('Unidade')).toHaveFocus()
+
+    await user.click(screen.getByRole('radio', { name: /do prazo/ }))
+    await user.keyboard('{Enter}')
+    expect(onCreate).toHaveBeenCalledTimes(1)
   })
 })

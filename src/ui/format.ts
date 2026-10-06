@@ -54,15 +54,41 @@ export function formatDueDate(due: Due | null, locale: Locale, t: Dictionary): s
   return formatter.format(dueToDate(due))
 }
 
-/** Short form for the card's badge: "Toda semana", "A cada 2 semanas". */
+/** Every day of the week, 0 = Sunday ... 6 = Saturday (Date#getDay). */
+export const WEEK_DAYS = [0, 1, 2, 3, 4, 5, 6] as const
+export const WORKDAYS: readonly number[] = [1, 2, 3, 4, 5]
+export const WEEKEND: readonly number[] = [0, 6]
+
+/** Localized weekday name (Intl), e.g. "seg." / "segunda-feira", "Mon" / "Monday". */
+export function weekdayName(day: number, locale: Locale, width: 'short' | 'long'): string {
+  // 1 Jan 2023 was a Sunday; UTC so the device zone cannot shift the day.
+  return new Intl.DateTimeFormat(locale, { weekday: width, timeZone: 'UTC' }).format(new Date(Date.UTC(2023, 0, 1 + day)))
+}
+
+function sameDays(a: readonly number[], b: readonly number[]): boolean {
+  return a.length === b.length && a.every((day, index) => day === b[index])
+}
+
+/** "Dias úteis", "Fins de semana", "Todos os dias", or "seg., qua. e sex.". */
+export function formatWeekdays(weekdays: readonly number[], t: Dictionary): string {
+  if (sameDays(weekdays, WORKDAYS)) return t.recurrence.workdays
+  if (sameDays(weekdays, WEEKEND)) return t.recurrence.weekend
+  if (weekdays.length === WEEK_DAYS.length) return t.recurrence.everyDay
+  const names = weekdays.map((day) => weekdayName(day, t.locale, 'short'))
+  return new Intl.ListFormat(t.locale, { type: 'conjunction' }).format(names)
+}
+
+/** Short form for the card's badge: "Toda semana", "A cada 2 semanas", "Dias úteis". */
 export function formatRecurrenceShort(recurrence: Recurrence, t: Dictionary): string {
-  const { unit, every } = describeRecurrence(recurrence)
+  const { unit, every, weekdays } = describeRecurrence(recurrence)
+  if (weekdays !== null) return formatWeekdays(weekdays, t)
   return t.recurrence.every(unit, every)
 }
 
 /** Full form for the back of the card: "A cada 2 semanas, contando da conclusão". */
 export function formatRecurrence(recurrence: Recurrence, t: Dictionary): string {
-  const { anchor } = describeRecurrence(recurrence)
+  const { anchor, weekdays } = describeRecurrence(recurrence)
+  if (weekdays !== null) return t.recurrence.onDays(formatWeekdays(weekdays, t)) + t.recurrence.fromDue
   return (
     formatRecurrenceShort(recurrence, t) +
     (anchor === 'completion' ? t.recurrence.fromCompletion : t.recurrence.fromDue)

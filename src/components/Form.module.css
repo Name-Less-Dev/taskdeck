@@ -246,3 +246,61 @@
 .anchorName {
   font-weight: 600;
 }
+
+/* Days of the week: 7 toggles that wrap at 320 px, plus two shortcuts. */
+.weekdays {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.weekdays legend {
+  padding: 0;
+  font-weight: 600;
+}
+
+.dayToggles,
+.dayShortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.dayToggle,
+.dayShortcut {
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.dayToggle[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+}
+
+.dayShortcut {
+  background: transparent;
+  text-decoration: underline;
+}
+
+.firstTime {
+  margin: 0;
+  font-weight: 600;
+}
+
+.anchor input:disabled + span {
+  opacity: 0.6;
+}
