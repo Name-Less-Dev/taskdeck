@@ -13,6 +13,7 @@ import { useI18n } from '../i18n/index.tsx'
 import { cx } from '../ui/cx.ts'
 import { dueTone, formatDueDate, formatDueStatus, formatRecurrence } from '../ui/format.ts'
 import { decideSwipe, HORIZONTAL_DISTANCE_RATIO, VERTICAL_DISTANCE_RATIO, type SwipeAction } from '../ui/gestures.ts'
+import { reportGesture } from '../dev/gestureDebug.ts'
 import { Icon, type IconName } from './Icon.tsx'
 import styles from './TaskCard.module.css'
 
@@ -115,6 +116,8 @@ export function TaskCard({
   useEffect(() => {
     if (exit === null) return
     let cancelled = false
+    let finished = false
+    if (import.meta.env.DEV) reportGesture({ exitStatus: 'started', exitId: task.id })
 
     const run = async () => {
       if (reduceMotion) {
@@ -131,14 +134,18 @@ export function TaskCard({
           animate(opacity, 0, EXIT_TRANSITION).finished,
         ])
       }
+      finished = true
+      if (import.meta.env.DEV) reportGesture({ exitStatus: cancelled ? 'interrupted' : 'resolved', exitId: task.id })
       if (!cancelled) onExitedRef.current(exit)
     }
     void run()
 
     return () => {
       cancelled = true
+      if (import.meta.env.DEV && !finished) reportGesture({ exitStatus: 'interrupted', exitId: task.id })
     }
-  }, [exit, reduceMotion, opacity, x, y])
+    // task.id only feeds the dev debug report.
+  }, [exit, reduceMotion, opacity, x, y, task.id])
 
   function measure() {
     const element = elementRef.current
@@ -189,9 +196,22 @@ export function TaskCard({
           onDragStart={() => {
             draggedRef.current = true
             setDragging(true)
+            if (import.meta.env.DEV) reportGesture({ dragging: true })
           }}
+          {...(import.meta.env.DEV
+            ? {
+                onDrag: (_event: unknown, info: PanInfo) => {
+                  reportGesture({
+                    dragX: info.offset.x,
+                    dragY: info.offset.y,
+                    decision: decideSwipe({ offset: info.offset, velocity: info.velocity, size: sizeRef.current }),
+                  })
+                },
+              }
+            : {})}
           onDragEnd={(event, info) => {
             setDragging(false)
+            if (import.meta.env.DEV) reportGesture({ dragging: false })
             handleDragEnd(event, info)
           }}
           onClick={() => {

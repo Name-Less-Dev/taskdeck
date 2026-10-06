@@ -13,6 +13,7 @@ import { TOP_CARD_ATTRIBUTE } from './components/TaskCard.tsx'
 import { TaskFormSheet } from './components/TaskFormSheet.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
 import { createDemoTasks } from './demo/seed.ts'
+import { reportGesture, reportRender } from './dev/gestureDebug.ts'
 import { ZodError } from 'zod'
 import {
   canRedo,
@@ -146,6 +147,10 @@ export default function App({
   }, [focusRequest])
 
   const busy = exiting !== null
+  if (import.meta.env.DEV) {
+    reportRender()
+    reportGesture({ topId: top?.id ?? null, flippedId, exiting, busy })
+  }
   const editingTask = allTasks.find((task) => task.id === editingId)
   const undoAvailable = canUndo(state) && !busy
   const redoAvailable = canRedo(state) && !busy
