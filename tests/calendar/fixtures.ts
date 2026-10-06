@@ -6,4 +6,5 @@ export const LABELS: IcsOptions['labels'] = {
   priorities: { low: 'Baixa', medium: 'Média', high: 'Alta' },
   deck: 'Baralho',
   completionRecurrenceNote: 'Repete a partir da conclusão: só a próxima data foi exportada.',
+  monthEndRecurrenceNote: (day) => `Repete todo mês no dia ${day} (ou no último dia): só a próxima data foi exportada.`,
 }

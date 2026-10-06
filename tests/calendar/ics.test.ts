@@ -211,15 +211,13 @@ describe('buildIcs: recurrence', () => {
     ['every 2 weeks', { unit: 'week', every: 2, anchor: 'due' }, 'FREQ=WEEKLY;INTERVAL=2'],
     ['monthly on the 7th', { unit: 'month', every: 1, anchor: 'due', originDay: 7 }, 'FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=7'],
     ['monthly on the 28th', { unit: 'month', every: 1, anchor: 'due', originDay: 28 }, 'FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=28'],
-    [
-      'monthly on the 29th (leap years)',
-      { unit: 'month', every: 1, anchor: 'due', originDay: 29 },
-      'FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=28,29;BYSETPOS=-1',
-    ],
+    ['monthly on the 29th: no portable rule', { unit: 'month', every: 1, anchor: 'due', originDay: 29 }, null],
+    ['monthly on the 30th: no portable rule', { unit: 'month', every: 1, anchor: 'due', originDay: 30 }, null],
+    ['monthly on the 31st: last day of the month', { unit: 'month', every: 1, anchor: 'due', originDay: 31 }, 'FREQ=MONTHLY;INTERVAL=1;BYMONTHDAY=-1'],
     [
       'monthly on the 31st, every 2 months',
       { unit: 'month', every: 2, anchor: 'due', originDay: 31 },
-      'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=28,29,30,31;BYSETPOS=-1',
+      'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=-1',
     ],
     ['anchored on completion: no rule', { unit: 'week', every: 1, anchor: 'completion' }, null],
   ])('%s', (_label, recurrence, expected) => {
@@ -230,6 +228,14 @@ describe('buildIcs: recurrence', () => {
     const task = makeTask({ id: 'r', due: { date: '2026-10-07', time: '08:00' }, recurrence: { unit: 'week', every: 2, anchor: 'due' } })
 
     expect(event(buildIcs([task], options()), 'r')).toContain('RRULE:FREQ=WEEKLY;INTERVAL=2')
+  })
+
+  it('exports only the next occurrence of a monthly task on the 30th and says so', () => {
+    const task = makeTask({ id: 'm30', due: { date: '2026-11-30' }, recurrence: { unit: 'month', every: 1, anchor: 'due', originDay: 30 } })
+    const lines = event(buildIcs([task], options()), 'm30')
+
+    expect(lines.some((line) => line.startsWith('RRULE'))).toBe(false)
+    expect(lines.find((line) => line.startsWith('DESCRIPTION:'))).toContain('Repete todo mês no dia 30 (ou no último dia)')
   })
 
   it('exports only the next occurrence of a completion-anchored task and says so', () => {

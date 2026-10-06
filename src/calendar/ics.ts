@@ -12,11 +12,14 @@ import { addToDayKey, compareTasksById, type Due, type Priority, type Recurrence
  *   non-inclusive). Due with a time: floating local time (no Z, no TZID,
  *   RFC 5545 3.3.5 form #1), lasting 15 minutes (DURATION:PT15M).
  * - PRIORITY: high 1, medium 5, low 9 (RFC 5545 3.8.1.9: 1-4 high, 5 medium, 6-9 low).
- * - Recurrence anchored on the due date becomes an RRULE. Monthly on a day
- *   above 28 uses BYMONTHDAY=28..N;BYSETPOS=-1, which is exactly "day N, or
- *   the last day of a shorter month" (invalid dates are ignored, 3.3.10).
- *   Recurrence anchored on completion has no calendar equivalent: only the
- *   next occurrence is exported and DESCRIPTION says so.
+ * - Recurrence anchored on the due date becomes an RRULE. Monthly rules:
+ *   day 1-28 -> BYMONTHDAY=N; day 31 -> BYMONTHDAY=-1 (the last day, which is
+ *   exactly "31, or the last day of a shorter month"). Days 29 and 30 have an
+ *   RFC-exact form (BYMONTHDAY=28..N;BYSETPOS=-1), but ical.js 2.2.1 ignores
+ *   BYSETPOS there and expands every listed day (checked in the parser
+ *   tests), so it is not portable: only the next date is exported, with a note.
+ *   Recurrence anchored on completion has no calendar equivalent either: only
+ *   the next occurrence is exported and DESCRIPTION says so.
  * - Lines end in CRLF and are folded at 75 octets without splitting a UTF-8
  *   sequence (3.1); TEXT escapes backslash, semicolon, comma and newlines (3.3.11).
  */
@@ -29,8 +32,10 @@ export interface IcsLabels {
   readonly priority: string
   readonly priorities: Readonly<Record<Priority, string>>
   readonly deck: string
-  /** Added to DESCRIPTION when a recurrence cannot be expressed as an RRULE. */
+  /** Added to DESCRIPTION for recurrences anchored on completion (no RRULE). */
   readonly completionRecurrenceNote: string
+  /** Added to DESCRIPTION for monthly recurrences on day 29 or 30 (no portable RRULE). */
+  readonly monthEndRecurrenceNote: (day: number) => string
 }
 
 export interface IcsOptions {
@@ -101,7 +106,11 @@ function utcStamp(now: Date): string {
   return now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
 }
 
-/** RRULE for a recurrence anchored on the due date; null when it has no exact equivalent. */
+function monthDay(recurrence: Recurrence, due: Due): number {
+  return recurrence.originDay ?? Number(due.date.slice(8, 10))
+}
+
+/** RRULE for a recurrence anchored on the due date; null when it has no exact, portable equivalent. */
 export function recurrenceRule(recurrence: Recurrence, due: Due): string | null {
   if (recurrence.anchor !== 'due') return null
   const interval = `INTERVAL=${recurrence.every}`
@@ -111,10 +120,10 @@ export function recurrenceRule(recurrence: Recurrence, due: Due): string | null 
     case 'week':
       return `FREQ=WEEKLY;${interval}`
     case 'month': {
-      const day = recurrence.originDay ?? Number(due.date.slice(8, 10))
+      const day = monthDay(recurrence, due)
       if (day <= 28) return `FREQ=MONTHLY;${interval};BYMONTHDAY=${day}`
-      const days = Array.from({ length: day - 27 }, (_, i) => 28 + i).join(',')
-      return `FREQ=MONTHLY;${interval};BYMONTHDAY=${days};BYSETPOS=-1`
+      if (day === 31) return `FREQ=MONTHLY;${interval};BYMONTHDAY=-1`
+      return null
     }
   }
 }
@@ -153,7 +162,13 @@ function eventLines(task: Task & { due: Due }, options: IcsOptions): string[] {
   const details = [
     `${labels.priority}: ${labels.priorities[task.priority]}`,
     ...(options.deckName(task.deckId) === undefined ? [] : [`${labels.deck}: ${options.deckName(task.deckId) ?? ''}`]),
-    ...(task.recurrence !== null && rule === null ? [labels.completionRecurrenceNote] : []),
+    ...(task.recurrence !== null && rule === null
+      ? [
+          task.recurrence.anchor === 'completion'
+            ? labels.completionRecurrenceNote
+            : labels.monthEndRecurrenceNote(monthDay(task.recurrence, due)),
+        ]
+      : []),
   ]
   const description = [task.description, details.join('\n')].filter((part) => part !== '').join('\n\n')
   lines.push(`DESCRIPTION:${escapeText(description)}`)
