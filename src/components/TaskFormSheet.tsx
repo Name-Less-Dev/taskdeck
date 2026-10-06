@@ -13,6 +13,7 @@ import {
 import { useI18n } from '../i18n/index.tsx'
 import { TASK_FORM_FIELDS, taskFormErrors, type TaskFormErrors, type TaskFormField } from '../ui/form-errors.ts'
 import { formatRecurrence } from '../ui/format.ts'
+import { handleFormEnter, SUBMIT_ON_ENTER_ATTRIBUTE } from '../ui/form-navigation.ts'
 import { addTags, type TagInputError } from '../ui/tags.ts'
 import styles from './Form.module.css'
 import { AUTOFOCUS_ATTRIBUTE, Sheet } from './Sheet.tsx'
@@ -142,7 +143,7 @@ export function TaskFormSheet({ decks, defaultDeckId, task, createId, onCreate, 
 
   return (
     <Sheet title={editing ? t.form.editTitle : t.form.title} onClose={onClose}>
-      <form className={styles.form} noValidate onSubmit={handleSubmit}>
+      <form className={styles.form} noValidate onSubmit={handleSubmit} onKeyDown={handleFormEnter}>
         <div className={styles.field}>
           <label htmlFor={`${id}-title`}>{t.form.titleLabel}</label>
           <input
@@ -167,6 +168,7 @@ export function TaskFormSheet({ decks, defaultDeckId, task, createId, onCreate, 
           <textarea
             {...fieldProps('description')}
             rows={3}
+            enterKeyHint="enter"
             value={values.description}
             onChange={(event) => {
               update('description', event.target.value)
@@ -242,6 +244,7 @@ export function TaskFormSheet({ decks, defaultDeckId, task, createId, onCreate, 
             <input
               {...fieldProps('date')}
               type="date"
+              enterKeyHint="next"
               value={values.date}
               onChange={(event) => {
                 update('date', event.target.value)
@@ -255,7 +258,9 @@ export function TaskFormSheet({ decks, defaultDeckId, task, createId, onCreate, 
             </label>
             <input
               {...fieldProps('time')}
+              {...{ [SUBMIT_ON_ENTER_ATTRIBUTE]: true }}
               type="time"
+              enterKeyHint="done"
               value={values.time}
               onChange={(event) => {
                 update('time', event.target.value)

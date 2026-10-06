@@ -1,6 +1,7 @@
 import type { KeyboardEvent, Ref } from 'react'
 import { MAX_TAGS, TAG_MAX_LENGTH } from '../domain/index.ts'
 import { useI18n } from '../i18n/index.tsx'
+import { isComposingKey } from '../ui/form-navigation.ts'
 import { addTags, type TagInputError } from '../ui/tags.ts'
 import { Icon } from './Icon.tsx'
 import styles from './TagInput.module.css'
@@ -32,8 +33,10 @@ export function TagInput({ id, tags, draft, onChange, error, errorId, hintId, in
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Enter' || event.key === ',') {
-      // Enter must not submit the whole form while typing a tag.
+    if (isComposingKey(event)) return
+    if (event.key === ',' || (event.key === 'Enter' && draft.trim() !== '')) {
+      // With text, Enter makes a chip (and must not submit the form). Empty, it
+      // is left to the form, which moves on to the next field.
       event.preventDefault()
       if (draft.trim() !== '') commit(draft)
     } else if (event.key === 'Backspace' && draft === '' && tags.length > 0) {
@@ -72,7 +75,7 @@ export function TagInput({ id, tags, draft, onChange, error, errorId, hintId, in
         value={draft}
         autoComplete="off"
         autoCapitalize="none"
-        enterKeyHint="enter"
+        enterKeyHint="next"
         aria-invalid={error !== undefined}
         aria-describedby={error === undefined ? hintId : `${errorId} ${hintId}`}
         onKeyDown={handleKeyDown}

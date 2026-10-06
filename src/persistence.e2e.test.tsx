@@ -52,7 +52,9 @@ async function stored(): Promise<Extract<LoadResult, { ok: true }>> {
 
 async function createTaskThroughUi(user: ReturnType<typeof userEvent.setup>, title: string) {
   await user.click(screen.getByRole('button', { name: 'Nova tarefa' }))
-  await user.type(within(screen.getByRole('dialog')).getByLabelText('Título'), `${title}{Enter}`)
+  const dialog = screen.getByRole('dialog')
+  await user.type(within(dialog).getByLabelText('Título'), title)
+  await user.click(within(dialog).getByRole('button', { name: 'Criar tarefa' }))
 }
 
 beforeEach(() => {

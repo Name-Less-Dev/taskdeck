@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { createTask } from '../domain/index.ts'
 import { renderWithI18n } from '../test/render.tsx'
@@ -109,7 +109,8 @@ describe('TaskFormSheet: create', () => {
     const { user, onCreate } = renderSheet()
 
     expect(screen.getByRole('radio', { name: 'Média' })).toBeChecked()
-    await user.type(screen.getByLabelText('Título'), 'Sem prazo{Enter}')
+    await user.type(screen.getByLabelText('Título'), 'Sem prazo')
+    await user.click(screen.getByRole('button', { name: 'Criar tarefa' }))
 
     expect(onCreate.mock.calls[0]?.[0]).toMatchObject({ priority: 'medium', due: null })
   })
@@ -121,7 +122,8 @@ describe('TaskFormSheet: deck and tags', () => {
 
     expect(screen.getByLabelText('Baralho')).toHaveValue('deck-2')
     await user.selectOptions(screen.getByLabelText('Baralho'), 'deck-1')
-    await user.type(screen.getByLabelText('Título'), 'Mudar de baralho{Enter}')
+    await user.type(screen.getByLabelText('Título'), 'Mudar de baralho')
+    await user.click(screen.getByRole('button', { name: 'Criar tarefa' }))
 
     expect(onCreate.mock.calls[0]?.[0]).toMatchObject({ deckId: 'deck-1' })
   })
@@ -225,5 +227,101 @@ describe('TaskFormSheet: edit', () => {
 
     expect(screen.getByLabelText(/Data do prazo/)).toHaveAccessibleDescription('Uma tarefa recorrente precisa de uma data.')
     expect(onUpdate).not.toHaveBeenCalled()
+  })
+})
+
+describe('TaskFormSheet: Enter key', () => {
+  it('declares what the virtual keyboard key does on each field', () => {
+    renderSheet()
+
+    expect(screen.getByLabelText('Título')).toHaveAttribute('enterkeyhint', 'next')
+    expect(screen.getByLabelText(/Descrição/)).toHaveAttribute('enterkeyhint', 'enter')
+    expect(screen.getByLabelText(/^Tags/)).toHaveAttribute('enterkeyhint', 'next')
+    expect(screen.getByLabelText(/Data do prazo/)).toHaveAttribute('enterkeyhint', 'next')
+    expect(screen.getByLabelText(/Hora do prazo/)).toHaveAttribute('enterkeyhint', 'done')
+  })
+
+  it('Enter in the title moves focus to the description and does not submit', async () => {
+    const { user, onCreate } = renderSheet()
+
+    await user.type(screen.getByLabelText('Título'), 'Comprar pão{Enter}')
+
+    expect(screen.getByLabelText(/Descrição/)).toHaveFocus()
+    expect(onCreate).not.toHaveBeenCalled()
+  })
+
+  it('Enter keeps moving through the single-line fields in order', async () => {
+    const { user, onCreate } = renderSheet()
+
+    await user.click(screen.getByLabelText(/^Tags/))
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('radio', { name: 'Média' })).toHaveFocus()
+
+    await user.keyboard('{Enter}')
+    expect(screen.getByLabelText(/Data do prazo/)).toHaveFocus()
+
+    await user.keyboard('{Enter}')
+    expect(screen.getByLabelText(/Hora do prazo/)).toHaveFocus()
+    expect(onCreate).not.toHaveBeenCalled()
+  })
+
+  it('Enter in the last field submits', async () => {
+    const { user, onCreate } = renderSheet()
+
+    await user.type(screen.getByLabelText('Título'), 'Último campo')
+    await user.type(screen.getByLabelText(/Hora do prazo/), '{Enter}')
+
+    expect(onCreate).toHaveBeenCalledTimes(1)
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({ title: 'Último campo' })
+  })
+
+  it('Enter in the tag field makes a chip when there is text, and moves on when it is empty', async () => {
+    const { user, onCreate } = renderSheet()
+    const tags = screen.getByLabelText(/^Tags/)
+
+    await user.type(tags, 'casa{Enter}')
+    expect(screen.getByRole('list', { name: 'Tags' })).toHaveTextContent('#casa')
+    expect(tags).toHaveFocus()
+
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('radio', { name: 'Média' })).toHaveFocus()
+    expect(onCreate).not.toHaveBeenCalled()
+  })
+
+  it('Enter in the description inserts a new line; Ctrl+Enter submits', async () => {
+    const { user, onCreate } = renderSheet()
+    await user.type(screen.getByLabelText('Título'), 'Com descrição')
+    const description = screen.getByLabelText(/Descrição/)
+
+    await user.type(description, 'linha 1{Enter}linha 2')
+    expect(description).toHaveValue('linha 1\nlinha 2')
+    expect(onCreate).not.toHaveBeenCalled()
+
+    await user.keyboard('{Control>}{Enter}{/Control}')
+    expect(onCreate).toHaveBeenCalledTimes(1)
+    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({ description: 'linha 1\nlinha 2' })
+  })
+
+  it('Ctrl+Enter in the title submits too, and validation still focuses the first invalid field', async () => {
+    const { user, onCreate } = renderSheet()
+
+    await user.click(screen.getByLabelText(/Descrição/))
+    await user.keyboard('{Control>}{Enter}{/Control}')
+
+    expect(onCreate).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('Título')).toHaveFocus()
+    expect(screen.getByLabelText('Título')).toHaveAccessibleDescription('Informe um título.')
+  })
+
+  it('ignores Enter while text is being composed (IME)', () => {
+    const { onCreate } = renderSheet()
+    const title = screen.getByLabelText('Título')
+    title.focus()
+
+    fireEvent.keyDown(title, { key: 'Enter', isComposing: true })
+    fireEvent.keyDown(title, { key: 'Enter', keyCode: 229 })
+
+    expect(title).toHaveFocus()
+    expect(onCreate).not.toHaveBeenCalled()
   })
 })

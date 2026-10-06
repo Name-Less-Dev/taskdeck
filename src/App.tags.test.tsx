@@ -118,7 +118,8 @@ describe('editing', () => {
     const dialog = screen.getByRole('dialog', { name: 'Editar tarefa' })
     const title = within(dialog).getByLabelText('Título')
     await user.clear(title)
-    await user.type(title, 'Lavar a louça do jantar{Enter}')
+    await user.type(title, 'Lavar a louça do jantar')
+    await user.click(within(dialog).getByRole('button', { name: 'Salvar alterações' }))
 
     expect(screen.queryByRole('dialog')).toBeNull()
     await waitFor(() => {
@@ -158,7 +159,8 @@ describe('editing', () => {
     await user.keyboard('e')
     const title = screen.getByLabelText('Título')
     await user.clear(title)
-    await user.type(title, 'Lavar e estender{Enter}')
+    await user.type(title, 'Lavar e estender')
+    await user.click(screen.getByRole('button', { name: 'Salvar alterações' }))
 
     await user.click(topCard())
     expect(topCard()).toHaveAccessibleName(/^Lavar e estender/)
