@@ -190,6 +190,13 @@ export const ptBR: Dictionary = {
       duplicate: 'Já existe um baralho com esse nome.',
     },
   },
+  appearance: {
+    heading: 'Aparência',
+    themes: { auto: 'Automático', dark: 'Escuro', light: 'Claro', lilac: 'Lilás', pastel: 'Pastel', neon: 'Neon' },
+    autoHint: 'Automático segue o claro ou escuro do sistema. O tema fica só neste navegador.',
+    reset: 'Restaurar padrão',
+    applied: (name) => `Tema ${name} aplicado.`,
+  },
   settings: {
     open: 'Configurações',
     title: 'Configurações',

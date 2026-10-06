@@ -117,3 +117,72 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+/* Appearance: theme radios with a swatch and the name in text. */
+.themes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+  gap: var(--space-2);
+}
+
+.themeOption {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.themeOption:has(input:checked) {
+  border: 2px solid var(--color-accent);
+}
+
+.themeOption input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.themeName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.swatchPair {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+}
+
+/* Painted by the theme's own tokens (data-theme on this element). */
+.swatch {
+  display: inline-flex;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.swatch > span {
+  width: 10px;
+  height: 24px;
+}
+
+.swatchBg {
+  background: var(--color-bg);
+}
+
+.swatchSurface {
+  background: var(--color-surface);
+}
+
+.swatchAccent {
+  background: var(--color-accent);
+}

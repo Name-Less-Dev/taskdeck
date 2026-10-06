@@ -187,6 +187,13 @@ export const en: Dictionary = {
       duplicate: 'There is already a deck with this name.',
     },
   },
+  appearance: {
+    heading: 'Appearance',
+    themes: { auto: 'Auto', dark: 'Dark', light: 'Light', lilac: 'Lilac', pastel: 'Pastel', neon: 'Neon' },
+    autoHint: 'Auto follows the system light or dark mode. The theme stays in this browser only.',
+    reset: 'Restore default',
+    applied: (name) => `${name} theme applied.`,
+  },
   settings: {
     open: 'Settings',
     title: 'Settings',

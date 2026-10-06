@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
 import { ALARM_OPTIONS, type AlarmOption } from '../calendar/ics.ts'
 import type { AppData } from '../domain/index.ts'
 import type { InstallUi } from '../pwa/install.ts'
+import type { Theme } from '../ui/theme.ts'
+import { ThemePicker } from './ThemePicker.tsx'
 import { useI18n, type Dictionary } from '../i18n/index.tsx'
 import type { BackupError, BackupWarning, Language, ParseBackupResult, PersistenceState } from '../storage/index.ts'
 import form from './Form.module.css'
@@ -38,6 +40,8 @@ export interface SettingsSheetProps {
   readonly onDismissInstallHint: () => void
   /** The service worker is active and the app shell is cached. */
   readonly offlineReady: boolean
+  readonly theme: Theme
+  readonly onThemeChange: (theme: Theme) => void
   readonly onClose: () => void
 }
 
@@ -70,7 +74,7 @@ const LANGUAGE_OPTIONS: readonly { value: Language; label: (t: Dictionary) => st
   { value: 'en', label: (t) => t.settings.languageEn },
 ]
 
-/** Settings: language, app (offline, install), calendar, storage status, backup export and import. */
+/** Settings: language, appearance, app (offline, install), calendar, storage status, backup export and import. */
 export function SettingsSheet({
   language,
   languageForcedByUrl,
@@ -94,6 +98,8 @@ export function SettingsSheet({
   onInstall,
   onDismissInstallHint,
   offlineReady,
+  theme,
+  onThemeChange,
   onClose,
 }: SettingsSheetProps) {
   const { locale, t } = useI18n()
@@ -174,6 +180,8 @@ export function SettingsSheet({
           </div>
           {languageForcedByUrl && <p className={form.hint}>{t.settings.languageForcedByUrl}</p>}
         </fieldset>
+
+        <ThemePicker theme={theme} onChange={onThemeChange} />
 
         <section className={styles.section} aria-labelledby={`${id}-app`}>
           <h3 id={`${id}-app`} className={styles.heading}>

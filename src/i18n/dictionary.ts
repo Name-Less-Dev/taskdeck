@@ -187,6 +187,13 @@ export interface Dictionary {
       readonly duplicate: string
     }
   }
+  readonly appearance: {
+    readonly heading: string
+    readonly themes: Readonly<Record<'auto' | 'dark' | 'light' | 'lilac' | 'pastel' | 'neon', string>>
+    readonly autoHint: string
+    readonly reset: string
+    readonly applied: (name: string) => string
+  }
   readonly settings: {
     readonly open: string
     readonly title: string

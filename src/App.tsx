@@ -63,6 +63,7 @@ import type { SwipeAction } from './ui/gestures.ts'
 import { useAutosave } from './ui/useAutosave.ts'
 import { useNow } from './ui/useNow.ts'
 import { useTheme } from './ui/useTheme.ts'
+import type { Theme } from './ui/theme.ts'
 import { browserPersistence, usePersistence, type PersistenceApi } from './ui/usePersistence.ts'
 
 export interface AppProps {
@@ -108,7 +109,7 @@ export default function App({
   const { decks, tasks: allTasks } = state.present
   const now = useNow()
   // Applies the saved theme and follows the system for "auto" (first paint: index.html).
-  useTheme()
+  const [theme, setTheme] = useTheme()
 
   // UI state outside the undo history. activeDeckId is persisted in meta.
   const [activeDeckId, setActiveDeckId] = useState<string | null>(initialMeta.settings.activeDeckId)
@@ -495,6 +496,11 @@ export default function App({
     setFocusRequest((n) => n + 1)
   }
 
+  function changeTheme(next: Theme) {
+    setTheme(next)
+    announce(t.appearance.applied(t.appearance.themes[next]))
+  }
+
   function changeLanguage(next: Language) {
     onLanguageChange(next)
     announce(t.announce.languageChanged)
@@ -787,6 +793,8 @@ export default function App({
             setInstallHintDismissed(true)
           }}
           offlineReady={pwa.offlineReady}
+          theme={theme}
+          onThemeChange={changeTheme}
           onClose={closeSheet}
         />
       )}
