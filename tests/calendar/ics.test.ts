@@ -220,6 +220,9 @@ describe('buildIcs: recurrence', () => {
       'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=-1',
     ],
     ['anchored on completion: no rule', { unit: 'week', every: 1, anchor: 'completion' }, null],
+    ['Mon, Wed and Fri', { unit: 'week', every: 1, anchor: 'due', weekdays: [1, 3, 5] }, 'FREQ=WEEKLY;BYDAY=MO,WE,FR'],
+    ['weekdays', { unit: 'week', every: 1, anchor: 'due', weekdays: [1, 2, 3, 4, 5] }, 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'],
+    ['weekends', { unit: 'week', every: 1, anchor: 'due', weekdays: [0, 6] }, 'FREQ=WEEKLY;BYDAY=SU,SA'],
   ])('%s', (_label, recurrence, expected) => {
     expect(recurrenceRule(recurrence, due)).toBe(expected)
   })

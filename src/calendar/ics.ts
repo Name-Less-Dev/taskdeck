@@ -110,6 +110,9 @@ function monthDay(recurrence: Recurrence, due: Due): number {
   return recurrence.originDay ?? Number(due.date.slice(8, 10))
 }
 
+/** RFC 5545 weekday codes, indexed like Date#getDay (0 = Sunday). */
+const BYDAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const
+
 /** RRULE for a recurrence anchored on the due date; null when it has no exact, portable equivalent. */
 export function recurrenceRule(recurrence: Recurrence, due: Due): string | null {
   if (recurrence.anchor !== 'due') return null
@@ -118,6 +121,8 @@ export function recurrenceRule(recurrence: Recurrence, due: Due): string | null 
     case 'day':
       return `FREQ=DAILY;${interval}`
     case 'week':
+      // Days of the week only exist for every 1 week (domain invariant): INTERVAL defaults to 1.
+      if (recurrence.weekdays !== undefined) return `FREQ=WEEKLY;BYDAY=${recurrence.weekdays.map((day) => BYDAY[day]).join(',')}`
       return `FREQ=WEEKLY;${interval}`
     case 'month': {
       const day = monthDay(recurrence, due)

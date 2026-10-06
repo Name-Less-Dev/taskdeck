@@ -255,3 +255,28 @@ describe('ical.js accepts edge cases', () => {
     expect(empty.getAllSubcomponents('vevent')).toEqual([])
   })
 })
+
+describe('ical.js expands weekday rules exactly like the domain', () => {
+  it.each<[string, number[], string]>([
+    ['Mon, Wed and Fri (first due on a Tuesday moves to Wednesday)', [1, 3, 5], '2026-10-06'],
+    ['weekdays, starting on a Saturday', [1, 2, 3, 4, 5], '2026-10-10'],
+    ['weekends', [0, 6], '2026-10-05'],
+    ['Tuesdays across 29 Feb 2028', [2], '2028-02-15'],
+  ])('%s: 8 weeks of dates match', (_name, weekdays, date) => {
+    const weekly = task('wd', {
+      title: 'Academia',
+      due: { date, time: '07:30' },
+      recurrence: { unit: 'week', every: 1, anchor: 'due', weekdays },
+    })
+    const text = buildIcs([weekly], { now: NOW, alarm: 'none', labels: LABELS, deckName: () => undefined })
+    const vevent = parse(text).get('wd@taskdeck')
+    if (vevent === undefined) throw new Error('missing')
+    const count = weekdays.length * 8
+
+    // DTSTART is the first valid day (the domain already moved the due date).
+    expect(vevent.getFirstPropertyValue('dtstart')?.toString().slice(0, 10)).toBe(weekly.due?.date)
+    const iterator = new ICAL.Event(vevent).iterator()
+    const fromParser = Array.from({ length: count }, () => iterator.next().toString().slice(0, 10))
+    expect(fromParser).toEqual(domainSequence(weekly, count))
+  })
+})
