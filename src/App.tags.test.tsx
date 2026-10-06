@@ -33,6 +33,12 @@ function filterBar(): HTMLElement {
   return screen.getByRole('navigation', { name: 'Filtrar por tag' })
 }
 
+/** The bar starts collapsed: open it through its toggle. */
+async function openFilter(user: ReturnType<typeof renderApp>['user']): Promise<HTMLElement> {
+  await user.click(screen.getByRole('button', { name: /^Filtrar por tag/ }))
+  return filterBar()
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(NOW)
@@ -63,11 +69,11 @@ describe('tags on cards', () => {
 })
 
 describe('tag filter', () => {
-  it('lists the tags of active tasks with counts, most used first', () => {
-    renderApp()
+  it('lists the tags of active tasks with counts, most used first', async () => {
+    const { user } = renderApp()
 
     expect(
-      within(filterBar())
+      within(await openFilter(user))
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
     ).toEqual(['casa, 3 tarefas', 'banco, 1 tarefa', 'dinheiro, 1 tarefa', 'lazer, 1 tarefa', 'mensal, 1 tarefa', 'rapida, 1 tarefa'])
@@ -76,7 +82,7 @@ describe('tag filter', () => {
   it('filters the deck, marks the pressed tag and announces it; "Limpar" removes the filter', async () => {
     const { user } = renderApp()
 
-    await user.click(within(filterBar()).getByRole('button', { name: 'lazer, 1 tarefa' }))
+    await user.click(within(await openFilter(user)).getByRole('button', { name: 'lazer, 1 tarefa' }))
 
     expect(within(filterBar()).getByRole('button', { name: 'lazer, 1 tarefa' })).toHaveAttribute('aria-pressed', 'true')
     expect(topCard()).toHaveAccessibleName(/^Ler um livro/)
@@ -90,7 +96,7 @@ describe('tag filter', () => {
   it('shows a specific empty state with "Limpar filtro" when nothing is left', async () => {
     const { user } = renderApp()
 
-    await user.click(within(filterBar()).getByRole('button', { name: 'lazer, 1 tarefa' }))
+    await user.click(within(await openFilter(user)).getByRole('button', { name: 'lazer, 1 tarefa' }))
     topCard().focus()
     await user.keyboard('{ArrowRight}')
 
@@ -105,7 +111,8 @@ describe('tag filter', () => {
   it('is hidden when no task has tags', () => {
     renderWithI18n(<App {...appProps({ decks: data.decks, tasks: [task('x', 'Sem tags', [])] })} />)
 
-    expect(screen.queryByRole('navigation', { name: 'Filtrar por tag' })).toBeNull()
+    expect(screen.queryByRole('navigation', { name: 'Filtrar por tag', hidden: true })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Filtrar por tag/ })).toBeNull()
   })
 })
 
@@ -142,7 +149,7 @@ describe('editing', () => {
 
   it('keeps the recurrence and counters of a recurring task, and undo restores the old version', async () => {
     const { user } = renderApp()
-    await user.click(within(filterBar()).getByRole('button', { name: 'casa, 3 tarefas' }))
+    await user.click(within(await openFilter(user)).getByRole('button', { name: 'casa, 3 tarefas' }))
     // Order with #casa: overdue "Lavar a louça", today "Pagar contas", then the weekly task.
     topCard().focus()
     await user.keyboard('{ArrowLeft}')

@@ -122,6 +122,9 @@ export interface Dictionary {
     readonly more: (count: number) => string
     readonly moreLabel: (count: number) => string
     readonly filterLabel: string
+    readonly filterOn: string
+    readonly chip: (tag: string) => string
+    readonly removeFilter: (tag: string) => string
     readonly filterButton: (tag: string, count: number) => string
     readonly clear: string
     readonly emptyTitle: (tag: string) => string

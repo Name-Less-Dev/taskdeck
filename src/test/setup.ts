@@ -24,4 +24,6 @@ if (typeof window.matchMedia !== 'function') {
 
 afterEach(() => {
   cleanup()
+  // Interface preferences (src/ui/preferences.ts) must not leak between tests.
+  window.localStorage.clear()
 })
