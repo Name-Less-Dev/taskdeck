@@ -40,9 +40,18 @@
   cursor: not-allowed;
 }
 
+/* Only where a keyboard and a precise pointer are likely; display:none also
+   removes it from the accessibility tree. The shortcuts keep working anyway. */
 .shortcuts {
+  display: none;
   font-size: 0.875rem;
   color: var(--color-text-muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shortcuts {
+    display: block;
+  }
 }
 
 .shortcuts summary {
