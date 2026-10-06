@@ -48,6 +48,7 @@ export const en: Dictionary = {
       }
     },
     fromCompletion: ', counted from completion',
+    fromDue: ', counted from the due date',
   },
   card: {
     front: 'Front',
@@ -72,6 +73,7 @@ export const en: Dictionary = {
     removed: 'Task deleted',
     taskUpdated: 'Task updated',
     imported: 'Data imported',
+    rescheduled: (date) => `Rescheduled for ${date}`,
     deckCreated: 'Deck created',
     deckRenamed: 'Deck renamed',
     deckRemoved: 'Deck deleted',
@@ -83,6 +85,7 @@ export const en: Dictionary = {
     added: (title) => `Task created: ${title}.`,
     deckSelected: (name) => `Showing: ${name}.`,
     taskUpdated: (title) => `Task updated: ${title}. Undo available.`,
+    rescheduled: (title, date) => `${title}: rescheduled for ${date}. Undo available.`,
     tagFilter: (tag, n) => `Filter #${tag}: ${p(n, '{n} task', '{n} tasks')}.`,
     tagFilterCleared: 'Tag filter removed.',
     imported: (decks, tasks) =>

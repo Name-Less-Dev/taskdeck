@@ -51,6 +51,7 @@ export const ptBR: Dictionary = {
       }
     },
     fromCompletion: ', contando da conclusão',
+    fromDue: ', contando do prazo',
   },
   card: {
     front: 'Frente',
@@ -75,6 +76,7 @@ export const ptBR: Dictionary = {
     removed: 'Tarefa apagada',
     taskUpdated: 'Tarefa atualizada',
     imported: 'Dados importados',
+    rescheduled: (date) => `Reagendada para ${date}`,
     deckCreated: 'Baralho criado',
     deckRenamed: 'Baralho renomeado',
     deckRemoved: 'Baralho apagado',
@@ -86,6 +88,7 @@ export const ptBR: Dictionary = {
     added: (title) => `Tarefa criada: ${title}.`,
     deckSelected: (name) => `Mostrando: ${name}.`,
     taskUpdated: (title) => `Tarefa atualizada: ${title}. Desfazer disponível.`,
+    rescheduled: (title, date) => `${title}: reagendada para ${date}. Desfazer disponível.`,
     tagFilter: (tag, n) => `Filtro #${tag}: ${p(n, '{n} tarefa', '{n} tarefas')}.`,
     tagFilterCleared: 'Filtro de tag removido.',
     imported: (decks, tasks) =>

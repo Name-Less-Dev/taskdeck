@@ -1,4 +1,4 @@
-import { dueToDate, type Due, type DueStatus, type Recurrence } from '../domain/index.ts'
+import { describeRecurrence, dueToDate, type Due, type DueStatus, type Recurrence } from '../domain/index.ts'
 import type { Dictionary, Locale } from '../i18n/dictionary.ts'
 
 const MINUTES_PER_HOUR = 60
@@ -44,9 +44,19 @@ export function formatDueDate(due: Due | null, locale: Locale, t: Dictionary): s
   return formatter.format(dueToDate(due))
 }
 
+/** Short form for the card's badge: "Toda semana", "A cada 2 semanas". */
+export function formatRecurrenceShort(recurrence: Recurrence, t: Dictionary): string {
+  const { unit, every } = describeRecurrence(recurrence)
+  return t.recurrence.every(unit, every)
+}
+
+/** Full form for the back of the card: "A cada 2 semanas, contando da conclusão". */
 export function formatRecurrence(recurrence: Recurrence, t: Dictionary): string {
-  const base = t.recurrence.every(recurrence.unit, recurrence.every)
-  return recurrence.anchor === 'completion' ? base + t.recurrence.fromCompletion : base
+  const { anchor } = describeRecurrence(recurrence)
+  return (
+    formatRecurrenceShort(recurrence, t) +
+    (anchor === 'completion' ? t.recurrence.fromCompletion : t.recurrence.fromDue)
+  )
 }
 
 /** Semantic tone of a due badge; the text always carries the meaning too. */

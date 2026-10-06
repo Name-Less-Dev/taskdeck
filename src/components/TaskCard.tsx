@@ -11,7 +11,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties
 import { getDueStatus, type Priority, type Task } from '../domain/index.ts'
 import { useI18n } from '../i18n/index.tsx'
 import { cx } from '../ui/cx.ts'
-import { dueTone, formatDueDate, formatDueStatus, formatRecurrence } from '../ui/format.ts'
+import { dueTone, formatDueDate, formatDueStatus, formatRecurrence, formatRecurrenceShort } from '../ui/format.ts'
 import { decideSwipe, HORIZONTAL_DISTANCE_RATIO, VERTICAL_DISTANCE_RATIO, type SwipeAction } from '../ui/gestures.ts'
 import { reportGesture } from '../dev/gestureDebug.ts'
 import { shouldResetMotion } from '../ui/exitState.ts'
@@ -204,6 +204,7 @@ export function TaskCard({
           ref={elementRef}
           {...{ [TOP_CARD_ATTRIBUTE]: isTop ? 'true' : undefined }}
           className={cx(styles.card, isTop && styles.top)}
+          data-band={status.kind}
           style={{ x, y, opacity, rotate: reduceMotion ? 0 : rotate }}
           drag={interactive}
           dragListener={false}
@@ -261,9 +262,15 @@ export function TaskCard({
                   </span>
                 )}
                 <span className={styles.badge} data-tone={dueTone(status.kind)}>
-                  <Icon name="clock" size={14} />
+                  <Icon name={status.kind === 'overdue' ? 'alert' : 'clock'} size={14} />
                   {dueText}
                 </span>
+                {task.recurrence !== null && (
+                  <span className={styles.badge} data-tone="neutral" data-testid="recurrence-badge">
+                    <Icon name="repeat" size={14} />
+                    {formatRecurrenceShort(task.recurrence, t)}
+                  </span>
+                )}
                 {task.postponedDays >= 1 && (
                   <span className={styles.badge} data-tone="muted">
                     {t.card.postponedBadge(task.postponedDays)}
@@ -290,12 +297,6 @@ export function TaskCard({
                   <PriorityShape priority={task.priority} />
                   {t.priority.label}: {priorityText}
                 </span>
-                {task.recurrence !== null && (
-                  <span className={styles.repeat}>
-                    <Icon name="repeat" size={14} />
-                    {formatRecurrence(task.recurrence, t)}
-                  </span>
-                )}
                 {isTop && <span className={styles.hint}>{t.card.flipHint}</span>}
               </div>
             </div>

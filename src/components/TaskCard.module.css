@@ -288,3 +288,31 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/*
+ * Deadline escalation: border and background follow the urgency band. The
+ * badge always carries an icon and text, so colour is never the only signal.
+ */
+.card[data-band='overdue'] .face {
+  border: 2px solid var(--color-danger-fg);
+  background: var(--color-danger-surface);
+}
+
+.card[data-band='soon'] .face {
+  border: 2px solid var(--color-warning-fg);
+  background: var(--color-warning-surface);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card[data-band='soon'] .front {
+    animation: soon-pulse 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes soon-pulse {
+  50% {
+    box-shadow:
+      0 0 0 4px var(--color-warning-bg),
+      var(--shadow-card);
+  }
+}

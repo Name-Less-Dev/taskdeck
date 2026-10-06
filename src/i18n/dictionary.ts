@@ -51,6 +51,7 @@ export interface Dictionary {
   readonly recurrence: {
     readonly every: (unit: Recurrence['unit'], every: number) => string
     readonly fromCompletion: string
+    readonly fromDue: string
   }
   readonly card: {
     readonly front: string
@@ -77,6 +78,7 @@ export interface Dictionary {
     readonly deckRemoved: string
     readonly taskUpdated: string
     readonly imported: string
+    readonly rescheduled: (date: string) => string
   }
   readonly announce: {
     readonly completed: (title: string) => string
@@ -86,6 +88,7 @@ export interface Dictionary {
     readonly samplesLoaded: (count: number) => string
     readonly deckSelected: (name: string) => string
     readonly taskUpdated: (title: string) => string
+    readonly rescheduled: (title: string, date: string) => string
     readonly tagFilter: (tag: string, count: number) => string
     readonly tagFilterCleared: string
     readonly imported: (decks: number, tasks: number) => string

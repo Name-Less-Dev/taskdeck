@@ -28,6 +28,7 @@ import {
   type TaskPatch,
 } from './domain/index.ts'
 import { useI18n } from './i18n/index.tsx'
+import { formatDueDate } from './ui/format.ts'
 import { createId as randomId } from './lib/id.ts'
 import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
 import {
@@ -85,7 +86,7 @@ export default function App({
   persistence = browserPersistence,
   download = downloadBlob,
 }: AppProps) {
-  const { t } = useI18n()
+  const { locale, t } = useI18n()
   const [state, dispatch] = useReducer(deckReducer, initialData, createDeckState)
   const { decks, tasks: allTasks } = state.present
   const now = useNow()
@@ -202,7 +203,16 @@ export default function App({
     if (next !== exitState) setExitState(next)
     if (commit === null) return
     const title = allTasks.find((task) => task.id === commit.id)?.title ?? ''
-    apply({ type: commit.action, id: commit.id, now: new Date() }, t.announce[MESSAGE_KEY[commit.action]](title))
+    const action = { type: commit.action, id: commit.id, now: new Date() }
+    // A completed recurring task stays active with its next due date: say when.
+    const after = deckReducer(state, action).present.tasks.find((task) => task.id === commit.id)
+    if (commit.action === 'complete' && after?.status === 'active' && after.due !== null) {
+      const date = formatDueDate(after.due, locale, t)
+      apply(action, t.announce.rescheduled(title, date))
+      showToast(t.toast.rescheduled(date))
+      return
+    }
+    apply(action, t.announce[MESSAGE_KEY[commit.action]](title))
     showToast(t.toast[MESSAGE_KEY[commit.action]])
   }
 

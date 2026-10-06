@@ -46,6 +46,14 @@ const TEXT_PAIRS: readonly [fg: string, bg: string][] = [
   ['on-overlay', 'postpone'],
   ['on-overlay', 'remove'],
   ['on-accent', 'accent'],
+  // Escalated cards (overdue / soon): every text colour used on a card face.
+  ['text', 'danger-surface'],
+  ['text-muted', 'danger-surface'],
+  ['danger-fg', 'danger-surface'],
+  ['text', 'warning-surface'],
+  ['text-muted', 'warning-surface'],
+  ['warning-fg', 'warning-surface'],
+  ['danger-fg', 'warning-surface'],
 ]
 
 // Non-text UI (focus ring) only needs 3:1 against what surrounds it.

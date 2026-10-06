@@ -4,7 +4,7 @@ import type { Dictionary } from '../../src/i18n/dictionary.ts'
 import { en } from '../../src/i18n/en.ts'
 import { detectLocale } from '../../src/i18n/locale.ts'
 import { ptBR } from '../../src/i18n/pt-BR.ts'
-import { dueTone, formatDueDate, formatDueStatus, formatRecurrence } from '../../src/ui/format.ts'
+import { dueTone, formatDueDate, formatDueStatus, formatRecurrence, formatRecurrenceShort } from '../../src/ui/format.ts'
 
 /** Sorted dotted paths of every leaf in a dictionary, e.g. "due.inDays". */
 function keyPaths(value: object, prefix = ''): string[] {
@@ -81,17 +81,19 @@ describe('formatDueStatus', () => {
 
 describe('other formatters', () => {
   it('formats recurrences with plurals and the completion anchor', () => {
-    expect(formatRecurrence({ unit: 'week', every: 1, anchor: 'due' }, ptBR)).toBe('Toda semana')
-    expect(formatRecurrence({ unit: 'week', every: 2, anchor: 'due' }, en)).toBe('Every 2 weeks')
+    expect(formatRecurrence({ unit: 'week', every: 1, anchor: 'due' }, ptBR)).toBe('Toda semana, contando do prazo')
+    expect(formatRecurrenceShort({ unit: 'week', every: 1, anchor: 'due' }, ptBR)).toBe('Toda semana')
+    expect(formatRecurrenceShort({ unit: 'week', every: 2, anchor: 'completion' }, en)).toBe('Every 2 weeks')
+    expect(formatRecurrence({ unit: 'week', every: 2, anchor: 'due' }, en)).toBe('Every 2 weeks, counted from the due date')
     expect(formatRecurrence({ unit: 'day', every: 1, anchor: 'completion' }, ptBR)).toBe(
       'Todo dia, contando da conclusão',
     )
-    expect(formatRecurrence({ unit: 'day', every: 3, anchor: 'due' }, ptBR)).toBe('A cada 3 dias')
-    expect(formatRecurrence({ unit: 'month', every: 1, anchor: 'due', originDay: 5 }, en)).toBe('Every month')
+    expect(formatRecurrence({ unit: 'day', every: 3, anchor: 'due' }, ptBR)).toBe('A cada 3 dias, contando do prazo')
+    expect(formatRecurrence({ unit: 'month', every: 1, anchor: 'due', originDay: 5 }, en)).toBe('Every month, counted from the due date')
     expect(formatRecurrence({ unit: 'month', every: 6, anchor: 'completion' }, ptBR)).toBe(
       'A cada 6 meses, contando da conclusão',
     )
-    expect(formatRecurrence({ unit: 'day', every: 2, anchor: 'due' }, en)).toBe('Every 2 days')
+    expect(formatRecurrence({ unit: 'day', every: 2, anchor: 'due' }, en)).toBe('Every 2 days, counted from the due date')
     expect(formatRecurrence({ unit: 'week', every: 1, anchor: 'completion' }, en)).toBe(
       'Every week, counted from completion',
     )
