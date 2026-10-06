@@ -68,6 +68,9 @@ async function writeSnapshot(
     for (const task of data.tasks) requests.push(tasks.put(task))
     requests.push(tx.objectStore('meta').put(meta, META_KEY))
     for (const entry of quarantine) requests.push(tx.objectStore('quarantine').add(entry))
+    // Commit now instead of waiting for the transaction to go idle: a save
+    // started on pagehide (reload, closing the tab) is otherwise lost.
+    tx.commit()
     await Promise.all([...requests, done])
   } catch (error) {
     // A request that throws synchronously (e.g. DataCloneError) leaves the

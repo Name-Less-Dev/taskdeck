@@ -1,3 +1,4 @@
+import { IDBTransaction } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppData, Task } from '../../src/domain/index.ts'
 import {
@@ -199,6 +200,18 @@ describe('IndexedDB storage: versions', () => {
 })
 
 describe('IndexedDB storage: atomic saves', () => {
+  it('commits the save explicitly once every write is queued, so a save started on pagehide survives a reload', async () => {
+    // Without commit(), Chromium dropped a save started on pagehide when the
+    // page was reloaded right after a change (seen in e2e/persistence.spec.ts).
+    const storage = await createIndexedDbStorage(context())
+    const commit = vi.spyOn(IDBTransaction.prototype, 'commit')
+
+    await storage.save(sampleData(), sampleMeta)
+
+    expect(commit).toHaveBeenCalledTimes(1)
+    commit.mockRestore()
+  })
+
   it('keeps the previous snapshot when a write fails half way through', async () => {
     const storage = await createIndexedDbStorage(context())
     await storage.save(sampleData(), sampleMeta)
