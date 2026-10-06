@@ -84,7 +84,7 @@ describe('add one task to the calendar', () => {
 describe('export from settings', () => {
   it('exports every active task with a due date, and only the active deck when asked', async () => {
     const { user, download } = renderApp({
-      initialMeta: { ...DEFAULT_META, settings: { activeDeckId: 'home', language: 'auto', alarm: '15m' } },
+      initialMeta: { ...DEFAULT_META, settings: { activeDeckId: 'home', language: 'auto', alarm: '15m', installHintDismissed: false } },
     })
     await user.click(screen.getByRole('button', { name: 'Configurações' }))
     const dialog = screen.getByRole('dialog', { name: 'Configurações' })
@@ -126,7 +126,7 @@ describe('export from settings', () => {
     })
     unmount()
 
-    const again = renderApp({ initialMeta: { ...DEFAULT_META, settings: { activeDeckId: null, language: 'auto', alarm: '1d' } } })
+    const again = renderApp({ initialMeta: { ...DEFAULT_META, settings: { activeDeckId: null, language: 'auto', alarm: '1d', installHintDismissed: false } } })
     await again.user.click(screen.getByRole('button', { name: 'Configurações' }))
     expect(screen.getByLabelText('Alarme dos eventos')).toHaveValue('1d')
   })

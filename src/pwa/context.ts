@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-/** Service worker state, as the app sees it. */
+/** Service worker and install state, as the app sees it. */
 export interface PwaState {
   /** A new version is installed and waiting for "Update". */
   readonly needRefresh: boolean
@@ -8,13 +8,22 @@ export interface PwaState {
   readonly update: () => void
   /** A service worker is active, so the precached app opens offline. */
   readonly offlineReady: boolean
+  /** The browser offered an install prompt that can be shown now. */
+  readonly canPrompt: boolean
+  readonly install: () => void
+  readonly isIos: boolean
+  readonly standalone: boolean
 }
 
-/** Default for tests and the dev server: no service worker. */
+/** Default for tests and the dev server: no service worker, nothing to install. */
 export const NO_PWA: PwaState = {
   needRefresh: false,
   update: () => undefined,
   offlineReady: false,
+  canPrompt: false,
+  install: () => undefined,
+  isIos: false,
+  standalone: false,
 }
 
 export const PwaContext = createContext<PwaState>(NO_PWA)

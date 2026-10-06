@@ -15,6 +15,8 @@ export const SettingsSchema = z.object({
   // Added in stage 4 with a default, so meta saved before it still validates
   // (no migration needed; older apps simply drop the unknown key).
   alarm: z.enum(ALARM_OPTIONS).default('15m'),
+  // Stage 5, same approach: the iOS "Add to Home Screen" hint was dismissed.
+  installHintDismissed: z.boolean().default(false),
 })
 export type Settings = z.infer<typeof SettingsSchema>
 
@@ -27,7 +29,7 @@ export type Meta = z.infer<typeof MetaSchema>
 
 export const DEFAULT_META: Meta = {
   schemaVersion: SCHEMA_VERSION,
-  settings: { activeDeckId: null, language: 'auto', alarm: '15m' },
+  settings: { activeDeckId: null, language: 'auto', alarm: '15m', installHintDismissed: false },
   lastBackupAt: null,
 }
 

@@ -1,14 +1,15 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import App, { type AppProps } from './App.tsx'
 import { NO_PWA, PwaContext, type PwaState } from './pwa/context.ts'
+import { createMemoryStorage, DEFAULT_META } from './storage/index.ts'
 import { appProps } from './test/app.tsx'
 import { renderWithI18n } from './test/render.tsx'
 
 const DATA = { decks: [{ id: 'home', name: 'Casa' }], tasks: [] }
 
 function renderApp(pwa: Partial<PwaState>, overrides: Partial<AppProps> = {}) {
-  const state = { ...NO_PWA, update: vi.fn(), ...pwa }
+  const state = { ...NO_PWA, update: vi.fn(), install: vi.fn(), ...pwa }
   const result = renderWithI18n(
     <PwaContext value={state}>
       <App {...appProps(DATA, overrides)} />
@@ -61,7 +62,48 @@ describe('update prompt', () => {
   })
 })
 
-describe('offline status in settings', () => {
+describe('install and offline status in settings', () => {
+  it('offers "Instalar app" when the browser can prompt', async () => {
+    const { user, pwa } = renderApp({ canPrompt: true })
+    const dialog = await openSettings(user)
+
+    await user.click(within(dialog).getByRole('button', { name: 'Instalar app' }))
+
+    expect(pwa.install).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows nothing to install in standalone mode', async () => {
+    const { user } = renderApp({ canPrompt: true, isIos: true, standalone: true })
+    const dialog = await openSettings(user)
+
+    expect(within(dialog).queryByRole('button', { name: 'Instalar app' })).toBeNull()
+    expect(within(dialog).queryByText(/Adicionar à Tela de Início/)).toBeNull()
+  })
+
+  it('shows the iOS hint, and persists its dismissal', async () => {
+    const storage = createMemoryStorage({ createId: () => 'g', names: { general: 'Geral', recovered: 'Recuperadas' } })
+    const { user } = renderApp({ isIos: true }, { storage })
+    const dialog = await openSettings(user)
+
+    expect(within(dialog).getByText(/Compartilhar > Adicionar à Tela de Início/)).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Dispensar dica' }))
+
+    expect(within(dialog).queryByText(/Adicionar à Tela de Início/)).toBeNull()
+    await waitFor(() => {
+      expect(storage.snapshot().meta).toMatchObject({ settings: { installHintDismissed: true } })
+    })
+  })
+
+  it('does not show a dismissed iOS hint again', async () => {
+    const { user } = renderApp(
+      { isIos: true },
+      { initialMeta: { ...DEFAULT_META, settings: { ...DEFAULT_META.settings, installHintDismissed: true } } },
+    )
+    const dialog = await openSettings(user)
+
+    expect(within(dialog).queryByText(/Adicionar à Tela de Início/)).toBeNull()
+  })
+
   it('says when the app is ready to use offline', async () => {
     const ready = renderApp({ offlineReady: true })
     expect(within(await openSettings(ready.user)).getByTestId('offline-status')).toHaveTextContent(

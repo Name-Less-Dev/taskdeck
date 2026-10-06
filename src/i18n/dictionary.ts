@@ -246,6 +246,9 @@ export interface Dictionary {
     readonly update: string
     readonly later: string
     readonly heading: string
+    readonly install: string
+    readonly iosHint: string
+    readonly dismissHint: string
     readonly offlineReady: string
     readonly offlineNotReady: string
   }

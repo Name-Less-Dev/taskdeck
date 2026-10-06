@@ -15,6 +15,7 @@ import { TaskFormSheet } from './components/TaskFormSheet.tsx'
 import { UndoToast, type ToastData } from './components/UndoToast.tsx'
 import { UpdateToast } from './components/UpdateToast.tsx'
 import { usePwa } from './pwa/context.ts'
+import { decideInstallUi } from './pwa/install.ts'
 import { shouldOfferUpdate } from './pwa/update.ts'
 import { createDemoTasks } from './demo/seed.ts'
 import { reportGesture, reportRender } from './dev/gestureDebug.ts'
@@ -104,6 +105,7 @@ export default function App({
   const [activeDeckId, setActiveDeckId] = useState<string | null>(initialMeta.settings.activeDeckId)
   const [lastBackupAt, setLastBackupAt] = useState<string | null>(initialMeta.lastBackupAt)
   const [alarm, setAlarm] = useState<AlarmOption>(initialMeta.settings.alarm)
+  const [installHintDismissed, setInstallHintDismissed] = useState(initialMeta.settings.installHintDismissed)
   const [firstRun, setFirstRun] = useState(initialFirstRun)
   // Tag filter: session only, never persisted.
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -123,10 +125,10 @@ export default function App({
   const meta = useMemo<Meta>(
     () => ({
       schemaVersion: SCHEMA_VERSION,
-      settings: { activeDeckId: deckId, language, alarm },
+      settings: { activeDeckId: deckId, language, alarm, installHintDismissed },
       lastBackupAt,
     }),
-    [deckId, language, alarm, lastBackupAt],
+    [deckId, language, alarm, installHintDismissed, lastBackupAt],
   )
   const autosave = useAutosave(storage, state.present, meta)
   const { state: persistenceState, requestOnce: requestPersistence } = usePersistence(
@@ -184,6 +186,12 @@ export default function App({
   const pwa = usePwa()
   const [updatePostponed, setUpdatePostponed] = useState(false)
   const offerUpdate = shouldOfferUpdate({ needRefresh: pwa.needRefresh, sheetOpen: sheet !== null, postponed: updatePostponed })
+  const installUi = decideInstallUi({
+    canPrompt: pwa.canPrompt,
+    isIos: pwa.isIos,
+    standalone: pwa.standalone,
+    dismissed: installHintDismissed,
+  })
   const updateAnnounced = useRef(false)
   useEffect(() => {
     if (!offerUpdate || updateAnnounced.current) return
@@ -677,6 +685,11 @@ export default function App({
           exportableActiveDeck={exportableCount(deckTasks)}
           onExportCalendar={(activeDeckOnly) => {
             exportCalendar(activeDeckOnly ? deckTasks : allTasks)
+          }}
+          installUi={installUi}
+          onInstall={pwa.install}
+          onDismissInstallHint={() => {
+            setInstallHintDismissed(true)
           }}
           offlineReady={pwa.offlineReady}
           onClose={closeSheet}

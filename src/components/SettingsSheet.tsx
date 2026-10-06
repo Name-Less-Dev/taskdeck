@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
 import { ALARM_OPTIONS, type AlarmOption } from '../calendar/ics.ts'
 import type { AppData } from '../domain/index.ts'
+import type { InstallUi } from '../pwa/install.ts'
 import { useI18n, type Dictionary } from '../i18n/index.tsx'
 import type { BackupError, BackupWarning, Language, ParseBackupResult, PersistenceState } from '../storage/index.ts'
 import form from './Form.module.css'
@@ -31,6 +32,10 @@ export interface SettingsSheetProps {
   readonly exportableAll: number
   readonly exportableActiveDeck: number
   readonly onExportCalendar: (activeDeckOnly: boolean) => void
+  /** Install button (Chromium), iOS hint, or nothing (installed / unsupported). */
+  readonly installUi: InstallUi
+  readonly onInstall: () => void
+  readonly onDismissInstallHint: () => void
   /** The service worker is active and the app shell is cached. */
   readonly offlineReady: boolean
   readonly onClose: () => void
@@ -65,7 +70,7 @@ const LANGUAGE_OPTIONS: readonly { value: Language; label: (t: Dictionary) => st
   { value: 'en', label: (t) => t.settings.languageEn },
 ]
 
-/** Settings: language, app (offline), calendar, storage status, backup export and import. */
+/** Settings: language, app (offline, install), calendar, storage status, backup export and import. */
 export function SettingsSheet({
   language,
   languageForcedByUrl,
@@ -85,6 +90,9 @@ export function SettingsSheet({
   exportableAll,
   exportableActiveDeck,
   onExportCalendar,
+  installUi,
+  onInstall,
+  onDismissInstallHint,
   offlineReady,
   onClose,
 }: SettingsSheetProps) {
@@ -174,6 +182,19 @@ export function SettingsSheet({
           <p className={form.hint} data-testid="offline-status">
             {offlineReady ? t.pwa.offlineReady : t.pwa.offlineNotReady}
           </p>
+          {installUi === 'prompt' && (
+            <button type="button" className={form.primary} onClick={onInstall}>
+              {t.pwa.install}
+            </button>
+          )}
+          {installUi === 'ios-hint' && (
+            <div className={styles.installHint}>
+              <p className={styles.installHintText}>{t.pwa.iosHint}</p>
+              <button type="button" className={form.secondary} onClick={onDismissInstallHint}>
+                {t.pwa.dismissHint}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className={styles.section} aria-labelledby={`${id}-calendar`}>
