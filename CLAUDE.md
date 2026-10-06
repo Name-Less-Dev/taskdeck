@@ -65,6 +65,16 @@ strips `TZ` before it reaches Node.
 - Ids: always `createId()` from `src/lib/id.ts`, never `crypto.randomUUID` (missing in
   insecure contexts such as `http://<LAN IP>` on a phone; ESLint enforces it).
 - Motion is imported from `motion/react`. Find the top card through `data-top-card`.
+- Card exits go through the pure state machine in `src/ui/exitState.ts` (request →
+  finished | interrupted | 600 ms timeout → commit). Any motion value a card animates
+  must be reset when its exit ends: the same card instance (keyed by task id) comes
+  back for postponed and recurring tasks.
+- The shell is a flex column where only `<main>` grows: adding a bar (banner, filter)
+  must not change the deck's height logic. Cards are capped to the deck area.
+- Forms: Enter moves to the next field in single-line inputs and submits only on the
+  field marked `data-submit-on-enter` (`src/ui/form-navigation.ts`); set
+  `enterkeyhint` (next/done/enter) to match, it only changes the key label.
+- Debug gestures/viewport on a device with `?debug=gestures` (dev only, see README).
 - Do not simulate drag in jsdom. Component tests fake only `Date`
   (`vi.useFakeTimers({ toFake: ['Date'] })`); fake timers also freeze fake-indexeddb.
 

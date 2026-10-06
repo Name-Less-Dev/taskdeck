@@ -242,6 +242,44 @@ exporting a backup now and then is the recommended safety net.
   element that sticks out on the right:
   `[...document.querySelectorAll('*')].filter(e => e.getBoundingClientRect().right > innerWidth + 1)`.
 
+## Fixed bugs worth remembering
+
+- **Enter in the task form created the task** (stage 3). The virtual keyboard's
+  action key sends Enter, and Enter in a single-line field implicitly submits a
+  `<form>`; `enterkeyhint` only changes the key's label. The form now handles Enter:
+  next field in single-line fields, submit on the last one (time), new line in the
+  description, Ctrl/Cmd+Enter submits anywhere, nothing while an IME is composing.
+- **Invisible card / "frozen" deck after creating cards in the form** (stage 3), two
+  independent causes, both reproduced before fixing:
+  1. *Layout.* The shell was a 3-row grid (`auto 1fr auto`); stage 3 added more rows
+     (tag bar, banners), so as soon as a task had tags (only possible through the
+     form) the flexible row went to the tag bar, `<main>` collapsed to its padding,
+     the deck area had 0 height and the card spilled over the action bar; `focus()`
+     then scrolled the `overflow: hidden` shell and pushed the header off-screen.
+     Measured at 360x740: rows 72/509/32/127 px, shell scrollTop 285. Fix: a flex
+     column where only `<main>` grows, `overflow: clip`, card capped to the deck area.
+  2. *Motion values.* The exit animation leaves the card off-screen with opacity 0.
+     A postponed (or completed recurring) task keeps the same card instance, so it
+     came back to the top invisible and ~1200 px away: drags hit nothing, only the
+     buttons worked. Fix: reset x/y/opacity when the exit ends. Also, an exit
+     interrupted because the card lost the top never ended and blocked every action;
+     the exit is now a pure state machine (`src/ui/exitState.ts`) that always commits
+     (finished, interrupted, or after a 600 ms safety-net timeout).
+
+### Gesture and viewport debug panel (development only)
+
+Open the dev server with `?debug=gestures` (e.g. `http://<LAN IP>:5173/?debug=gestures`)
+to get a live panel: last pointer events and targets, top card id, flipped / exiting /
+busy flags, drag offset and the `decideSwipe` result, exit animation status and age,
+inner/visual viewport sizes (and innerHeight changes), inert elements, the top card's
+opacity/transform/on-screen state, renders per second and a heartbeat delay. Reading
+it: high heartbeat delay = main thread blocked; normal heartbeat but stuck UI = a
+lock, `inert` or an overlay; "exit started" for more than 1 s = exit never finished;
+innerHeight changing near the problem = viewport/keyboard; `pointercancel` during a
+drag = the browser took the touch; pointerdown without "drag ON" = drag controls on
+the wrong element; top card opacity 0 or OFF-SCREEN = the card is there but invisible.
+The panel never intercepts touches and is not part of production builds.
+
 ## Manual QA on a phone
 
 Not done yet: this needs a real device. Run `npm run dev -- --host`, then open the
@@ -268,6 +306,8 @@ Gestures and layout:
 - [ ] The on-screen keyboard does not cover the fields of the task form
 - [ ] Dark mode (system setting) looks right and stays readable
 - [ ] Rotating the screen keeps the layout usable
+- [ ] Cards created through the form, with long content (long title and description, many tags, high priority already overdue) and with the virtual keyboard open: the card is visible, can be dragged and flipped, and the deck keeps working after several actions in a row (use `?debug=gestures`)
+- [ ] In the task form, the keyboard action key goes to the next field (title → description...) and only the last field submits
 - [ ] No horizontal scrolling or cut-off content at 320, 360 and 390 px wide (empty deck, cards, every sheet open, toast visible, settings), in light and dark themes and with the system text size enlarged
 - [ ] Screen reader (TalkBack / VoiceOver): card name, flip state, actions and
       announcements are read
