@@ -236,6 +236,15 @@ export const ptBR: Dictionary = {
     reload: 'Recarregar',
     details: 'Detalhes técnicos',
   },
+  reminders: {
+    soon: (title, when) => `Prazo chegando: ${title} (${when.toLowerCase()})`,
+    overdue: (title) => `Venceu: ${title}`,
+    group: (n) => p(n, '{n} tarefa mudou de estado', '{n} tarefas mudaram de estado'),
+    awayOverdue: (n) => p(n, '{n} tarefa venceu enquanto você estava fora', '{n} tarefas venceram enquanto você estava fora'),
+    awayMixed: (n) =>
+      p(n, '{n} tarefa mudou de estado enquanto você estava fora', '{n} tarefas mudaram de estado enquanto você estava fora'),
+    dismiss: 'Dispensar aviso',
+  },
   repeat: {
     legend: 'Repetição',
     toggle: 'Repetir esta tarefa',

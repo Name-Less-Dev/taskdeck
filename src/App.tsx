@@ -6,6 +6,7 @@ import { Deck } from './components/Deck.tsx'
 import { EmptyState, emptyStateButton } from './components/EmptyState.tsx'
 import { Icon } from './components/Icon.tsx'
 import { LiveRegion, type Announcement } from './components/LiveRegion.tsx'
+import { ReminderToast } from './components/ReminderToast.tsx'
 import { SettingsSheet } from './components/SettingsSheet.tsx'
 import { StorageBanner } from './components/StorageBanner.tsx'
 import { TagFilterBar } from './components/TagFilterBar.tsx'
@@ -21,6 +22,7 @@ import {
   collectTags,
   createDeck,
   filterByTag,
+  getDueStatus,
   orderDeck,
   renameDeck,
   type AppData,
@@ -28,7 +30,9 @@ import {
   type TaskPatch,
 } from './domain/index.ts'
 import { useI18n } from './i18n/index.tsx'
-import { formatDueDate } from './ui/format.ts'
+import { formatDueDate, formatDueStatus } from './ui/format.ts'
+import type { Reminder } from './ui/reminders.ts'
+import { useDueReminders } from './ui/useDueReminders.ts'
 import { createId as randomId } from './lib/id.ts'
 import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
 import {
@@ -120,6 +124,23 @@ export default function App({
     storageMode === 'indexeddb',
   )
 
+  // In-app reminders: every task (all decks), as time passes.
+  const { notice: reminderNotice, dismiss: dismissReminder } = useDueReminders(allTasks, now)
+  const reminderMessage = reminderNotice === null ? '' : reminderText(reminderNotice.reminder)
+
+  function reminderText(reminder: Reminder): string {
+    switch (reminder.kind) {
+      case 'single':
+        return reminder.band === 'overdue'
+          ? t.reminders.overdue(reminder.task.title)
+          : t.reminders.soon(reminder.task.title, formatDueStatus(getDueStatus(reminder.task.due, now), t))
+      case 'group':
+        return t.reminders.group(reminder.count)
+      case 'away':
+        return reminder.allOverdue ? t.reminders.awayOverdue(reminder.count) : t.reminders.awayMixed(reminder.count)
+    }
+  }
+
   const [flippedId, setFlippedId] = useState<string | null>(null)
   const [exitState, setExitState] = useState<ExitState>(IDLE)
   const exiting = isExiting(exitState) ? { id: exitState.id, action: exitState.action } : null
@@ -148,6 +169,14 @@ export default function App({
     const card = region?.querySelector<HTMLElement>(`[${TOP_CARD_ATTRIBUTE}]`)
     ;(card ?? region)?.focus()
   }, [focusRequest])
+
+  const announcedReminder = useRef(0)
+  useEffect(() => {
+    if (reminderNotice === null || reminderNotice.id === announcedReminder.current) return
+    announcedReminder.current = reminderNotice.id
+    messageCounter.current += 1
+    setAnnouncement({ id: messageCounter.current, message: reminderMessage })
+  }, [reminderNotice, reminderMessage])
 
   const busy = exiting !== null
   if (import.meta.env.DEV) {
@@ -550,6 +579,14 @@ export default function App({
         onDismiss={() => {
           setToast(null)
         }}
+      />
+      <ReminderToast
+        id={reminderNotice?.id ?? null}
+        message={reminderMessage}
+        tone={
+          reminderNotice?.reminder.kind === 'single' && reminderNotice.reminder.band === 'soon' ? 'warning' : 'danger'
+        }
+        onDismiss={dismissReminder}
       />
       <LiveRegion announcement={announcement} />
       {(sheet === 'add' || sheet === 'edit') && (

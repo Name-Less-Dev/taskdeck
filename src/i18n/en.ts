@@ -232,6 +232,14 @@ export const en: Dictionary = {
     reload: 'Reload',
     details: 'Technical details',
   },
+  reminders: {
+    soon: (title, when) => `Due soon: ${title} (${when.toLowerCase()})`,
+    overdue: (title) => `Overdue: ${title}`,
+    group: (n) => p(n, '{n} task changed state', '{n} tasks changed state'),
+    awayOverdue: (n) => p(n, '{n} task became overdue while you were away', '{n} tasks became overdue while you were away'),
+    awayMixed: (n) => p(n, '{n} task changed state while you were away', '{n} tasks changed state while you were away'),
+    dismiss: 'Dismiss notice',
+  },
   repeat: {
     legend: 'Repetition',
     toggle: 'Repeat this task',

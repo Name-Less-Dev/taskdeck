@@ -225,6 +225,14 @@ export interface Dictionary {
     readonly reload: string
     readonly details: string
   }
+  readonly reminders: {
+    readonly soon: (title: string, when: string) => string
+    readonly overdue: (title: string) => string
+    readonly group: (count: number) => string
+    readonly awayOverdue: (count: number) => string
+    readonly awayMixed: (count: number) => string
+    readonly dismiss: string
+  }
   readonly repeat: {
     readonly legend: string
     readonly toggle: string
