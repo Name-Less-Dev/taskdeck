@@ -53,6 +53,13 @@ strips `TZ` before it reaches Node.
 - Every sheet is built on `components/Sheet.tsx` (focus trap, Escape, aria-modal);
   App makes the page `inert` and returns focus to the opener or the deck.
 - Never put a control inside the card (`role="button"`); siblings only (see Edit).
+- Layout must fit 320 px with no horizontal page scroll. Grid columns that hold
+  content use `minmax(0, 1fr)`; flex/grid children that hold text get `min-width: 0`;
+  long single-line text uses ellipsis; size things from their container (`100%`), not
+  `vw`. `overflow-x: clip` on html/body is only a safety net: never rely on it. jsdom
+  cannot catch overflow, so check a real browser at 320/360 px
+  (`document.documentElement.scrollWidth <= clientWidth`, and no element whose right
+  edge passes `innerWidth`) until the Playwright check exists.
 - Styling: CSS Modules + tokens from `src/index.css`; `vh` fallback before `dvh`. New
   text/background token pairs go into `tests/ui/contrast.test.ts` (WCAG AA, both themes).
 - Ids: always `createId()` from `src/lib/id.ts`, never `crypto.randomUUID` (missing in
@@ -83,5 +90,6 @@ The manual phone QA checklist (gestures and persistence) in the README is still 
 4. Due dates and recurrence in the UI (editing `originDay` already follows the due
    date in `updateTask`), `.ics` export.
 5. Installable PWA, offline (service worker), Playwright end-to-end tests (including
-   real drag gestures), deploy (Vercel, HTTPS).
+   real drag gestures, and `scrollWidth <= clientWidth` at 320 and 360 px viewports in
+   every main state), deploy (Vercel, HTTPS).
 6. Optional: Capacitor packaging for Android.

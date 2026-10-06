@@ -232,6 +232,15 @@ exporting a backup now and then is the recommended safety net.
   (stage 5).
 - Component tests fake only `Date` and build dates with local constructors, so they
   pass in every CI time zone.
+- **Layout (horizontal overflow) cannot be tested in jsdom**, which computes no layout.
+  Stage 3 shipped a regression that made the app wider than a 360 px phone (the shell's
+  grid column grew to the header's min-content). Until stage 5 it is checked by hand;
+  in stage 5 a Playwright test will assert
+  `document.documentElement.scrollWidth <= document.documentElement.clientWidth` with
+  viewports of 320 and 360 px, in every main state (deck, flipped card, each sheet,
+  toast, settings). To check by hand in DevTools at a phone width, this lists every
+  element that sticks out on the right:
+  `[...document.querySelectorAll('*')].filter(e => e.getBoundingClientRect().right > innerWidth + 1)`.
 
 ## Manual QA on a phone
 
@@ -259,6 +268,7 @@ Gestures and layout:
 - [ ] The on-screen keyboard does not cover the fields of the task form
 - [ ] Dark mode (system setting) looks right and stays readable
 - [ ] Rotating the screen keeps the layout usable
+- [ ] No horizontal scrolling or cut-off content at 320, 360 and 390 px wide (empty deck, cards, every sheet open, toast visible, settings), in light and dark themes and with the system text size enlarged
 - [ ] Screen reader (TalkBack / VoiceOver): card name, flip state, actions and
       announcements are read
 
@@ -320,5 +330,5 @@ Vite down-compiles syntax but does not polyfill APIs or CSS. Newer features in u
 2. Card UI with gestures, buttons/keyboard and undo (done)
 3. Decks, tags, editing, local persistence and JSON backup (done)
 4. Due dates and recurrence in the UI, `.ics` export
-5. Installable PWA, offline, Playwright end-to-end tests, deploy
+5. Installable PWA, offline, Playwright end-to-end tests (real drag, and no horizontal overflow at 320/360 px), deploy
 6. Optional: Capacitor/Android packaging
