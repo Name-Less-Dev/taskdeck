@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } 
 import styles from './App.module.css'
 import { ActionBar } from './components/ActionBar.tsx'
 import { DeckSheet } from './components/DeckSheet.tsx'
-import { Deck, type Exiting } from './components/Deck.tsx'
+import { Deck } from './components/Deck.tsx'
 import { EmptyState, emptyStateButton } from './components/EmptyState.tsx'
 import { Icon } from './components/Icon.tsx'
 import { LiveRegion, type Announcement } from './components/LiveRegion.tsx'
@@ -41,6 +41,7 @@ import {
 } from './storage/index.ts'
 import { downloadBlob, jsonBlob, type Download } from './ui/download.ts'
 import { deckNameError } from './ui/form-errors.ts'
+import { EXIT_TIMEOUT_MS, exitReducer, IDLE, isExiting, type ExitEvent, type ExitState } from './ui/exitState.ts'
 import type { SwipeAction } from './ui/gestures.ts'
 import { useAutosave } from './ui/useAutosave.ts'
 import { useNow } from './ui/useNow.ts'
@@ -119,7 +120,8 @@ export default function App({
   )
 
   const [flippedId, setFlippedId] = useState<string | null>(null)
-  const [exiting, setExiting] = useState<Exiting | null>(null)
+  const [exitState, setExitState] = useState<ExitState>(IDLE)
+  const exiting = isExiting(exitState) ? { id: exitState.id, action: exitState.action } : null
   const [toast, setToast] = useState<ToastData | null>(null)
   const [announcement, setAnnouncement] = useState<Announcement | null>(null)
   const messageCounter = useRef(0)
@@ -191,17 +193,33 @@ export default function App({
 
   /** Gestures, buttons and keys share this path: exit animation first, dispatch after. */
   function requestAction(action: SwipeAction) {
-    if (top === null || busy) return
-    setExiting({ id: top.id, action })
+    handleExit({ type: 'request', topId: top?.id ?? null, action, at: performance.now() })
   }
 
-  function finishAction(action: SwipeAction) {
-    if (exiting === null) return
-    const title = allTasks.find((task) => task.id === exiting.id)?.title ?? ''
-    apply({ type: action, id: exiting.id, now: new Date() }, t.announce[MESSAGE_KEY[action]](title))
-    setExiting(null)
-    showToast(t.toast[MESSAGE_KEY[action]])
+  /** Every exit ends in a commit: animation finished, interrupted, or timed out. */
+  function handleExit(event: ExitEvent) {
+    const { state: next, commit } = exitReducer(exitState, event)
+    if (next !== exitState) setExitState(next)
+    if (commit === null) return
+    const title = allTasks.find((task) => task.id === commit.id)?.title ?? ''
+    apply({ type: commit.action, id: commit.id, now: new Date() }, t.announce[MESSAGE_KEY[commit.action]](title))
+    showToast(t.toast[MESSAGE_KEY[commit.action]])
   }
+
+  // Safety net: commit an exit whose animation never reports back (see exitState.ts).
+  const handleExitRef = useRef(handleExit)
+  useEffect(() => {
+    handleExitRef.current = handleExit
+  })
+  useEffect(() => {
+    if (!isExiting(exitState)) return
+    const timer = setTimeout(() => {
+      handleExitRef.current({ type: 'timeout', at: performance.now() })
+    }, EXIT_TIMEOUT_MS)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [exitState])
 
   function undoLast() {
     if (!undoAvailable) return
@@ -499,7 +517,12 @@ export default function App({
             exiting={exiting}
             onFlip={toggleFlip}
             onRequestAction={requestAction}
-            onExited={finishAction}
+            onExited={(id) => {
+              handleExit({ type: 'finished', id })
+            }}
+            onExitInterrupted={(id) => {
+              handleExit({ type: 'interrupted', id })
+            }}
             onKeyDown={handleDeckKeyDown}
             regionRef={regionRef}
             emptyState={emptyState}

@@ -22,7 +22,10 @@ export interface DeckProps {
   readonly exiting: Exiting | null
   readonly onFlip: () => void
   readonly onRequestAction: (action: SwipeAction) => void
-  readonly onExited: (action: SwipeAction) => void
+  /** The exit animation of card `id` finished. */
+  readonly onExited: (id: string) => void
+  /** The exit animation of card `id` stopped before finishing (lost the top, unmounted). */
+  readonly onExitInterrupted?: (id: string) => void
   readonly onKeyDown?: KeyboardEventHandler<HTMLElement>
   readonly regionRef?: Ref<HTMLElement>
   /** Replaces the default "all caught up" message when there is no card. */
@@ -41,6 +44,7 @@ export function Deck({
   onFlip,
   onRequestAction,
   onExited,
+  onExitInterrupted,
   onKeyDown,
   regionRef,
   emptyState,
@@ -53,23 +57,27 @@ export function Deck({
     <section ref={regionRef} className={styles.region} aria-label={t.app.deckLabel} tabIndex={-1} onKeyDown={onKeyDown}>
       {tasks.length === 0
         ? (emptyState ?? <EmptyState />)
-        : tasks
-            .slice(0, VISIBLE_CARDS)
-            .map((task, depth) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                now={now}
-                depth={depth}
-                flipped={depth === 0 && flippedId === task.id}
-                exit={depth === 0 && exiting?.id === task.id ? exiting.action : null}
-                onFlip={onFlip}
-                onSwipe={onRequestAction}
-                onExited={onExited}
-                {...(depth === 0 && onEdit !== undefined ? { onEdit } : {})}
-                {...(deckNames?.has(task.deckId) === true ? { deckName: deckNames.get(task.deckId) } : {})}
-              />
-            ))}
+        : tasks.slice(0, VISIBLE_CARDS).map((task, depth) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              now={now}
+              depth={depth}
+              flipped={depth === 0 && flippedId === task.id}
+              // Not tied to depth: a card that loses the top mid-exit keeps animating out.
+              exit={exiting?.id === task.id ? exiting.action : null}
+              onFlip={onFlip}
+              onSwipe={onRequestAction}
+              onExited={() => {
+                onExited(task.id)
+              }}
+              onExitInterrupted={() => {
+                onExitInterrupted?.(task.id)
+              }}
+              {...(depth === 0 && onEdit !== undefined ? { onEdit } : {})}
+              {...(deckNames?.has(task.deckId) === true ? { deckName: deckNames.get(task.deckId) } : {})}
+            />
+          ))}
     </section>
   )
 }

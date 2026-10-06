@@ -7,13 +7,14 @@ import {
   useTransform,
   type PanInfo,
 } from 'motion/react'
-import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { getDueStatus, type Priority, type Task } from '../domain/index.ts'
 import { useI18n } from '../i18n/index.tsx'
 import { cx } from '../ui/cx.ts'
 import { dueTone, formatDueDate, formatDueStatus, formatRecurrence } from '../ui/format.ts'
 import { decideSwipe, HORIZONTAL_DISTANCE_RATIO, VERTICAL_DISTANCE_RATIO, type SwipeAction } from '../ui/gestures.ts'
 import { reportGesture } from '../dev/gestureDebug.ts'
+import { shouldResetMotion } from '../ui/exitState.ts'
 import { Icon, type IconName } from './Icon.tsx'
 import styles from './TaskCard.module.css'
 
@@ -39,6 +40,8 @@ export interface TaskCardProps {
   readonly onFlip: () => void
   readonly onSwipe: (action: SwipeAction) => void
   readonly onExited: (action: SwipeAction) => void
+  /** The exit animation stopped before finishing (exit removed or card unmounted). */
+  readonly onExitInterrupted?: () => void
   /** Deck name, shown on the card in the "All decks" view. */
   readonly deckName?: string
   /** Opens the edit sheet; shows an "Edit" button over the back of the top card. */
@@ -83,6 +86,7 @@ export function TaskCard({
   onFlip,
   onSwipe,
   onExited,
+  onExitInterrupted,
   deckName,
   onEdit,
 }: TaskCardProps) {
@@ -109,9 +113,24 @@ export function TaskCard({
   const overlayOpacity = { complete: completeOpacity, postpone: postponeOpacity, remove: removeOpacity }
 
   const onExitedRef = useRef(onExited)
+  const onExitInterruptedRef = useRef(onExitInterrupted)
   useEffect(() => {
     onExitedRef.current = onExited
+    onExitInterruptedRef.current = onExitInterrupted
   })
+
+  // The card stays mounted after an exit when its task stays in the deck
+  // (postponed, recurring): bring it back to the origin, visible. Layout effect,
+  // so no frame is ever painted with the old exit transform.
+  const previousExit = useRef(exit)
+  useLayoutEffect(() => {
+    if (shouldResetMotion(previousExit.current, exit)) {
+      x.jump(0)
+      y.jump(0)
+      opacity.jump(1)
+    }
+    previousExit.current = exit
+  }, [exit, x, y, opacity])
 
   useEffect(() => {
     if (exit === null) return
@@ -142,7 +161,10 @@ export function TaskCard({
 
     return () => {
       cancelled = true
-      if (import.meta.env.DEV && !finished) reportGesture({ exitStatus: 'interrupted', exitId: task.id })
+      if (!finished) {
+        if (import.meta.env.DEV) reportGesture({ exitStatus: 'interrupted', exitId: task.id })
+        onExitInterruptedRef.current?.()
+      }
     }
     // task.id only feeds the dev debug report.
   }, [exit, reduceMotion, opacity, x, y, task.id])
