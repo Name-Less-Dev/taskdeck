@@ -1,7 +1,8 @@
 import { TaskSchema, type Due, type Priority, type Recurrence, type Task } from './schemas.ts'
+import { alignDue } from './weekdays.ts'
 
 /** A recurrence as the user edits it; originDay is derived, never typed in. */
-export type RecurrenceInput = Pick<Recurrence, 'unit' | 'every' | 'anchor'>
+export type RecurrenceInput = Pick<Recurrence, 'unit' | 'every' | 'anchor' | 'weekdays'>
 
 /** The fields a user can edit. Everything else is kept from the task. */
 export interface TaskPatch {
@@ -43,10 +44,11 @@ function nextRecurrence(task: Task, patch: TaskPatch, due: Due | null): Recurren
   }
   if (patch.recurrence === null) return null
 
-  const { unit, every, anchor } = patch.recurrence
-  if (!usesOriginDay(patch.recurrence) || due === null) return { unit, every, anchor }
+  const { unit, every, anchor, weekdays } = patch.recurrence
+  const base = { unit, every, anchor, ...(weekdays === undefined ? {} : { weekdays }) }
+  if (!usesOriginDay(patch.recurrence) || due === null) return base
   const kept = dueChanged ? undefined : task.recurrence?.originDay
-  return { unit, every, anchor, originDay: kept ?? dayOfMonth(due) }
+  return { ...base, originDay: kept ?? dayOfMonth(due) }
 }
 
 /**
@@ -55,9 +57,12 @@ function nextRecurrence(task: Task, patch: TaskPatch, due: Due | null): Recurren
  * patch fields are read, whatever else the object carries.
  * Throws ZodError when the result is invalid, e.g. a recurrence without a due
  * date (removing the due date is fine if the same patch removes the recurrence).
+ * With weekdays, the due date moves to the first valid weekday (time kept).
  */
 export function updateTask(task: Task, patch: TaskPatch): Task {
-  const due = patch.due === undefined ? task.due : patch.due
+  const requested = patch.due === undefined ? task.due : patch.due
+  const recurrence = nextRecurrence(task, patch, requested)
+  const due = alignDue(requested, recurrence?.weekdays)
 
   return TaskSchema.parse({
     id: task.id,
@@ -67,7 +72,7 @@ export function updateTask(task: Task, patch: TaskPatch): Task {
     tags: patch.tags ?? task.tags,
     priority: patch.priority ?? task.priority,
     due,
-    recurrence: nextRecurrence(task, patch, due),
+    recurrence,
     status: task.status,
     createdAt: task.createdAt,
     completedAt: task.completedAt,

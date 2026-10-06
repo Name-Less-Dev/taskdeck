@@ -88,9 +88,9 @@ describe('diffDueBands', () => {
 
 describe('describeRecurrence', () => {
   it.each([
-    [{ unit: 'week', every: 2, anchor: 'completion' } as const, { unit: 'week', every: 2, anchor: 'completion', monthDay: null }],
-    [{ unit: 'month', every: 1, anchor: 'due', originDay: 31 } as const, { unit: 'month', every: 1, anchor: 'due', monthDay: 31 }],
-    [{ unit: 'day', every: 1, anchor: 'due' } as const, { unit: 'day', every: 1, anchor: 'due', monthDay: null }],
+    [{ unit: 'week', every: 2, anchor: 'completion' } as const, { unit: 'week', every: 2, anchor: 'completion', monthDay: null, weekdays: null }],
+    [{ unit: 'month', every: 1, anchor: 'due', originDay: 31 } as const, { unit: 'month', every: 1, anchor: 'due', monthDay: 31, weekdays: null }],
+    [{ unit: 'day', every: 1, anchor: 'due' } as const, { unit: 'day', every: 1, anchor: 'due', monthDay: null, weekdays: null }],
   ])('describes %o without any text', (recurrence, expected) => {
     expect(describeRecurrence(recurrence)).toEqual(expected)
   })

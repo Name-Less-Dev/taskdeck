@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { alignDue } from './weekdays.ts'
 
 export const PRIORITIES = ['low', 'medium', 'high'] as const
 export const PrioritySchema = z.enum(PRIORITIES)
@@ -28,6 +29,17 @@ export type Due = z.infer<typeof DueSchema>
 export const RECURRENCE_UNITS = ['day', 'week', 'month'] as const
 export const RECURRENCE_ANCHORS = ['due', 'completion'] as const
 
+/**
+ * Days of the week, 0 = Sunday ... 6 = Saturday (Date#getDay). Not empty, no
+ * repeats, normalized to ascending order.
+ */
+export const WeekdaysSchema = z
+  .array(z.int().min(0).max(6))
+  .min(1)
+  .refine((days) => new Set(days).size === days.length, { error: 'weekdays must not repeat' })
+  .overwrite((days) => [...days].sort((a, b) => a - b))
+  .readonly()
+
 export const RecurrenceSchema = z
   .object({
     unit: z.enum(RECURRENCE_UNITS),
@@ -35,6 +47,8 @@ export const RecurrenceSchema = z
     anchor: z.enum(RECURRENCE_ANCHORS),
     // Day of month of the first deadline, kept so that 31 Jan -> 28 Feb -> 31 Mar.
     originDay: z.int().min(1).max(31).optional(),
+    // Optional and additive (schemaVersion stays 1): repeat on these days of the week.
+    weekdays: WeekdaysSchema.optional(),
   })
   .refine(
     (r) => (r.originDay !== undefined) === (r.unit === 'month' && r.anchor === 'due'),
@@ -43,6 +57,11 @@ export const RecurrenceSchema = z
       path: ['originDay'],
     },
   )
+  .refine((r) => r.weekdays === undefined || (r.unit === 'week' && r.every === 1 && r.anchor === 'due'), {
+    // A fixed calendar only: "every 2 weeks on Mon/Wed" or "from completion" are not supported.
+    error: 'weekdays need a weekly recurrence, every 1 week, anchored on "due"',
+    path: ['weekdays'],
+  })
   .readonly()
 export type Recurrence = z.infer<typeof RecurrenceSchema>
 
@@ -100,7 +119,7 @@ export interface TaskInput {
   readonly tags?: readonly string[]
   readonly priority?: Priority
   readonly due?: Due | null
-  readonly recurrence?: Pick<Recurrence, 'unit' | 'every' | 'anchor'> | null
+  readonly recurrence?: Pick<Recurrence, 'unit' | 'every' | 'anchor' | 'weekdays'> | null
 }
 
 export interface CreateTaskContext {
@@ -113,8 +132,9 @@ export interface CreateTaskContext {
  * Throws a ZodError (structured issues, no UI text) when the input is invalid.
  */
 export function createTask(input: TaskInput, { id, now }: CreateTaskContext): Task {
-  const due = input.due ?? null
   const recurrence = input.recurrence ?? null
+  // With weekdays, the first deadline moves to the first valid day (time kept).
+  const due = alignDue(input.due ?? null, recurrence?.weekdays)
   const originDay =
     recurrence?.unit === 'month' && recurrence.anchor === 'due' && due !== null
       ? Number(due.date.slice(8, 10))
@@ -131,9 +151,13 @@ export function createTask(input: TaskInput, { id, now }: CreateTaskContext): Ta
     recurrence:
       recurrence === null
         ? null
-        : originDay === undefined
-          ? { unit: recurrence.unit, every: recurrence.every, anchor: recurrence.anchor }
-          : { unit: recurrence.unit, every: recurrence.every, anchor: recurrence.anchor, originDay },
+        : {
+            unit: recurrence.unit,
+            every: recurrence.every,
+            anchor: recurrence.anchor,
+            ...(originDay === undefined ? {} : { originDay }),
+            ...(recurrence.weekdays === undefined ? {} : { weekdays: recurrence.weekdays }),
+          },
     status: 'active',
     createdAt: now.toISOString(),
     completedAt: null,

@@ -45,6 +45,8 @@ export interface RecurrenceDescription {
   readonly anchor: Recurrence['anchor']
   /** Day of the month for monthly "due" recurrences, otherwise null. */
   readonly monthDay: number | null
+  /** Days of the week (0 = Sunday, ascending) for weekday recurrences, otherwise null. */
+  readonly weekdays: readonly number[] | null
 }
 
 export function describeRecurrence(recurrence: Recurrence): RecurrenceDescription {
@@ -53,5 +55,6 @@ export function describeRecurrence(recurrence: Recurrence): RecurrenceDescriptio
     every: recurrence.every,
     anchor: recurrence.anchor,
     monthDay: recurrence.originDay ?? null,
+    weekdays: recurrence.weekdays ?? null,
   }
 }

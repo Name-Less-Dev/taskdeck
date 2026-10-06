@@ -1,5 +1,6 @@
 import { addMonthsOnDay, addToDayKey, calendarDaysBetween, dayKeyToDate, toDayKey, type DayKey } from './dates.ts'
 import type { Due, Recurrence, Task } from './schemas.ts'
+import { nextWeekdayAfter } from './weekdays.ts'
 
 /** A task that repeats; the schema guarantees a recurring task has a due date. */
 export type RecurringTask = Task & { readonly due: Due; readonly recurrence: Recurrence }
@@ -51,14 +52,19 @@ function firstOccurrenceAfter(start: DayKey, recurrence: Recurrence, today: DayK
  * - anchor "due": current due + 1 interval, skipping occurrences already missed.
  * - anchor "completion": today + 1 interval.
  * Monthly "due" recurrences land on min(originDay, last day of the month).
+ * With weekdays: the first valid weekday strictly after max(current due,
+ * today), so missed days are skipped and completing early moves on from the
+ * due date.
  */
 export function nextDue(task: RecurringTask, now: Date): Due {
   const { due, recurrence } = task
   const today = toDayKey(now)
   const date =
-    recurrence.anchor === 'completion'
-      ? addToDayKey(today, recurrence.unit, recurrence.every)
-      : firstOccurrenceAfter(due.date, recurrence, today)
+    recurrence.weekdays !== undefined
+      ? nextWeekdayAfter(due.date > today ? due.date : today, recurrence.weekdays)
+      : recurrence.anchor === 'completion'
+        ? addToDayKey(today, recurrence.unit, recurrence.every)
+        : firstOccurrenceAfter(due.date, recurrence, today)
 
   return due.time === undefined ? { date } : { date, time: due.time }
 }

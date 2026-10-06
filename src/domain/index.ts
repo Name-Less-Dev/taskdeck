@@ -15,6 +15,7 @@ export {
   TASK_STATUSES,
   TaskSchema,
   TimeSchema,
+  WeekdaysSchema,
 } from './schemas.ts'
 export type { CreateTaskContext, Deck, Due, Priority, Recurrence, Task, TaskInput } from './schemas.ts'
 
@@ -70,3 +71,5 @@ export type { BandChange, BandKey, RecurrenceDescription } from './bands.ts'
 
 export { availableTasks, dailyProgress, dormantTasks, isAvailable } from './availability.ts'
 export type { DailyProgress } from './availability.ts'
+
+export { alignToWeekdays, nextWeekdayAfter, weekdayOf } from './weekdays.ts'
