@@ -89,6 +89,9 @@ Playwright. Demonstração: <https://taskdeck-flax.vercel.app>.
 - **Days of the week**: a weekly repetition can run on chosen days (Mon/Wed/Fri,
   weekdays, weekends...), with "First time: <date>" before saving; exported to
   calendars as `BYDAY`.
+- **Themes**: Settings > Appearance offers Auto (follows the system, live), Dark,
+  Light, Lilac, Pastel and Neon, each with a 3-colour swatch and its name; applied at
+  once, announced, with "Restore default". No flash on load.
 - **Collapsible tag filter**: "Filter by tag" opens the bar (collapsed by default,
   remembered per browser); an active filter shows an indicator and a dismissible
   "tag: X ×" chip.
@@ -382,13 +385,13 @@ exporting a backup now and then is the recommended safety net.
 
 ## Testing notes
 
-Test pyramid (counts after the first behaviour package):
+Test pyramid (counts after the themes package):
 
 | Layer | Runner | Tests |
 | --- | --- | ---: |
-| Unit (domain, state, storage, calendar, ui logic, i18n, pwa) | Vitest, `node` project | 706 |
-| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | 224 |
-| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | 28 × 2 = 56 (2 skipped by design: the shortcuts legend is checked per project) |
+| Unit (domain, state, storage, calendar, ui logic, i18n, pwa, themes and contrast) | Vitest, `node` project | 864 |
+| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | 234 |
+| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | 39 × 2 = 78 (2 skipped by design: the shortcuts legend is checked per project) |
 
 End-to-end specs (`e2e/`): layout (no horizontal scroll at 320 and 360 px, light and
 dark, in first run, deck, form, decks sheet and settings), gestures with real mouse
@@ -602,6 +605,41 @@ previous snapshot as the clock ticks (`useNow`: every 30 s and when the tab beco
 visible); `src/ui/reminders.ts` applies the rules: nothing on load, grouped changes,
 one summary for what changed while the tab was hidden, no repeats for the same task
 and band, and no reminder for a change caused by editing the due date.
+
+## Themes
+
+- **Model** (`src/ui/theme.ts`, pure): `Theme = auto | dark | light | lilac | pastel | neon`,
+  default `auto`. `parseTheme` turns anything stored (missing, broken, unknown) into a
+  valid theme without throwing; `resolveTheme(theme, systemPrefersDark)` turns `auto`
+  into `light` or `dark`.
+- **Tokens**: `src/index.css` has exactly one block per theme, `[data-theme='x']`,
+  defining every colour token, the shadows and `color-scheme` (light or dark, so the
+  native date picker and scrollbars match). `data-theme` on `<html>` always holds the
+  resolved theme (`data-theme-choice` keeps `auto`); nothing depends on
+  `prefers-color-scheme` in CSS any more. **Light and dark are exactly the colours from
+  before themes** (a test pins them), so nothing changes for anyone who does not
+  choose. The swatches in Settings use the same blocks on a nested element.
+- **Pastel** colours tags and the deck badge with six fixed pastel hues, picked by a
+  stable hash of the text (`tagHue`, FNV-1a), always with dark text. A selected tag keeps
+  the accent colour so selection stays obvious.
+- **Neon**: near-black base, cyan accent, lime focus, magenta delete. The glow
+  (`box-shadow`) only reinforces the focus outline and selected controls; it is never
+  the only indicator, there is no `text-shadow`, and the "soon" pulse stays off with
+  reduced motion (as in every theme).
+- **Semantics** (overdue, soon, done, delete) keep their hue family and the icon + text
+  pair in every theme; every pair passes AA (see Testing notes).
+- **No flash**: the choice lives in `localStorage` under one key
+  (`taskdeck:ui:theme`, JSON), read by a small synchronous script at the top of
+  `<head>`, before the CSS and the bundle (unavailable storage = auto). It is never
+  stored in IndexedDB or in backups. A test runs that exact script against
+  `parseTheme`/`resolveTheme`; Playwright checks the attribute is there even with every
+  script file blocked.
+- **At runtime** `useTheme` applies changes at once, follows the system for `auto`, and
+  points every `<meta name="theme-color">` at the theme's background.
+- **Limits**: the manifest's `theme_color`/`background_color` are static (light), so
+  the splash screen of the installed app does not follow the theme. The theme is per
+  browser (not synced, not in backups). Dark keeps its previous warm graphite tones
+  rather than a new neutral palette, to keep "nothing changes" true.
 
 ## Interface preferences
 

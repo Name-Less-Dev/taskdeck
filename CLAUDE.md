@@ -112,6 +112,19 @@ strips `TZ` before it reaches Node.
   `src/ui/preferences.ts` (guarded), never in IndexedDB or backups. Component tests
   clear `localStorage` after each test (`src/test/setup.ts`).
 
+## Theme conventions (themes package)
+
+- Colours only through tokens. Each theme is ONE block `[data-theme='x']` in
+  `src/index.css` with every colour token, the shadows and `color-scheme`. A new token
+  goes into every block; a new text/background pair goes into
+  `tests/ui/contrast.test.ts` (it runs over every theme automatically).
+- light and dark must keep their current colours (pinned by a test).
+- The theme is an interface preference: `localStorage` key `taskdeck:ui:theme` (JSON),
+  never IndexedDB or backups. The inline script in `index.html` must stay in sync with
+  `parseTheme`/`resolveTheme` (`tests/ui/theme-boot.test.ts` runs it).
+- Never rely on glow, colour or motion alone: neon's glow only adds to the outline.
+- Tags and badges that should take pastel colours carry `data-tag-hue={tagHue(text)}`.
+
 ## PWA and end-to-end conventions (stage 5)
 
 - The service worker exists only in the production build (vite-plugin-pwa,
@@ -149,7 +162,8 @@ Playwright e2e on CI, metadata). Deployed at https://taskdeck-flax.vercel.app.
 **DEFINITION OF DONE REACHED** at stage 5. After it, behaviour package 1 (requested
 explicitly) added: the shortcuts legend only on hover/fine-pointer devices, a
 collapsible tag filter, recurring cards only on their day (Scheduled sheet, daily
-progress, rollover announcement) and days of the week in recurrences. Otherwise:
+progress, rollover announcement) and days of the week in recurrences. The themes
+package added Settings > Appearance (auto, dark, light, lilac, pastel, neon). Otherwise:
 bug fixes (test first, fix in its own commit), dependency updates and documentation.
 
 Still manual (see the README): the phone QA checklists (gestures, persistence,
