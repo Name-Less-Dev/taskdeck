@@ -91,11 +91,25 @@ body {
   height: 100%;
 }
 
+/*
+ * Safety net only. The real fix for horizontal overflow is in the layout itself
+ * (App.module.css: a 0-min grid column, min-width: 0 on flex/grid children, an
+ * internally scrolling tag bar). If something still ends up wider than the
+ * screen, clip it instead of letting the whole page scroll sideways. "clip"
+ * (unlike "hidden") creates no scroll container, so sticky positioning and
+ * scroll chaining behave as before. Browsers without "clip" ignore the rule.
+ * Never rely on this to hide a new overflow: check scrollWidth (see CLAUDE.md).
+ */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 100%;
   line-height: 1.4;
   /* The deck owns every gesture: no pull-to-refresh or scroll chaining. */
   overscroll-behavior: none;

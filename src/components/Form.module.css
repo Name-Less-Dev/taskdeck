@@ -65,7 +65,7 @@
 
 .segments {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: var(--space-1);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);

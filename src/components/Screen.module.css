@@ -43,7 +43,7 @@
 
 /* Loading skeleton: a card-shaped placeholder that gently pulses. */
 .skeleton {
-  width: min(92vw, 420px);
+  width: min(100%, 420px);
   height: 60vh;
   height: 60dvh;
   max-height: 640px;

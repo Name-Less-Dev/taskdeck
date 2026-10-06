@@ -76,6 +76,7 @@
 }
 
 .file {
+  max-width: 100%;
   min-height: var(--touch-target);
   font-size: 0.9375rem;
 }

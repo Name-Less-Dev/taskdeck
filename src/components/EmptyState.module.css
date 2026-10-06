@@ -1,9 +1,11 @@
 .empty {
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
-  max-width: 320px;
+  width: min(100%, 320px);
   padding: var(--space-5);
   text-align: center;
 }
@@ -39,6 +41,7 @@
 /* Shared look for buttons placed in an empty state. */
 .primary,
 .secondary {
+  max-width: 100%;
   min-height: var(--touch-target);
   padding: 0 var(--space-5);
   border-radius: var(--radius-md);

@@ -2,6 +2,12 @@
 .shell {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  /*
+   * One column that may shrink to 0. Without it the implicit `auto` column grows to
+   * the widest row's min-content (the header with a nowrap deck name) and the whole
+   * app gets wider than the screen.
+   */
+  grid-template-columns: minmax(0, 1fr);
   height: 100vh;
   height: 100dvh;
   max-width: 640px;
@@ -10,16 +16,22 @@
   overflow: hidden;
 }
 
+/* Header, banners, tag bar, main and action bar: never wider than the shell. */
+.shell > * {
+  min-width: 0;
+}
+
 .header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   padding: var(--space-3) var(--space-4);
 }
 
 .deckSwitcher {
   display: inline-flex;
-  flex: 1;
+  /* Takes the leftover space and gives it back first; the name ellipsizes. */
+  flex: 1 1 0;
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
@@ -36,6 +48,7 @@
 }
 
 .deckName {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -49,11 +62,13 @@
 
 .history {
   display: flex;
+  flex: none;
   gap: var(--space-1);
 }
 
 .headerButton {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: var(--space-1);
   min-height: var(--touch-target);
@@ -76,7 +91,9 @@
 
 .addButton {
   display: inline-flex;
+  flex: none;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
   min-height: var(--touch-target);
   padding: 0 var(--space-4);
@@ -88,9 +105,13 @@
   cursor: pointer;
 }
 
-/* Narrow phones: the header keeps icons and drops the undo/redo words. */
+/*
+ * Narrow phones (down to 320 px): every header button is icon-only (48 px); the
+ * words stay as accessible names. The deck switcher keeps the rest.
+ */
 @media (max-width: 400px) {
-  .headerButton span {
+  .headerButton span,
+  .addButton span {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -99,7 +120,8 @@
     white-space: nowrap;
   }
 
-  .headerButton {
+  .headerButton,
+  .addButton {
     min-width: var(--touch-target);
     justify-content: center;
     padding: 0;
