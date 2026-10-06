@@ -37,6 +37,7 @@ export interface Dictionary {
   }
   readonly priority: Readonly<Record<Priority, string>> & { readonly label: string }
   readonly due: {
+    readonly pendingDays: (days: number) => string
     readonly none: string
     readonly today: string
     readonly tomorrow: string
@@ -78,7 +79,7 @@ export interface Dictionary {
     readonly deckRemoved: string
     readonly taskUpdated: string
     readonly imported: string
-    readonly rescheduled: (date: string) => string
+    readonly completedUntil: (date: string) => string
   }
   readonly announce: {
     readonly completed: (title: string) => string
@@ -88,7 +89,8 @@ export interface Dictionary {
     readonly samplesLoaded: (count: number) => string
     readonly deckSelected: (name: string) => string
     readonly taskUpdated: (title: string) => string
-    readonly rescheduled: (title: string, date: string) => string
+    readonly completedUntil: (title: string, date: string) => string
+    readonly newCards: (count: number) => string
     readonly tagFilter: (tag: string, count: number) => string
     readonly tagFilterCleared: string
     readonly imported: (decks: number, tasks: number) => string
@@ -104,6 +106,9 @@ export interface Dictionary {
   readonly empty: {
     readonly title: string
     readonly body: string
+  }
+  readonly progress: {
+    readonly today: (done: number, total: number) => string
   }
   readonly shortcuts: {
     readonly summary: string

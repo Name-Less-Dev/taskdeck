@@ -325,6 +325,11 @@
   background: var(--color-danger-surface);
 }
 
+/* Recurring "pending for N days": a neutral notice, never red and never pulsing. */
+.card[data-band='pending'] .face {
+  border: 2px dashed var(--color-border);
+}
+
 .card[data-band='soon'] .face {
   border: 2px solid var(--color-warning-fg);
   background: var(--color-warning-surface);

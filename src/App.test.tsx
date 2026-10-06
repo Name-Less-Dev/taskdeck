@@ -98,18 +98,17 @@ describe('App deck', () => {
     expect(liveRegion()).toHaveTextContent('Tarefa concluída: Pagar a luz. Desfazer disponível.')
   })
 
-  it('completes a recurring task with ArrowRight: it stays and comes back further down', async () => {
+  it('completes a recurring task with ArrowRight: it leaves the deck until its next day', async () => {
     const { user } = renderApp([laundry, today, noDue])
     expect(deckTitles()).toEqual(['Lavar a roupa', 'Enviar relatório', 'Ler um livro'])
 
     topCard().focus()
     await user.keyboard('{ArrowRight}')
 
-    // Next weekly occurrence after 3 Oct is 10 Oct: "in 5 days", below today's task.
+    // Next weekly occurrence after 3 Oct is 10 Oct: dormant until then.
     await waitFor(() => {
-      expect(deckTitles()).toEqual(['Enviar relatório', 'Lavar a roupa', 'Ler um livro'])
+      expect(deckTitles()).toEqual(['Enviar relatório', 'Ler um livro'])
     })
-    expect(screen.getByText('Em 5 dias')).toBeInTheDocument()
   })
 
   it('postpones with ArrowLeft: the card goes to the bottom and shows "adiada 1 dia"', async () => {

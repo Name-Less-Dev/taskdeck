@@ -21,12 +21,15 @@ import { createDemoTasks } from './demo/seed.ts'
 import { reportGesture, reportRender } from './dev/gestureDebug.ts'
 import { ZodError } from 'zod'
 import {
+  availableTasks,
   canRedo,
   canUndo,
   collectTags,
+  dailyProgress,
   createDeck,
   filterByTag,
   getDueStatus,
+  isAvailable,
   orderDeck,
   renameDeck,
   toDayKey,
@@ -38,6 +41,7 @@ import { useI18n } from './i18n/index.tsx'
 import { formatDueDate, formatDueStatus } from './ui/format.ts'
 import type { Reminder } from './ui/reminders.ts'
 import { useDueReminders } from './ui/useDueReminders.ts'
+import { rolloverStep, type RolloverState } from './ui/rollover.ts'
 import { createId as randomId } from './lib/id.ts'
 import { createDeckState, deckReducer, type DeckAction } from './state/deckReducer.ts'
 import {
@@ -117,9 +121,12 @@ export default function App({
     () => (deckId === null ? allTasks : allTasks.filter((task) => task.deckId === deckId)),
     [allTasks, deckId],
   )
-  const tagCounts = useMemo(() => collectTags(deckTasks.filter((task) => task.status === 'active')), [deckTasks])
-  const visibleTasks = useMemo(() => filterByTag(deckTasks, activeTag), [deckTasks, activeTag])
+  // Only available cards are on the deck (isAvailable is the single visibility rule).
+  const deckAvailable = useMemo(() => availableTasks(deckTasks, now), [deckTasks, now])
+  const tagCounts = useMemo(() => collectTags(deckAvailable), [deckAvailable])
+  const visibleTasks = useMemo(() => filterByTag(deckAvailable, activeTag), [deckAvailable, activeTag])
   const tasks = useMemo(() => orderDeck(visibleTasks, now), [visibleTasks, now])
+  const progress = dailyProgress(deckTasks, now)
   const top = tasks[0] ?? null
 
   const meta = useMemo<Meta>(
@@ -136,8 +143,9 @@ export default function App({
     storageMode === 'indexeddb',
   )
 
-  // In-app reminders: every task (all decks), as time passes.
-  const { notice: reminderNotice, dismiss: dismissReminder } = useDueReminders(allTasks, now)
+  // In-app reminders: every available task (all decks), as time passes; dormant cards never remind.
+  const allAvailable = useMemo(() => availableTasks(allTasks, now), [allTasks, now])
+  const { notice: reminderNotice, dismiss: dismissReminder } = useDueReminders(allAvailable, now)
   const reminderMessage = reminderNotice === null ? '' : reminderText(reminderNotice.reminder)
 
   function reminderText(reminder: Reminder): string {
@@ -200,6 +208,16 @@ export default function App({
     setAnnouncement({ id: messageCounter.current, message: t.pwa.updateAvailable })
   }, [offerUpdate, t])
 
+  // Day rollover: cards that wake up on a new day are announced once (never on load).
+  const rollover = useRef<RolloverState | null>(null)
+  useEffect(() => {
+    const { state: next, appeared } = rolloverStep(rollover.current, deckTasks, now)
+    rollover.current = next
+    if (appeared === 0) return
+    messageCounter.current += 1
+    setAnnouncement({ id: messageCounter.current, message: t.announce.newCards(appeared) })
+  }, [deckTasks, now, t])
+
   const announcedReminder = useRef(0)
   useEffect(() => {
     if (reminderNotice === null || reminderNotice.id === announcedReminder.current) return
@@ -242,7 +260,7 @@ export default function App({
     const nextDeckId = deckId !== null && next.present.decks.some((deck) => deck.id === deckId) ? deckId : null
     const nextVisible =
       nextDeckId === null ? next.present.tasks : next.present.tasks.filter((task) => task.deckId === nextDeckId)
-    const empty = orderDeck(filterByTag(nextVisible, activeTag), action.now).length === 0
+    const empty = filterByTag(availableTasks(nextVisible, action.now), activeTag).length === 0
     announce(empty ? `${message} ${t.announce.empty}` : message)
     setFlippedId(null)
     if (sheet === null) setFocusRequest((n) => n + 1)
@@ -263,12 +281,12 @@ export default function App({
     if (commit === null) return
     const title = allTasks.find((task) => task.id === commit.id)?.title ?? ''
     const action = { type: commit.action, id: commit.id, now: new Date() }
-    // A completed recurring task stays active with its next due date: say when.
+    // A completed recurring task leaves the deck until its next day: say when it comes back.
     const after = deckReducer(state, action).present.tasks.find((task) => task.id === commit.id)
     if (commit.action === 'complete' && after?.status === 'active' && after.due !== null) {
       const date = formatDueDate(after.due, locale, t)
-      apply(action, t.announce.rescheduled(title, date))
-      showToast(t.toast.rescheduled(date))
+      apply(action, t.announce.completedUntil(title, date))
+      showToast(t.toast.completedUntil(date))
       return
     }
     apply(action, t.announce[MESSAGE_KEY[commit.action]](title))
@@ -407,7 +425,7 @@ export default function App({
     if (tag === null) {
       announce(t.announce.tagFilterCleared)
     } else {
-      const count = filterByTag(deckTasks, tag).filter((task) => task.status === 'active').length
+      const count = filterByTag(deckTasks, tag).filter((task) => isAvailable(task, now)).length
       announce(t.announce.tagFilter(tag, count))
     }
   }
@@ -577,6 +595,9 @@ export default function App({
           >
             <Icon name="settings" size={20} />
           </button>
+          <p className={styles.progress} data-testid="daily-progress">
+            {t.progress.today(progress.done, progress.done + progress.remaining)}
+          </p>
           <button
             type="button"
             className={styles.addButton}

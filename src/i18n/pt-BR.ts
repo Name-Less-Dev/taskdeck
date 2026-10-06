@@ -28,6 +28,7 @@ export const ptBR: Dictionary = {
     high: 'Alta',
   },
   due: {
+    pendingDays: (n) => p(n, 'Pendente há {n} dia', 'Pendente há {n} dias'),
     none: 'Sem prazo',
     today: 'Hoje',
     tomorrow: 'Amanhã',
@@ -76,7 +77,7 @@ export const ptBR: Dictionary = {
     removed: 'Tarefa apagada',
     taskUpdated: 'Tarefa atualizada',
     imported: 'Dados importados',
-    rescheduled: (date) => `Reagendada para ${date}`,
+    completedUntil: (date) => `Concluída. Volta em ${date}`,
     deckCreated: 'Baralho criado',
     deckRenamed: 'Baralho renomeado',
     deckRemoved: 'Baralho apagado',
@@ -88,7 +89,8 @@ export const ptBR: Dictionary = {
     added: (title) => `Tarefa criada: ${title}.`,
     deckSelected: (name) => `Mostrando: ${name}.`,
     taskUpdated: (title) => `Tarefa atualizada: ${title}. Desfazer disponível.`,
-    rescheduled: (title, date) => `${title}: reagendada para ${date}. Desfazer disponível.`,
+    completedUntil: (title, date) => `${title}: concluída. Volta em ${date}. Desfazer disponível.`,
+    newCards: (n) => `Novas cartas para hoje: ${n}.`,
     tagFilter: (tag, n) => `Filtro #${tag}: ${p(n, '{n} tarefa', '{n} tarefas')}.`,
     tagFilterCleared: 'Filtro de tag removido.',
     imported: (decks, tasks) =>
@@ -106,6 +108,9 @@ export const ptBR: Dictionary = {
   empty: {
     title: 'Tudo em dia!',
     body: 'Nenhuma tarefa no baralho. Crie uma com o botão Nova tarefa.',
+  },
+  progress: {
+    today: (done, total) => `${done} de ${total} hoje`,
   },
   shortcuts: {
     summary: 'Atalhos',

@@ -1,4 +1,14 @@
-import { describeRecurrence, dueToDate, type Due, type DueStatus, type Recurrence } from '../domain/index.ts'
+import {
+  calendarDaysBetween,
+  describeRecurrence,
+  dueToDate,
+  getDueStatus,
+  type Due,
+  type DueStatus,
+  type DueStatusKind,
+  type Recurrence,
+  type Task,
+} from '../domain/index.ts'
 import type { Dictionary, Locale } from '../i18n/dictionary.ts'
 
 const MINUTES_PER_HOUR = 60
@@ -77,4 +87,29 @@ export function dueTone(kind: DueStatus['kind']): DueTone {
     case 'none':
       return 'muted'
   }
+}
+
+/** What the card shows for its due date: text, tone, escalation band and icon. */
+export interface DuePresentation {
+  readonly text: string
+  readonly tone: DueTone
+  /** Drives the card's border/background; "pending" is a neutral, non-pulsing style. */
+  readonly band: DueStatusKind | 'pending'
+  readonly alert: boolean
+}
+
+/**
+ * A recurring task with a date only is "for that day", not a deadline: on the
+ * deck it reads "Today" or "Pending for N days" in a neutral style (no red,
+ * no pulse). Everything else (one-off tasks, recurring tasks with a time)
+ * keeps the due status and its escalation. getDueStatus itself is unchanged.
+ */
+export function presentDue(task: Task, now: Date, t: Dictionary): DuePresentation {
+  const status = getDueStatus(task.due, now)
+  if (task.recurrence !== null && task.due !== null && task.due.time === undefined) {
+    const daysLate = calendarDaysBetween(now, dueToDate(task.due))
+    if (daysLate >= 1) return { text: t.due.pendingDays(daysLate), tone: 'neutral', band: 'pending', alert: false }
+    if (daysLate === 0) return { text: t.due.today, tone: 'neutral', band: 'today', alert: false }
+  }
+  return { text: formatDueStatus(status, t), tone: dueTone(status.kind), band: status.kind, alert: status.kind === 'overdue' }
 }

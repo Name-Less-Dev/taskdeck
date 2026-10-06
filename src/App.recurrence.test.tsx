@@ -61,31 +61,31 @@ describe('recurrence on cards', () => {
     expect(topCard()).toHaveAccessibleDescription(/Toda semana, contando do prazo/)
   })
 
-  it('completing a recurring task says "Reagendada para <date>", keeps the card with its new date, and undo restores it', async () => {
+  it('completing a recurring task says "Concluída. Volta em <date>", takes the card off the deck, and undo restores it', async () => {
     const { user } = renderApp([weekly, task('o', { title: 'Outra' })])
 
     await user.click(screen.getByRole('button', { name: 'Concluir' }))
 
     const nextDate = formatDueDate({ date: '2026-10-10' }, 'pt-BR', ptBR)
-    expect(await screen.findByTestId('undo-toast')).toHaveTextContent(`Reagendada para ${nextDate}`)
-    expect(screen.getByText(`Lavar a roupa: reagendada para ${nextDate}. Desfazer disponível.`)).toBeInTheDocument()
-    // Still in the deck, with its next date (10 Oct: in 5 days).
+    expect(await screen.findByTestId('undo-toast')).toHaveTextContent(`Concluída. Volta em ${nextDate}`)
+    expect(screen.getByText(`Lavar a roupa: concluída. Volta em ${nextDate}. Desfazer disponível.`)).toBeInTheDocument()
+    // Off the deck until 10 Oct.
     await waitFor(() => {
-      expect(screen.getAllByText('Em 5 dias')).not.toHaveLength(0)
+      expect(topCard()).toHaveAccessibleName(/^Outra/)
     })
 
     await user.click(within(screen.getByTestId('undo-toast')).getByRole('button', { name: 'Desfazer' }))
-    // Back to the old due date (3 Oct, overdue since the end of that day: 34 h).
-    expect(topCard()).toHaveAccessibleName(/^Lavar a roupa\. Atrasada há 1 dia/)
+    // Back to the old due date (3 Oct): a date-only recurring card reads "pending", not "overdue".
+    expect(topCard()).toHaveAccessibleName(/^Lavar a roupa\. Pendente há 2 dias/)
   })
 
-  it('says "Rescheduled for" in English', async () => {
+  it('says "Done. Back on" in English', async () => {
     const { user } = renderApp([weekly], 'en')
 
     await user.click(screen.getByRole('button', { name: 'Complete' }))
 
     const nextDate = formatDueDate({ date: '2026-10-10' }, 'en', en)
-    expect(await screen.findByTestId('undo-toast')).toHaveTextContent(`Rescheduled for ${nextDate}`)
+    expect(await screen.findByTestId('undo-toast')).toHaveTextContent(`Done. Back on ${nextDate}`)
   })
 
   it('a one-off task still says "Tarefa concluída"', async () => {
@@ -102,7 +102,8 @@ describe('recurrence on cards', () => {
     const dialog = screen.getByRole('dialog')
 
     await user.type(within(dialog).getByLabelText('Título'), 'Tomar remédio')
-    await user.type(within(dialog).getByLabelText(/Data do prazo/), '2026-10-06')
+    // Due today: a recurring card is only on the deck from its day on.
+    await user.type(within(dialog).getByLabelText(/Data do prazo/), '2026-10-05')
     await user.click(within(dialog).getByRole('checkbox', { name: 'Repetir esta tarefa' }))
     await user.selectOptions(within(dialog).getByLabelText('Unidade'), 'day')
     await user.click(within(dialog).getByRole('button', { name: 'Criar tarefa' }))

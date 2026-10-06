@@ -25,6 +25,7 @@ export const en: Dictionary = {
     high: 'High',
   },
   due: {
+    pendingDays: (n) => p(n, 'Pending for {n} day', 'Pending for {n} days'),
     none: 'No due date',
     today: 'Today',
     tomorrow: 'Tomorrow',
@@ -73,7 +74,7 @@ export const en: Dictionary = {
     removed: 'Task deleted',
     taskUpdated: 'Task updated',
     imported: 'Data imported',
-    rescheduled: (date) => `Rescheduled for ${date}`,
+    completedUntil: (date) => `Done. Back on ${date}`,
     deckCreated: 'Deck created',
     deckRenamed: 'Deck renamed',
     deckRemoved: 'Deck deleted',
@@ -85,7 +86,8 @@ export const en: Dictionary = {
     added: (title) => `Task created: ${title}.`,
     deckSelected: (name) => `Showing: ${name}.`,
     taskUpdated: (title) => `Task updated: ${title}. Undo available.`,
-    rescheduled: (title, date) => `${title}: rescheduled for ${date}. Undo available.`,
+    completedUntil: (title, date) => `${title}: done. Back on ${date}. Undo available.`,
+    newCards: (n) => `New cards for today: ${n}.`,
     tagFilter: (tag, n) => `Filter #${tag}: ${p(n, '{n} task', '{n} tasks')}.`,
     tagFilterCleared: 'Tag filter removed.',
     imported: (decks, tasks) =>
@@ -103,6 +105,9 @@ export const en: Dictionary = {
   empty: {
     title: 'All caught up!',
     body: 'There are no tasks in the deck. Create one with the New task button.',
+  },
+  progress: {
+    today: (done, total) => `${done} of ${total} today`,
   },
   shortcuts: {
     summary: 'Shortcuts',

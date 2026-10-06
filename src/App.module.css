@@ -26,6 +26,7 @@
 
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
   padding: var(--space-3) var(--space-4);
@@ -55,6 +56,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* "2 of 5 today": its own line under the header buttons (order puts it last). */
+.progress {
+  flex: 1 0 100%;
+  order: 1;
+  margin: 0;
+  padding: 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .main {

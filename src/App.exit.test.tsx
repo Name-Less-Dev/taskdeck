@@ -56,7 +56,7 @@ describe('cards that exit but stay in the deck', () => {
     expectAtOrigin(topCard())
   })
 
-  it('a completed recurring card comes back visible further down', async () => {
+  it('a completed recurring card leaves the deck and comes back visible after undo', async () => {
     const weekly = task('w', 'Lavar a roupa', {
       due: { date: '2026-10-03' },
       recurrence: { unit: 'week', every: 1, anchor: 'due' },
@@ -68,9 +68,14 @@ describe('cards that exit but stay in the deck', () => {
     await waitFor(() => {
       expect(topCard()).toHaveAccessibleName(/^Hoje/)
     })
+    // Dormant until its next day (10 Oct).
+    expect(cardW.isConnected).toBe(false)
 
-    expect(cardW.isConnected).toBe(true)
-    expectAtOrigin(cardW)
+    await user.click(screen.getAllByRole('button', { name: 'Desfazer' })[0] as HTMLElement)
+    await waitFor(() => {
+      expect(topCard()).toHaveAccessibleName(/^Lavar a roupa/)
+    })
+    expectAtOrigin(topCard())
   })
 
   it('actions keep working after a card comes back (nothing stays locked)', async () => {

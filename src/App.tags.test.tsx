@@ -18,7 +18,8 @@ const data: AppData = {
     task('b', 'Pagar contas', ['casa', 'dinheiro', 'mensal', 'banco'], { due: { date: '2026-10-05' } }),
     task('c', 'Ler um livro', ['lazer']),
     task('r', 'Lavar a roupa', ['casa'], {
-      due: { date: '2026-10-07' },
+      // Due today: a recurring card is only on the deck from its day on.
+      due: { date: '2026-10-05' },
       recurrence: { unit: 'week', every: 1, anchor: 'due' },
       postponedDays: 2,
     }),

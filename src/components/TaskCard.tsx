@@ -8,10 +8,10 @@ import {
   type PanInfo,
 } from 'motion/react'
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
-import { getDueStatus, type Priority, type Task } from '../domain/index.ts'
+import type { Priority, Task } from '../domain/index.ts'
 import { useI18n } from '../i18n/index.tsx'
 import { cx } from '../ui/cx.ts'
-import { dueTone, formatDueDate, formatDueStatus, formatRecurrence, formatRecurrenceShort } from '../ui/format.ts'
+import { formatDueDate, formatRecurrence, formatRecurrenceShort, presentDue } from '../ui/format.ts'
 import { decideSwipe, HORIZONTAL_DISTANCE_RATIO, VERTICAL_DISTANCE_RATIO, type SwipeAction } from '../ui/gestures.ts'
 import { reportGesture } from '../dev/gestureDebug.ts'
 import { shouldResetMotion } from '../ui/exitState.ts'
@@ -189,8 +189,8 @@ export function TaskCard({
     else onSwipe(action)
   }
 
-  const status = getDueStatus(task.due, now)
-  const dueText = formatDueStatus(status, t)
+  const due = presentDue(task, now, t)
+  const dueText = due.text
   const priorityText = t.priority[task.priority]
   const interactive = isTop && exit === null
 
@@ -207,7 +207,7 @@ export function TaskCard({
           ref={elementRef}
           {...{ [TOP_CARD_ATTRIBUTE]: isTop ? 'true' : undefined }}
           className={cx(styles.card, isTop && styles.top)}
-          data-band={status.kind}
+          data-band={due.band}
           style={{ x, y, opacity, rotate: reduceMotion ? 0 : rotate }}
           drag={interactive}
           dragListener={false}
@@ -264,8 +264,8 @@ export function TaskCard({
                     {deckName}
                   </span>
                 )}
-                <span className={styles.badge} data-tone={dueTone(status.kind)}>
-                  <Icon name={status.kind === 'overdue' ? 'alert' : 'clock'} size={14} />
+                <span className={styles.badge} data-tone={due.tone}>
+                  <Icon name={due.alert ? 'alert' : 'clock'} size={14} />
                   {dueText}
                 </span>
                 {task.recurrence !== null && (
