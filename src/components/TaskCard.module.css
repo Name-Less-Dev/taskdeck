@@ -3,6 +3,8 @@
   position: absolute;
   inset: 0;
   display: grid;
+  /* A definite row, so the frame's max-height: 100% means "the deck area". */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
   z-index: calc(10 - var(--depth));
   transform: translateY(calc(var(--depth) * 14px)) scale(calc(1 - var(--depth) * 0.05));
@@ -15,7 +17,8 @@
   width: min(100%, 420px);
   height: 60vh;
   height: 60dvh;
-  max-height: 640px;
+  /* Never taller than the deck area (bars, small screens, open keyboard). */
+  max-height: min(640px, 100%);
 }
 
 .card {
