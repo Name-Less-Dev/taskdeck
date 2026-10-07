@@ -96,6 +96,9 @@ Playwright. Demonstração: <https://taskdeck-flax.vercel.app>.
 - **Days of the week**: a weekly repetition can run on chosen days (Mon/Wed/Fri,
   weekdays, weekends...), with "First time: <date>" before saving; exported to
   calendars as `BYDAY`.
+- **How to use**: a five-step tutorial with a hands-on practice of the four actions,
+  from Settings > Help ("How to use", with a help icon), from "See how it works" on the
+  first-run screen, or with `?help=1`. It never opens on its own.
 - **Themes**: Settings > Appearance offers Auto (follows the system, live), Dark,
   Light, Lilac, Pastel and Neon, each with a 3-colour swatch and its name; applied at
   once, announced, with "Restore default". No flash on load.
@@ -405,13 +408,13 @@ exporting a backup now and then is the recommended safety net.
 
 ## Testing notes
 
-Test pyramid (counts after the snooze package):
+Test pyramid (counts after the tutorial package):
 
 | Layer | Runner | Tests |
 | --- | --- | ---: |
 | Unit (domain, state, storage, calendar, ui logic, i18n, pwa, themes and contrast) | Vitest, `node` project | 910 |
-| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | 246 |
-| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | 44 × 2 = 88 (2 skipped by design: the shortcuts legend is checked per project) |
+| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | 275 |
+| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | 55 × 2 = 110 (2 skipped by design: the shortcuts legend is checked per project) |
 
 End-to-end specs (`e2e/`): layout (no horizontal scroll at 320 and 360 px, light and
 dark, in first run, deck, form, decks sheet and settings), gestures with real mouse
@@ -630,6 +633,36 @@ and band, and no reminder for a change caused by editing the due date. Only
 away, even if its deadline passes; when it comes back it is simply announced as a new
 card for today.
 
+## How-to tutorial
+
+- **Five steps** in a sheet (`HowToSheet`, on the shared Sheet): one card at a time;
+  swipe sideways; up and down; prefer buttons?; repeats and due dates. Each has a title,
+  one or two short sentences and, where there is no practice, a static illustration in
+  HTML/CSS drawn with the colour tokens (every direction as an arrow AND a word). "Step
+  2 of 5", Back, Next (Finish on the last), Skip. The texts only describe what exists.
+  Step 4 mentions the arrow keys only with `(hover: hover) and (pointer: fine)`.
+- **Never opens on its own.** Entry points: Settings > Help > "How to use" (help icon,
+  full accessible name; closing returns to Settings with focus on that button), the
+  discreet third option "See how it works" on the first-run screen, and `?help=1` in
+  the address, which opens it on load (handy for demos and tests).
+- **`meta.settings.tutorialSeen`** (zod default `false`, additive: `schemaVersion`
+  stays 1, older data loads unchanged; backups never held settings) becomes true when
+  the sheet is closed, skipped or finished. It only hides the first-run link afterwards;
+  nothing else changes for anyone. (Like any settings change on the first-run screen,
+  it is saved, so after a reload the first-run choice is not offered again.)
+- **Practice (steps 2 and 3)**: `PracticeDeck` uses the REAL `Deck`/`TaskCard`
+  (with `decideSwipe`) and `ActionBar`, the real pure `deckReducer` on a separate
+  in-memory state with its own history, the shared exit state machine and a fixed
+  practice clock. It never dispatches to the app, never schedules a save, and has no
+  reminders, calendar or app announcements (it has its own live region); its card is
+  labelled "Practice: nothing here is saved". The asked action counts from any input
+  (drag, button or key); another action gets a kind note and "Try again"; "Skip this
+  step" is always there; after 8 s a non-blocking hint names the button. Tests prove
+  the isolation (no `save` call, unchanged IndexedDB contents in Playwright).
+- **Accessibility**: focus trapped (Sheet), Escape closes, focus returns to the opener,
+  each step is announced ("Step 2 of 5: Swipe sideways") in the sheet's own live region,
+  no time limit, nothing animated, tokens only (AA in every theme).
+
 ## Themes
 
 - **Model** (`src/ui/theme.ts`, pure): `Theme = auto | dark | light | lilac | pastel | neon`,
@@ -681,6 +714,10 @@ from the accessibility tree. The shortcuts keep working with a keyboard.
 - **"Today" is the local civil day** of the device (midnight to midnight). There is no
   configurable start of the day (e.g. 4:00 for night owls): a card completed at 00:30
   counts for the new day.
+- **The tutorial must follow the features**: its texts and practice describe the
+  current actions; any change to gestures, buttons or Scheduled must update it.
+- **No demonstration animation**: the illustrations are static and the practice is
+  driven by the person, never by a moving "ghost" gesture.
 - **Snooze is only "until tomorrow"**: there is no free date ("snooze until Friday");
   snoozing again the next day is the way to push further.
 - **No history or streaks**: progress counts only today's completions; there is no
@@ -746,6 +783,7 @@ Next (not started):
 
 - **Snooze until a chosen date** (the field already holds a day; the UI only offers
   tomorrow).
-- **A "How to use" screen** (gestures, Later vs Tomorrow, Scheduled).
+- **An animated "ghost" gesture** in the tutorial (respecting reduced motion).
+- **Contextual tips** (e.g. the first time Scheduled appears), never blocking.
 - **Colour per deck**.
 - Optional: Capacitor/Android packaging with local (system) notifications.

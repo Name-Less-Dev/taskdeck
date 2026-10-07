@@ -122,6 +122,17 @@ strips `TZ` before it reaches Node.
   `src/ui/preferences.ts` (guarded), never in IndexedDB or backups. Component tests
   clear `localStorage` after each test (`src/test/setup.ts`).
 
+## How-to conventions (tutorial package)
+
+- The tutorial never opens by itself: only Settings > Help, the first-run link, or
+  `?help=1`. `meta.settings.tutorialSeen` only hides the first-run link.
+- Its texts must only describe features that exist; update `howTo` and `practice` in
+  both dictionaries whenever gestures, buttons or Scheduled change.
+- The practice deck reuses the real Deck/TaskCard/ActionBar and the pure deckReducer on
+  its own state: never pass it App callbacks, storage, reminders or the app live region.
+  `src/App.practice.test.tsx` and `e2e/practice.spec.ts` guard the isolation.
+- Key-to-action mapping lives in `src/ui/deckKeys.ts` (shared by both decks).
+
 ## Theme conventions (themes package)
 
 - Colours only through tokens. Each theme is ONE block `[data-theme='x']` in
@@ -184,6 +195,6 @@ calendar and reminders, PWA and time field), `public/og.png` (1200x630),
 ## Roadmap (not started)
 
 - Snooze until a chosen date (the field already holds a day).
-- A "How to use" screen.
+- An animated "ghost" gesture in the tutorial; contextual tips.
 - Colour per deck.
 - Optional: Capacitor packaging for Android with local (system) notifications.
