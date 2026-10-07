@@ -4,14 +4,15 @@
 
 ## Fixed bugs worth remembering
 
-- **Enter in the task form created the task** (stage 3). The virtual keyboard's
+- **Enter in the task form created the task** (step 3 of the [history](history.md)). The virtual keyboard's
   action key sends Enter, and Enter in a single-line field implicitly submits a
   `<form>`; `enterkeyhint` only changes the key's label. The form now handles Enter:
-  next field in single-line fields, submit on the last one (time), new line in the
+  next field in single-line fields, submit on the last one (the time, or the
+  repetition anchor when the task repeats), new line in the
   description, Ctrl/Cmd+Enter submits anywhere, nothing while an IME is composing.
-- **Invisible card / "frozen" deck after creating cards in the form** (stage 3), two
+- **Invisible card / "frozen" deck after creating cards in the form** (same step), two
   independent causes, both reproduced before fixing:
-  1. *Layout.* The shell was a 3-row grid (`auto 1fr auto`); stage 3 added more rows
+  1. *Layout.* The shell was a 3-row grid (`auto 1fr auto`); that step added more rows
      (tag bar, banners), so as soon as a task had tags (only possible through the
      form) the flexible row went to the tag bar, `<main>` collapsed to its padding,
      the deck area had 0 height and the card spilled over the action bar; `focus()`
@@ -26,7 +27,7 @@
      the exit is now a pure state machine (`src/ui/exitState.ts`) that always commits
      (finished, interrupted, or after a 600 ms safety-net timeout).
 
-- **A change made right before a reload was lost** (found by the stage 5 Playwright
+- **A change made right before a reload was lost** (found by the Playwright
   persistence test). Saves are debounced by 300 ms and flushed on `pagehide`, but in
   Chromium the flushed transaction never committed before the page went away (with
   1 s of wait the test passed). Fix: `tx.commit()` once every write is queued, with a

@@ -4,12 +4,13 @@
 
 ## Stack
 
-Vite + React 19 + TypeScript (strict, `noUncheckedIndexedAccess`), client-only, no SSR.
-Domain: [zod](https://zod.dev) 4, [date-fns](https://date-fns.org) 4. UI:
+Vite 8 + React 19 + TypeScript 6 (strict, `noUncheckedIndexedAccess`), client-only,
+no SSR. Domain: [zod](https://zod.dev) 4, [date-fns](https://date-fns.org) 4. UI:
 [Motion](https://motion.dev) (`motion` package, imported from `motion/react`), CSS
-Modules with CSS custom properties (light/dark), a small typed i18n dictionary.
+Modules with CSS custom properties (one token block per theme, six themes), a small
+typed i18n dictionary.
 Storage: [idb](https://github.com/jakearchibald/idb) 8. Tooling: Vitest (node + jsdom
-projects) with V8 coverage, Testing Library,
+projects, Vitest 5) with V8 coverage, Testing Library,
 [fake-indexeddb](https://github.com/dumbmatter/fakeIndexedDB) 6, ESLint (flat config)
 with typescript-eslint in type-checked strict mode. PWA:
 [vite-plugin-pwa](https://vite-pwa-org.netlify.app) 2.0 (Workbox 7.4) and
@@ -50,19 +51,24 @@ src/
   main.tsx              entry: error overlay (dev), ErrorBoundary, Root
   Root.tsx              opens storage, loads, then renders App / loading / read-only
   App.tsx               deck state, sheets, focus, announcements, autosave
-  index.css             design tokens + light/dark
+  index.css             design tokens: one block per theme (auto resolves to light/dark)
   domain/               pure domain core: schemas, dates, urgency, recurrence,
-                        actions, decks (AppData), tags, updateTask, history
+                        weekdays, availability, actions (incl. snooze), decks
+                        (AppData), tags, updateTask, due bands, history
   state/deckReducer.ts  pure reducer over History<AppData>
   storage/              AppStorage interface, IndexedDB + memory implementations,
                         snapshot validation, migrations, autosaver, persistence,
                         JSON backup
-  ui/                   gestures, formatting, form errors, tags, hooks
-                        (useNow, useAutosave, usePersistence), download
+  ui/                   gestures, keys, formatting, form errors, tags, themes,
+                        reminders, rollover, preferences, time field, hooks
+                        (useNow, useAutosave, usePersistence, useTheme,
+                        useDueReminders, useFinePointer), download
   i18n/                 typed pt-BR and en dictionaries, locale resolution
-  components/           Deck, TaskCard, ActionBar, UndoToast, Sheet, TaskFormSheet,
-                        TagInput, TagFilterBar, DeckSheet, SettingsSheet,
-                        StartupScreens, StorageBanner, EmptyState, LiveRegion, ...
+  components/           Deck, TaskCard, ActionBar, UndoToast, ReminderToast,
+                        UpdateToast, Sheet, TaskFormSheet, TagInput, TagFilterBar,
+                        DeckSheet, SettingsSheet, ThemePicker, ScheduledSheet,
+                        HowToSheet, PracticeDeck, StartupScreens, StorageBanner,
+                        EmptyState, LiveRegion, ...
   calendar/             pure .ics builder (RFC 5545)
   pwa/                  service worker registration (PwaProvider), install and
                         update decisions (pure), PWA context
@@ -83,17 +89,26 @@ playwright.config.ts
 AppData = { decks: Deck[]; tasks: Task[] }   // invariants: >= 1 deck; every task.deckId exists
 Deck    = { id; name }                       // 1-30 chars, trimmed, unique ignoring case
 Task    = { id, deckId, title, description, tags, priority, due, recurrence,
-            status, createdAt, completedAt, skippedAt, postponedDays }
+            status, createdAt, completedAt, skippedAt, postponedDays,
+            snoozedUntil }                   // snoozedUntil: DayKey | null (default null)
+Due     = { date: 'YYYY-MM-DD', time?: 'HH:mm' }
+Recurrence = { unit: 'day' | 'week' | 'month', every, anchor: 'due' | 'completion',
+               originDay?,                   // monthly + due only
+               weekdays? }                   // 0-6, weekly + every 1 + due only
 Meta    = { schemaVersion: 1,
             settings: { activeDeckId: string | null, language: 'auto' | 'pt-BR' | 'en',
-                        alarm: AlarmOption, installHintDismissed: boolean },
+                        alarm: AlarmOption, installHintDismissed: boolean,
+                        tutorialSeen: boolean },
             lastBackupAt: ISO | null }
 ```
 
 `checkIntegrity(data)` lists every broken invariant (no deck, duplicate ids, orphan
 tasks). The undoable app state is `History<AppData>`; the active deck and the tag
 filter are UI state outside the history (the active deck is saved in `Meta`, the tag
-filter is per session).
+filter is per session). Fields added after the first format (`snoozedUntil`,
+`weekdays`, the settings with defaults) are additive: `schemaVersion` stays 1 and older
+data and backups load unchanged. The theme and the tag-filter state are interface
+preferences in `localStorage`, outside `Meta` and backups.
 
 ## Project decisions (summary)
 
@@ -170,7 +185,7 @@ filter is per session).
   shadowing the DOM's `Storage` type.
 - **One transaction per save.** `save` clears and rewrites decks and tasks and writes
   meta in a single readwrite transaction: all of it or none of it. It is committed
-  explicitly (`tx.commit()`) as soon as every write is queued (see "Fixed bugs"). A request that
+  explicitly (`tx.commit()`) as soon as every write is queued (see [bugs](bugs.md)). A request that
   fails synchronously (e.g. a value that cannot be cloned) aborts the transaction, so
   earlier writes in it never commit.
 - **Validation on load, with quarantine.** Every record is validated with the domain
@@ -207,8 +222,9 @@ exporting a backup now and then is the recommended safety net.
 ## UI design decisions
 
 - **The swipe decision is pure.** `decideSwipe` turns offset/velocity/size into an
-  action (30% of the width, 22% of the height upwards, or a 500 px/s flick with 40 px
-  of travel; ambiguous diagonals and downward swipes do nothing).
+  action: right complete, left later, up delete, down tomorrow (30% of the width, 22%
+  of the height up or down, or a 500 px/s flick with 40 px of travel; ambiguous
+  diagonals do nothing).
 - **Tap vs drag.** A drag starts only after 8 px of movement.
 - **The gesture is never the only way.** Buttons, keys and swipes share
   `requestAction`: exit animation first, reducer action after.
@@ -272,7 +288,7 @@ exporting a backup now and then is the recommended safety net.
   the only indicator, there is no `text-shadow`, and the "soon" pulse stays off with
   reduced motion (as in every theme).
 - **Semantics** (overdue, soon, done, delete) keep their hue family and the icon + text
-  pair in every theme; every pair passes AA (see Testing notes).
+  pair in every theme; every pair passes AA (see [testing](testing.md)).
 - **No flash**: the choice lives in `localStorage` under one key
   (`taskdeck:ui:theme`, JSON), read by a small synchronous script at the top of
   `<head>`, before the CSS and the bundle (unavailable storage = auto). It is never

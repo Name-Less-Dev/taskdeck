@@ -30,13 +30,13 @@ Tests default to `TZ=America/Sao_Paulo`. To run them in another zone, set `TZ`
 
 ## Testing notes
 
-Test pyramid (counts after the tutorial package):
+Test pyramid (run `npm test` and `npm run e2e` for the current counts):
 
-| Layer | Runner | Tests |
-| --- | --- | ---: |
-| Unit (domain, state, storage, calendar, ui logic, i18n, pwa, themes and contrast) | Vitest, `node` project | 910 |
-| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | 275 |
-| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | 55 × 2 = 110 (2 skipped by design: the shortcuts legend is checked per project) |
+| Layer | Runner | Scope |
+| --- | --- | --- |
+| Unit (domain, state, storage, calendar, ui logic, i18n, pwa, themes and contrast) | Vitest, `node` project | pure logic, `tests/` |
+| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | `src/**/*.test.tsx` |
+| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | `e2e/`; the shortcuts legend is checked per project, so one test is skipped in each |
 
 End-to-end specs (`e2e/`): layout (no horizontal scroll at 320 and 360 px, light and
 dark, in first run, deck, form, decks sheet and settings), gestures with real mouse
@@ -44,9 +44,14 @@ drags (right, left, up with Undo, a short drag that springs back), form (Enter f
 time field, recurrence without a date), persistence (reload, active deck, language),
 backup (export, import into a fresh context, invalid file), calendar (`.ics`
 download: CRLF, SUMMARY, DTSTART, notice), offline (reload with the network off,
-create and keep a task), accessibility (axe, failing on serious/critical, both
-themes; no rule disabled and no exception needed), i18n (`?lang=en`, `<html lang>`),
-and an overdue reminder using Playwright's controlled clock (`page.clock`). Each test
+create and keep a task), accessibility (axe, failing on serious/critical, in light,
+dark, pastel and neon; no rule disabled and no exception needed), i18n (`?lang=en`,
+`<html lang>`), an overdue reminder using Playwright's controlled clock
+(`page.clock`), themes (set before React, auto following the system, color-scheme),
+the shortcuts legend per device, the collapsible tag filter, repeating cards and
+snoozed cards coming back on their day (`page.clock`), days of the week with `BYDAY`,
+the four-action bar at 320/360 px, and the tutorial with its isolated practice (the
+IndexedDB contents compared before and after). Each test
 gets a fresh browser context (empty IndexedDB) and starts from the first-run screen;
 there are no fixed waits. "Clearing the site data" in the backup spec is a new
 context, which has its own empty storage.
@@ -61,7 +66,7 @@ context, which has its own empty storage.
 - Component tests fake only `Date` and build dates with local constructors, so they
   pass in every CI time zone.
 - **Layout (horizontal overflow) cannot be tested in jsdom**, which computes no layout.
-  Stage 3 shipped a regression that made the app wider than a 360 px phone. Playwright
+  An earlier version shipped a regression that made the app wider than a 360 px phone. Playwright
   now asserts `document.documentElement.scrollWidth <= clientWidth` at 320 and 360 px
   in the main states. To check by hand in DevTools at a phone width, this lists every
   element that sticks out on the right:

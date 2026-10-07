@@ -2,6 +2,14 @@
 
 Guidance for working in this repository.
 
+## Documentation
+
+The README is a one-minute overview; details live in docs/ (features, architecture,
+calendar-ics, testing, manual-qa, browser-support, bugs, limitations, history). Update
+the matching docs/ file with every change, keep claims backed by the code, write
+placeholders like `<date>` inside backticks (GitHub swallows bare tags), and keep
+relative links valid.
+
 ## Conventions
 
 - Code, identifiers, tests, comments and commit messages are in **English**. The user
@@ -76,7 +84,7 @@ strips `TZ` before it reaches Node.
 - Forms: Enter moves to the next field in single-line inputs and submits only on the
   field marked `data-submit-on-enter` (`src/ui/form-navigation.ts`); set
   `enterkeyhint` (next/done/enter) to match, it only changes the key label.
-- Debug gestures/viewport on a device with `?debug=gestures` (dev only, see README).
+- Debug gestures/viewport on a device with `?debug=gestures` (dev only, see docs/testing.md).
 - Do not simulate drag in jsdom. Component tests fake only `Date`
   (`vi.useFakeTimers({ toFake: ['Date'] })`); fake timers also freeze fake-indexeddb.
 
@@ -187,7 +195,7 @@ progress, rollover announcement) and days of the week in recurrences. The themes
 package added Settings > Appearance (auto, dark, light, lilac, pastel, neon). Otherwise:
 bug fixes (test first, fix in its own commit), dependency updates and documentation.
 
-Still manual (see the README): the phone QA checklists (gestures, persistence,
+Still manual (see docs/manual-qa.md and the README "Pending"): the phone QA checklists (gestures, persistence,
 calendar and reminders, PWA and time field), `public/og.png` (1200x630),
 `docs/screenshot-deck.png` and `docs/demo.gif`. Verified by hand so far: only an
 `.ics` imported into an Android calendar (time, daily repetition, alarm fired).

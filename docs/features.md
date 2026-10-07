@@ -29,15 +29,16 @@ Everything the app does, in detail.
   where you left it (active deck and language included).
 - **Backup**: export a dated `.json` file and import it back (summary, confirmation,
   undo) from Settings.
-- **Settings**: language (Automatic / Português / English), app (offline status, install), calendar export, persistent-storage status,
-  last backup date, export/import, quarantined records.
+- **Settings**: help ("How to use"), language (Automatic / Português / English),
+  appearance (six themes), app (offline status, install), calendar export,
+  persistent-storage status, last backup date, export/import, quarantined records.
 - **Accessibility**: live region announcements, focus returned to the opener (or the
   deck) when sheets close, focus trapped in sheets, visible focus, AA contrast checked
   by a test, never colour alone, reduced-motion support.
 - **Recurrence in the form**: a "Repeat" block (every N days/weeks/months, counted from
   the due date or from completion) to set, change or remove a task's repetition; a
   repeating task needs a due date. Cards show a short badge ("Toda semana") and the full
-  rule on the back; completing one says "Done. Back on <date>" (undoable).
+  rule on the back; completing one says "Done. Back on `<date>`" (undoable).
 - **Deadline escalation**: border and background follow the band (soon amber, overdue
   red), always with an icon and text; "soon" pulses gently unless reduced motion is on.
 - **In-app reminders**: when time moves a task into "soon" or "overdue" while the app is
@@ -47,7 +48,7 @@ Everything the app does, in detail.
   Settings exports every active task with a due date (or just the active deck), with
   an alarm setting (none, at the time, 15 min, 1 h, 1 day before; default 15 min).
 - **Recurring cards only on their day**: a repeating card leaves the deck when it is
-  completed and comes back on the day of its next date ("Done. Back on <date>").
+  completed and comes back on the day of its next date ("Done. Back on `<date>`").
   One-off tasks are never hidden, whatever their due date. The header reads "X of Y
   today"; "Scheduled (N)" opens a sheet with the waiting cards (next date, rule, deck;
   Complete now, Edit, Delete, all undoable). With nothing left for today the deck says
@@ -60,7 +61,7 @@ Everything the app does, in detail.
   "Bring back today") and comes back on its own at midnight. Undoable, announced. When the day changes with the app open
   (or on return to the tab), the cards that wake up are announced once.
 - **Days of the week**: a weekly repetition can run on chosen days (Mon/Wed/Fri,
-  weekdays, weekends...), with "First time: <date>" before saving; exported to
+  weekdays, weekends...), with "First time: `<date>`" before saving; exported to
   calendars as `BYDAY`.
 - **How to use**: a five-step tutorial with a hands-on practice of the four actions,
   from Settings > Help ("How to use", with a help icon), from "See how it works" on the

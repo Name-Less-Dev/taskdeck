@@ -51,7 +51,7 @@ Calendar and reminders script:
 - [ ] Import the same file again: events are updated, not duplicated
 - [ ] A monthly task on the 31st repeats on the last day of shorter months; one on the 30th shows only the next date with the note
 - [ ] Change the phone's clock (or wait) to cross a deadline with the app open: the card changes to soon/overdue and the reminder appears once
-- [ ] Complete a recurring task: "Done. Back on <date>", the card leaves the deck and is listed in "Scheduled", Undo restores it
+- [ ] Complete a recurring task: "Done. Back on `<date>`", the card leaves the deck and is listed in "Scheduled", Undo restores it
 - [ ] Leave the app open past midnight (or come back the next day): the repeating card is back and "New cards for today" is announced once
 - [ ] Pick Mon/Wed/Fri in the form: "First time" shows the right day, and the calendar app repeats on those days only
 - [ ] Phone: the shortcuts legend is not shown; the tag filter opens and closes and stays as left after a reload

@@ -37,16 +37,16 @@
   one tab are overwritten by the other's next save. There is no cross-tab sync yet.
 - Persistent storage is only available in secure contexts and the browser may refuse
   it; the status is shown in Settings.
-- The bundle is about 182 kB gzip (JS 180 + workbox-window 2.2; CSS 5.4). Motion's
+- The bundle is about 199 kB gzip (JS 189 + workbox-window 2.2; CSS 7.6). Motion's
   `LazyMotion` and code-splitting the sheets could cut it.
 - `og:image` points to `/og.png` (1200x630), which does not exist yet: link previews
-  show no image until it is made (see "Pending").
+  show no image until it is made (see [Pending](../README.md#pending)).
 - **DST.** Wall-clock due dates follow the device's zone. A local time that does not
   exist (the hour skipped when DST starts) or happens twice is resolved by JavaScript
   `Date` in the app, and by each calendar app for the floating times in the `.ics`
   (usually the next valid time / the first occurrence). Not specifically tested.
 - **Monthly on the 29th or 30th** exports only the next date to calendars (see the
-  calendar design above); the 31st exports as "last day of the month". Inside the app
+  [calendar design](calendar-ics.md)); the 31st exports as "last day of the month". Inside the app
   all of them repeat correctly.
 - An `.ics` with no task has no event, which parsers accept but the RFC grammar does
   not (it asks for at least one component), so the app never offers that download.
