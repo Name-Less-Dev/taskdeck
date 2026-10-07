@@ -95,8 +95,18 @@ strips `TZ` before it reaches Node.
 
 - `isAvailable(task, now)` (`src/domain/availability.ts`) is the ONLY visibility rule.
   Anything that shows, counts, reminds or announces cards uses it (or
-  `availableTasks` / `dormantTasks`); never filter recurring tasks by hand. A future
-  "postpone to tomorrow" goes inside it, as its own field, without touching `due`.
+  `availableTasks` / `dormantTasks` / `snoozedTasks`); never filter by hand. It
+  excludes done, snoozed (`snoozedUntil` after today) and recurring tasks before their
+  day.
+- Snooze ("Tomorrow", swipe down, ↓) never touches `due`: `snoozeTask` sets
+  `snoozedUntil = tomorrowKey(now)` and counts like "Later" in `postponedDays` (once
+  per day); `completeTask` clears it, `updateTask` keeps it. Snoozed and dormant
+  groups never overlap. Reminders only watch available tasks.
+- The left action is called "Later" (pt-BR "Mais tarde"); the code keeps the
+  `postpone` action name. Four actions in the bar must fit 320 px with 48 px targets.
+- Empty deck order: snoozed > 0 ("That's it for today", no celebration) → completed
+  today or scheduled ("All done for today", celebration only after a completion) →
+  "Nothing for today".
 - Only recurring tasks are hidden before their day; one-off tasks with a future due
   date stay on the deck.
 - `dailyProgress`: done = `completedAt` on the local day of `now`; remaining =
@@ -173,7 +183,7 @@ calendar and reminders, PWA and time field), `public/og.png` (1200x630),
 
 ## Roadmap (not started)
 
-- "Postpone to tomorrow": its own field, checked in `isAvailable`, never touching the
-  due date.
+- Snooze until a chosen date (the field already holds a day).
+- A "How to use" screen.
 - Colour per deck.
 - Optional: Capacitor packaging for Android with local (system) notifications.

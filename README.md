@@ -1,7 +1,7 @@
 # taskdeck
 
 A mobile-first to-do app where tasks are cards in a deck: swipe right to complete,
-left to send the card to the bottom, up to delete, tap to see the back. It runs
+left for later (bottom of the deck), down for tomorrow, up to delete, tap to see the back. It runs
 entirely in the browser (installable PWA, works offline, no backend).
 
 **Demo: <https://taskdeck-flax.vercel.app>** (deployed by Vercel from `main`).
@@ -43,10 +43,12 @@ Playwright. Demonstração: <https://taskdeck-flax.vercel.app>.
 - **Card deck** ordered by urgency (overdue → soon → today → tomorrow → this week →
   later → no due date). The top card is draggable; up to two more cards are drawn
   underneath.
-- **Gestures**: right = complete, left = postpone to the end of the day, up = delete,
-  tap = flip to the back. Coloured overlays with icon and text grow as you drag.
-- **Same actions without gestures**: Postpone / Delete / Complete buttons in the thumb
-  zone, Undo / Redo in the header, and keyboard shortcuts.
+- **Gestures**: right = complete, left = "Later" (bottom of the deck until the end of
+  the day), down = "Tomorrow" (off the deck until tomorrow), up = delete, tap = flip to
+  the back. Coloured overlays with icon and text grow as you drag.
+- **Same actions without gestures**: Later / Tomorrow / Delete / Complete buttons in the
+  thumb zone (icon over a short label, fitting 320 px), Undo / Redo in the header, and
+  keyboard shortcuts.
 - **Undo** for every change (50 steps): task actions, edits, deck changes and
   imports, from the header, `Ctrl/⌘+Z`, or the toast (6 s, paused on hover/focus).
 - **Decks**: the header button shows the active deck and opens the Decks sheet (all
@@ -83,8 +85,13 @@ Playwright. Demonstração: <https://taskdeck-flax.vercel.app>.
   One-off tasks are never hidden, whatever their due date. The header reads "X of Y
   today"; "Scheduled (N)" opens a sheet with the waiting cards (next date, rule, deck;
   Complete now, Edit, Delete, all undoable). With nothing left for today the deck says
-  "All done for today" (with a small CSS celebration, none with reduced motion) or
-  "Nothing for today", with "Upcoming (N)". When the day changes with the app open
+  "That's it for today. N cards are waiting for tomorrow." when cards were left for
+  tomorrow (never "all done" then), "All done for today" after a completion or with
+  scheduled cards (a small CSS celebration only after a completion, none with reduced
+  motion), or "Nothing for today".
+- **Tomorrow (snooze)**: swipe down, the Tomorrow button or ↓ hides the card until the
+  next day without touching its due date; it waits in Scheduled > "For tomorrow" (with
+  "Bring back today") and comes back on its own at midnight. Undoable, announced. When the day changes with the app open
   (or on return to the tab), the cards that wake up are announced once.
 - **Days of the week**: a weekly repetition can run on chosen days (Mon/Wed/Fri,
   weekdays, weekends...), with "First time: <date>" before saving; exported to
@@ -115,7 +122,8 @@ Playwright. Demonstração: <https://taskdeck-flax.vercel.app>.
 | `Enter` / `Space` | Flip the card |
 | `E` | Edit the card |
 | `→` | Complete |
-| `←` | Postpone |
+| `←` | Later |
+| `↓` | Tomorrow |
 | `Delete` / `Backspace` | Delete |
 | `Ctrl/⌘ + Z` | Undo |
 | `Ctrl + Shift + Z` / `Ctrl + Y` | Redo |
@@ -352,20 +360,32 @@ exporting a backup now and then is the recommended safety net.
   due at the end of that local day.
 - **Calendar-day arithmetic** (`differenceInCalendarDays`).
 - **Urgency bands** with a total order: band, priority, due, `createdAt`, id.
-- **Postpone lasts until the end of the day**; `postponedDays` counts days, not swipes.
+- **"Later" lasts until the end of the day** (the card goes to the bottom); "Tomorrow"
+  takes it off the deck until the next day. `postponedDays` counts days with either
+  of them, not swipes: once per local day, whichever comes first.
 - **Recurrence anchors** `'due'` (fixed schedule, skips missed occurrences) and
   `'completion'` (restarts from today); monthly `'due'` keeps `originDay`.
 - **One visibility rule: `isAvailable(task, now)`.** It is the only function that
   decides whether a card is on the deck; the deck, the counts, the tag counts, the
-  reminders and the rollover announcement all go through it (and so will a future
-  "postpone to tomorrow"). A task is available when it is active and, **only if it
+  reminders and the rollover announcement all go through it. A task is available
+  when it is active, **not snoozed** (`snoozedUntil` after today), and, **only if it
   repeats**, when its due date is today or earlier (overdue repeating cards stay). A
   one-off task with a future due date stays visible: a deadline is something to work
   towards, while a repeating card is "for that day". `availableTasks`,
-  `dormantTasks` (the waiting repeating cards, soonest first) and `dailyProgress`
-  build on it.
+  `dormantTasks` (waiting repeating cards, soonest first), `snoozedTasks` (by title;
+  never overlapping with dormant) and `dailyProgress` build on it.
+- **Tomorrow is not a deadline change.** `snoozeTask` only sets `snoozedUntil` to
+  `tomorrowKey(now)` (by the calendar, never 24 h); the due date, the urgency and the
+  `.ics` stay as they were. Only an active card that is on the deck today can be
+  snoozed; completing clears it; editing keeps it; a stale value (today or earlier) is
+  harmless. The field is additive (`schemaVersion` stays 1): older data and backups
+  load with `null`.
 - **Daily progress**: `done` = tasks whose `completedAt` falls on the local day of
-  `now` (one-off and repeating); `remaining` = available tasks. The header shows
+  `now` (one-off and repeating); `remaining` = available tasks; `snoozed` is counted
+  apart and never in "X of Y today".
+- **Honest "All done"**: when cards were left for tomorrow the deck says so ("That's it
+  for today") instead of celebrating; "All done for today" celebrates only after
+  something was actually completed today. The header shows
   "done of done + remaining today" for the active deck (the tag filter does not change
   it).
 - **On the card**, a repeating task with a date only reads "Today" or "Pending for N
@@ -385,13 +405,13 @@ exporting a backup now and then is the recommended safety net.
 
 ## Testing notes
 
-Test pyramid (counts after the themes package):
+Test pyramid (counts after the snooze package):
 
 | Layer | Runner | Tests |
 | --- | --- | ---: |
-| Unit (domain, state, storage, calendar, ui logic, i18n, pwa, themes and contrast) | Vitest, `node` project | 864 |
-| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | 234 |
-| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | 39 × 2 = 78 (2 skipped by design: the shortcuts legend is checked per project) |
+| Unit (domain, state, storage, calendar, ui logic, i18n, pwa, themes and contrast) | Vitest, `node` project | 910 |
+| Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | 246 |
+| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | 44 × 2 = 88 (2 skipped by design: the shortcuts legend is checked per project) |
 
 End-to-end specs (`e2e/`): layout (no horizontal scroll at 320 and 360 px, light and
 dark, in first run, deck, form, decks sheet and settings), gestures with real mouse
@@ -491,7 +511,8 @@ development, uncaught errors are printed on the page by a small overlay.
 
 Gestures and layout:
 
-- [ ] Swipe right, left and up: overlay grows with the distance, card leaves, action applies
+- [ ] Swipe right, left, up and down: overlay grows with the distance, card leaves, action applies
+- [ ] Swipe down ("Tomorrow"): the card is in Scheduled > "For tomorrow" and back the next morning; dragging down never scrolls or refreshes the page
 - [ ] Release before the threshold: card springs back, nothing happens
 - [ ] Short fast flick in each direction triggers the action
 - [ ] Tap flips the card; a tiny accidental move still counts as a tap
@@ -604,7 +625,10 @@ app; there are no system notifications). `diffDueBands` (domain) compares each t
 previous snapshot as the clock ticks (`useNow`: every 30 s and when the tab becomes
 visible); `src/ui/reminders.ts` applies the rules: nothing on load, grouped changes,
 one summary for what changed while the tab was hidden, no repeats for the same task
-and band, and no reminder for a change caused by editing the due date.
+and band, and no reminder for a change caused by editing the due date. Only
+**available** cards are watched: a snoozed (or dormant) card never reminds while it is
+away, even if its deadline passes; when it comes back it is simply announced as a new
+card for today.
 
 ## Themes
 
@@ -657,6 +681,8 @@ from the accessibility tree. The shortcuts keep working with a keyboard.
 - **"Today" is the local civil day** of the device (midnight to midnight). There is no
   configurable start of the day (e.g. 4:00 for night owls): a card completed at 00:30
   counts for the new day.
+- **Snooze is only "until tomorrow"**: there is no free date ("snooze until Friday");
+  snoozing again the next day is the way to push further.
 - **No history or streaks**: progress counts only today's completions; there is no
   record of past days and no streak counter.
 - **Days of the week only every 1 week, on a fixed calendar** (anchored on the due
@@ -714,10 +740,12 @@ from the accessibility tree. The shortcuts keep working with a keyboard.
 4. Due dates and recurrence in the UI, in-app reminders, `.ics` export (done)
 5. Installable PWA, offline, update prompt, HH:mm time field, Playwright end-to-end tests, metadata, deploy (done)
 6. Behaviour package 1 (done): shortcuts legend on pointer devices only, collapsible tag filter, repeating cards only on their day with a Scheduled sheet and daily progress, days of the week in recurrences
+7. Themes (done) and snooze until tomorrow with swipe down, "Later" naming and honest empty states (done)
 
 Next (not started):
 
-- **"Postpone to tomorrow"**: its own field (e.g. `hiddenUntil`), checked inside
-  `isAvailable`, never touching the due date.
+- **Snooze until a chosen date** (the field already holds a day; the UI only offers
+  tomorrow).
+- **A "How to use" screen** (gestures, Later vs Tomorrow, Scheduled).
 - **Colour per deck**.
 - Optional: Capacitor/Android packaging with local (system) notifications.
