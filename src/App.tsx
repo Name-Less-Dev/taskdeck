@@ -4,6 +4,7 @@ import { ActionBar } from './components/ActionBar.tsx'
 import { DeckSheet } from './components/DeckSheet.tsx'
 import { Deck } from './components/Deck.tsx'
 import { EmptyState, emptyStateButton } from './components/EmptyState.tsx'
+import { HowToSheet } from './components/HowToSheet.tsx'
 import { Icon } from './components/Icon.tsx'
 import { LiveRegion, type Announcement } from './components/LiveRegion.tsx'
 import { ReminderToast } from './components/ReminderToast.tsx'
@@ -84,9 +85,11 @@ export interface AppProps {
   readonly createId?: () => string
   readonly persistence?: PersistenceApi
   readonly download?: Download
+  /** ?help=1: open the how-to when the app loads (the only way it opens without a click). */
+  readonly openHowToOnLoad?: boolean
 }
 
-type SheetKind = 'add' | 'edit' | 'decks' | 'settings' | 'scheduled'
+type SheetKind = 'add' | 'edit' | 'decks' | 'settings' | 'scheduled' | 'howto'
 
 // Toast and announcement keys per action (same names in both dictionary sections).
 const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed', snooze: 'snoozed' } as const
@@ -104,6 +107,7 @@ export default function App({
   createId = randomId,
   persistence = browserPersistence,
   download = downloadBlob,
+  openHowToOnLoad = false,
 }: AppProps) {
   const { locale, t } = useI18n()
   const [state, dispatch] = useReducer(deckReducer, initialData, createDeckState)
@@ -117,6 +121,7 @@ export default function App({
   const [lastBackupAt, setLastBackupAt] = useState<string | null>(initialMeta.lastBackupAt)
   const [alarm, setAlarm] = useState<AlarmOption>(initialMeta.settings.alarm)
   const [installHintDismissed, setInstallHintDismissed] = useState(initialMeta.settings.installHintDismissed)
+  const [tutorialSeen, setTutorialSeen] = useState(initialMeta.settings.tutorialSeen)
   const [firstRun, setFirstRun] = useState(initialFirstRun)
   // Tag filter: session only, never persisted.
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -143,10 +148,10 @@ export default function App({
   const meta = useMemo<Meta>(
     () => ({
       schemaVersion: SCHEMA_VERSION,
-      settings: { activeDeckId: deckId, language, alarm, installHintDismissed },
+      settings: { activeDeckId: deckId, language, alarm, installHintDismissed, tutorialSeen },
       lastBackupAt,
     }),
-    [deckId, language, alarm, installHintDismissed, lastBackupAt],
+    [deckId, language, alarm, installHintDismissed, tutorialSeen, lastBackupAt],
   )
   const autosave = useAutosave(storage, state.present, meta)
   const { state: persistenceState, requestOnce: requestPersistence } = usePersistence(
@@ -178,7 +183,9 @@ export default function App({
   const [toast, setToast] = useState<ToastData | null>(null)
   const [announcement, setAnnouncement] = useState<Announcement | null>(null)
   const messageCounter = useRef(0)
-  const [sheet, setSheet] = useState<SheetKind | null>(null)
+  const [sheet, setSheet] = useState<SheetKind | null>(openHowToOnLoad ? 'howto' : null)
+  // The how-to opened from Settings goes back to Settings when it closes.
+  const howToFromSettings = useRef(false)
   // Where focus goes when a sheet closes (the button that opened it), or the deck.
   const returnFocus = useRef<HTMLElement | null>(null)
 
@@ -352,6 +359,25 @@ export default function App({
   function closeSheet() {
     setSheet(null)
     setFocusRequest((n) => n + 1)
+  }
+
+  /** Only ever called from a click (or ?help=1 on load): never opened automatically. */
+  function openHowTo(opener: HTMLElement | null, fromSettings: boolean) {
+    howToFromSettings.current = fromSettings
+    if (fromSettings) setSheet('howto')
+    else openSheet('howto', opener)
+  }
+
+  /** Closing, skipping or finishing all mark the tutorial as seen. */
+  function closeHowTo() {
+    setTutorialSeen(true)
+    if (howToFromSettings.current) {
+      howToFromSettings.current = false
+      // Back to Settings, where the "How to use" button gets focus again (first control).
+      setSheet('settings')
+      return
+    }
+    closeSheet()
   }
 
   function addTask(task: Task) {
@@ -609,6 +635,18 @@ export default function App({
         <button type="button" className={emptyStateButton.secondary} onClick={startEmpty}>
           {t.firstRun.startEmpty}
         </button>
+        {!tutorialSeen && (
+          <button
+            type="button"
+            className={emptyStateButton.link}
+            aria-haspopup="dialog"
+            onClick={(event) => {
+              openHowTo(event.currentTarget, false)
+            }}
+          >
+            {t.howTo.firstRunLink}
+          </button>
+        )}
       </EmptyState>
     ) : activeTag === null && tasks.length === 0 && snoozed.length > 0 ? (
       // Honest: cards were left for tomorrow, so this is not "all done".
@@ -829,6 +867,9 @@ export default function App({
           offlineReady={pwa.offlineReady}
           theme={theme}
           onThemeChange={changeTheme}
+          onOpenHowTo={() => {
+            openHowTo(null, true)
+          }}
           onClose={closeSheet}
         />
       )}
@@ -844,6 +885,7 @@ export default function App({
           onClose={closeSheet}
         />
       )}
+      {sheet === 'howto' && <HowToSheet onClose={closeHowTo} />}
       {sheet === 'decks' && (
         <DeckSheet
           decks={decks}

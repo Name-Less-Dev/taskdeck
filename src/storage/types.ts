@@ -17,6 +17,8 @@ export const SettingsSchema = z.object({
   alarm: z.enum(ALARM_OPTIONS).default('15m'),
   // Stage 5, same approach: the iOS "Add to Home Screen" hint was dismissed.
   installHintDismissed: z.boolean().default(false),
+  // The how-to was closed, skipped or finished once; only hides the first-run link.
+  tutorialSeen: z.boolean().default(false),
 })
 export type Settings = z.infer<typeof SettingsSchema>
 
@@ -29,7 +31,7 @@ export type Meta = z.infer<typeof MetaSchema>
 
 export const DEFAULT_META: Meta = {
   schemaVersion: SCHEMA_VERSION,
-  settings: { activeDeckId: null, language: 'auto', alarm: '15m', installHintDismissed: false },
+  settings: { activeDeckId: null, language: 'auto', alarm: '15m', installHintDismissed: false, tutorialSeen: false },
   lastBackupAt: null,
 }
 

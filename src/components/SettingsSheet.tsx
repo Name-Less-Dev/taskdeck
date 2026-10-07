@@ -8,6 +8,7 @@ import { useI18n, type Dictionary } from '../i18n/index.tsx'
 import type { BackupError, BackupWarning, Language, ParseBackupResult, PersistenceState } from '../storage/index.ts'
 import form from './Form.module.css'
 import styles from './SettingsSheet.module.css'
+import { Icon } from './Icon.tsx'
 import { Sheet } from './Sheet.tsx'
 
 export interface SettingsSheetProps {
@@ -42,6 +43,7 @@ export interface SettingsSheetProps {
   readonly offlineReady: boolean
   readonly theme: Theme
   readonly onThemeChange: (theme: Theme) => void
+  readonly onOpenHowTo: () => void
   readonly onClose: () => void
 }
 
@@ -74,7 +76,7 @@ const LANGUAGE_OPTIONS: readonly { value: Language; label: (t: Dictionary) => st
   { value: 'en', label: (t) => t.settings.languageEn },
 ]
 
-/** Settings: language, appearance, app (offline, install), calendar, storage status, backup export and import. */
+/** Settings: help, language, appearance, app (offline, install), calendar, storage status, backup export and import. */
 export function SettingsSheet({
   language,
   languageForcedByUrl,
@@ -100,6 +102,7 @@ export function SettingsSheet({
   offlineReady,
   theme,
   onThemeChange,
+  onOpenHowTo,
   onClose,
 }: SettingsSheetProps) {
   const { locale, t } = useI18n()
@@ -160,6 +163,22 @@ export function SettingsSheet({
   return (
     <Sheet title={t.settings.title} onClose={onClose}>
       <div className={styles.body}>
+        <section className={styles.section} aria-labelledby={`${id}-help`}>
+          <h3 id={`${id}-help`} className={styles.heading}>
+            {t.howTo.helpHeading}
+          </h3>
+          <button
+            type="button"
+            className={styles.helpButton}
+            aria-haspopup="dialog"
+            aria-label={t.howTo.openLabel}
+            onClick={onOpenHowTo}
+          >
+            <Icon name="help" size={20} />
+            <span>{t.howTo.open}</span>
+          </button>
+        </section>
+
         <fieldset className={styles.section}>
           <legend className={styles.heading}>{t.settings.languageLegend}</legend>
           <div className={styles.options}>

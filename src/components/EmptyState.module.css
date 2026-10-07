@@ -60,6 +60,19 @@
   background: var(--color-surface);
 }
 
+/* A discreet third option (e.g. "See how it works"): a text link look, full target size. */
+.link {
+  flex-basis: 100%;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* "All done for today": a short pop and ring, only without reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .empty[data-celebrate] .icon {

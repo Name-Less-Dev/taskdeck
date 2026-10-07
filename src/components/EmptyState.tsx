@@ -14,7 +14,7 @@ export interface EmptyStateProps {
 }
 
 /** Button classes for actions passed as children. */
-export const emptyStateButton = { primary: styles.primary, secondary: styles.secondary }
+export const emptyStateButton = { primary: styles.primary, secondary: styles.secondary, link: styles.link }
 
 /** Message shown instead of the cards. Defaults to "all caught up". */
 export function EmptyState({ title, body, icon = 'check', children, celebrate = false }: EmptyStateProps) {

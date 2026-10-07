@@ -130,7 +130,7 @@ describe('IndexedDB storage: validation and repair', () => {
 
     const loaded = ready(await storage.load())
 
-    expect(loaded.meta.settings).toEqual({ activeDeckId: null, language: 'auto', alarm: '15m', installHintDismissed: false })
+    expect(loaded.meta.settings).toEqual({ activeDeckId: null, language: 'auto', alarm: '15m', installHintDismissed: false, tutorialSeen: false })
     expect(loaded.quarantined).toBe(1)
   })
 })
@@ -143,7 +143,7 @@ describe('IndexedDB storage: settings added later', () => {
 
     const loaded = ready(await storage.load())
 
-    expect(loaded.meta.settings).toEqual({ activeDeckId: 'work', language: 'en', alarm: '15m', installHintDismissed: false })
+    expect(loaded.meta.settings).toEqual({ activeDeckId: 'work', language: 'en', alarm: '15m', installHintDismissed: false, tutorialSeen: false })
     expect(loaded.quarantined).toBe(0)
   })
 })

@@ -28,7 +28,7 @@ function renderApp(activeDeckId: string | null = null) {
   return renderWithI18n(
     <App
       {...appProps(data, {
-        initialMeta: { ...DEFAULT_META, settings: { activeDeckId, language: 'auto', alarm: '15m', installHintDismissed: false } },
+        initialMeta: { ...DEFAULT_META, settings: { activeDeckId, language: 'auto', alarm: '15m', installHintDismissed: false, tutorialSeen: false } },
         createId: () => `new-${String(++next)}`,
       })}
     />,

@@ -109,6 +109,7 @@ export function Root({
           createId={createId}
           persistence={persistence}
           download={download}
+          openHowToOnLoad={new URLSearchParams(search).get('help') === '1'}
         />
       )}
     </I18nProvider>
