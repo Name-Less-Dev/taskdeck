@@ -20,8 +20,12 @@ describe('index.html metadata', () => {
     expect(meta('property', 'og:type')).toBe('website')
     expect(meta('property', 'og:url')).toBe(`${SITE}/`)
     expect(meta('property', 'og:image')).toBe(`${SITE}/og.png`)
-    expect(meta('property', 'og:image:width')).toBe('1200')
-    expect(meta('property', 'og:image:height')).toBe('630')
+    // The declared size is the real size of public/og.png (PNG IHDR: width, height).
+    const png = readFileSync(new URL('../../public/og.png', import.meta.url))
+    expect(meta('property', 'og:image:width')).toBe(String(png.readUInt32BE(16)))
+    expect(meta('property', 'og:image:height')).toBe(String(png.readUInt32BE(20)))
+    expect(meta('property', 'og:image:width')).toBe('893')
+    expect(meta('property', 'og:image:height')).toBe('893')
   })
 
   it('has the matching Twitter card', () => {
