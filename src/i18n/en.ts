@@ -261,6 +261,43 @@ export const en: Dictionary = {
     saveFailed: 'Your latest changes could not be saved.',
     retry: 'Try again',
   },
+  howTo: {
+    title: 'How to use',
+    stepOf: (step, total) => `Step ${step} of ${total}`,
+    announce: (step, total, title) => `Step ${step} of ${total}: ${title}`,
+    back: 'Back',
+    next: 'Next',
+    finish: 'Finish',
+    skip: 'Skip',
+    keyboardHint: 'On a computer, the arrow keys work too.',
+    helpHeading: 'Help',
+    open: 'How to use',
+    openLabel: 'How to use: open the tutorial',
+    firstRunLink: 'See how it works',
+    figure: { card: 'Task', scheduled: 'Scheduled', backup: 'Backup' },
+    steps: [
+      {
+        title: 'One card at a time',
+        body: 'The deck shows the most urgent card. Tap the card to flip it and see the description.',
+      },
+      {
+        title: 'Swipe sideways',
+        body: "Right completes it. Left saves it for later: the card goes to the end of today's deck.",
+      },
+      {
+        title: 'Up and down',
+        body: 'Down moves it to tomorrow: the card is away until then. Up deletes it (you can undo).',
+      },
+      {
+        title: 'Prefer buttons?',
+        body: 'The buttons at the bottom do the same actions.',
+      },
+      {
+        title: 'Repeats and due dates',
+        body: 'Repeating tasks only show up on the right day; see the upcoming ones in Scheduled. Undo is at the top. Your data stays on this device only: make a backup in Settings.',
+      },
+    ],
+  },
   firstRun: {
     title: 'Welcome to taskdeck',
     body: 'Start with a few sample tasks to try the gestures, or with an empty deck.',

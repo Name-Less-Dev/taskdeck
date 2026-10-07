@@ -255,6 +255,23 @@ export interface Dictionary {
     readonly saveFailed: string
     readonly retry: string
   }
+  readonly howTo: {
+    readonly title: string
+    readonly stepOf: (step: number, total: number) => string
+    readonly announce: (step: number, total: number, title: string) => string
+    readonly back: string
+    readonly next: string
+    readonly finish: string
+    readonly skip: string
+    readonly keyboardHint: string
+    readonly helpHeading: string
+    readonly open: string
+    readonly openLabel: string
+    readonly firstRunLink: string
+    readonly figure: { readonly card: string; readonly scheduled: string; readonly backup: string }
+    /** Exactly five steps, in order. */
+    readonly steps: readonly { readonly title: string; readonly body: string }[]
+  }
   readonly firstRun: {
     readonly title: string
     readonly body: string

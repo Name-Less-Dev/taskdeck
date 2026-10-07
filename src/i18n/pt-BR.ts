@@ -265,6 +265,43 @@ export const ptBR: Dictionary = {
     saveFailed: 'Não foi possível salvar as últimas alterações.',
     retry: 'Tentar de novo',
   },
+  howTo: {
+    title: 'Como usar',
+    stepOf: (step, total) => `Passo ${step} de ${total}`,
+    announce: (step, total, title) => `Passo ${step} de ${total}: ${title}`,
+    back: 'Voltar',
+    next: 'Próximo',
+    finish: 'Concluir',
+    skip: 'Pular',
+    keyboardHint: 'No computador, as setas do teclado também.',
+    helpHeading: 'Ajuda',
+    open: 'Como usar',
+    openLabel: 'Como usar: abrir o tutorial',
+    firstRunLink: 'Ver como funciona',
+    figure: { card: 'Tarefa', scheduled: 'Agendadas', backup: 'Backup' },
+    steps: [
+      {
+        title: 'Uma carta por vez',
+        body: 'O baralho mostra a carta mais urgente. Toque na carta para virar e ver a descrição.',
+      },
+      {
+        title: 'Deslize para os lados',
+        body: 'Para a direita, conclui. Para a esquerda, deixa para mais tarde: a carta vai para o fim do baralho de hoje.',
+      },
+      {
+        title: 'Para cima e para baixo',
+        body: 'Para baixo, adia para amanhã: a carta some até lá. Para cima, apaga (dá para desfazer).',
+      },
+      {
+        title: 'Prefere botões?',
+        body: 'Os botões na parte de baixo fazem as mesmas ações.',
+      },
+      {
+        title: 'Repetições e prazos',
+        body: 'Tarefas que se repetem só aparecem no dia certo; veja as próximas em Agendadas. O Desfazer fica no topo. Seus dados ficam só neste aparelho: faça backup em Configurações.',
+      },
+    ],
+  },
   firstRun: {
     title: 'Bem-vindo ao taskdeck',
     body: 'Comece com algumas tarefas de exemplo para experimentar os gestos, ou com o baralho vazio.',

@@ -1,0 +1,200 @@
+/* How-to sheet: text first, then a static figure, then the navigation. Nothing moves. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.progress {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.stage {
+  min-width: 0;
+}
+
+.figure {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+  padding: var(--space-4) var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.stack {
+  position: relative;
+  width: 132px;
+  height: 120px;
+}
+
+.miniCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-1);
+  width: 112px;
+  height: 100px;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.stack .miniCard {
+  position: absolute;
+  left: 10px;
+}
+
+.stack .miniCard[data-depth='2'] {
+  top: 0;
+  transform: scale(0.88);
+}
+
+.stack .miniCard[data-depth='1'] {
+  top: 6px;
+  transform: scale(0.94);
+}
+
+.stack .miniCard[data-depth='0'] {
+  top: 14px;
+}
+
+.miniTitle {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.miniHint {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.cross,
+.column {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.column {
+  flex-direction: column;
+}
+
+.cross .miniCard,
+.column .miniCard {
+  width: 96px;
+  height: 72px;
+}
+
+/* Direction labels: arrow + word, on the semantic action colours. */
+.arrow {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  color: var(--color-on-overlay);
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.arrow[data-direction='right'] {
+  background: var(--color-complete);
+}
+
+.arrow[data-direction='left'] {
+  background: var(--color-postpone);
+}
+
+.arrow[data-direction='up'] {
+  background: var(--color-remove);
+}
+
+.arrow[data-direction='down'] {
+  background: var(--color-snooze);
+}
+
+.miniBar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+  width: 100%;
+  max-width: 340px;
+}
+
+.miniBar span {
+  padding: var(--space-2) var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.miniBar span[data-primary] {
+  border-color: var(--color-complete);
+  background: var(--color-complete);
+  color: var(--color-on-overlay);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.chip {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.navMain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.skip {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
