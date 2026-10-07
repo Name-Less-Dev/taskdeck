@@ -88,7 +88,7 @@ export interface AppProps {
 type SheetKind = 'add' | 'edit' | 'decks' | 'settings' | 'scheduled'
 
 // Toast and announcement keys per action (same names in both dictionary sections).
-const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed' } as const
+const MESSAGE_KEY = { complete: 'completed', postpone: 'postponed', remove: 'removed', snooze: 'snoozed' } as const
 
 export default function App({
   initialData,
@@ -568,6 +568,10 @@ export default function App({
       case 'ArrowLeft':
         event.preventDefault()
         requestAction('postpone')
+        return
+      case 'ArrowDown':
+        event.preventDefault()
+        requestAction('snooze')
         return
       case 'Delete':
       case 'Backspace':

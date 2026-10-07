@@ -81,11 +81,11 @@ describe('no state leaks from one top card to the next', () => {
     const { user } = renderWithI18n(<App {...appProps({ decks: [{ id: 'd', name: 'G' }], tasks: [task('a', 'A'), task('b', 'B')] })} />)
 
     await user.click(topCard())
-    await user.click(screen.getByRole('button', { name: 'Adiar' }))
+    await user.click(screen.getByRole('button', { name: 'Mais tarde' }))
     await waitFor(() => {
       expect(topCard()).toHaveAccessibleName(/^B/)
     })
-    await user.click(screen.getByRole('button', { name: 'Adiar' }))
+    await user.click(screen.getByRole('button', { name: 'Mais tarde' }))
     await waitFor(() => {
       expect(topCard()).toHaveAccessibleName(/^A/)
     })

@@ -41,10 +41,11 @@ const TEXT_PAIRS: readonly [fg: string, bg: string][] = [
   ['info-fg', 'info-bg'],
   ['neutral-fg', 'neutral-bg'],
   ['muted-fg', 'muted-bg'],
-  // Swipe overlays: complete, postpone, delete.
+  // Swipe overlays: complete, later, delete, tomorrow.
   ['on-overlay', 'complete'],
   ['on-overlay', 'postpone'],
   ['on-overlay', 'remove'],
+  ['on-overlay', 'snooze'],
   // Escalated cards (overdue / soon): every text colour used on a card face.
   ['text', 'danger-surface'],
   ['text-muted', 'danger-surface'],

@@ -4,12 +4,13 @@ import { renderWithI18n } from '../test/render.tsx'
 import { ActionBar } from './ActionBar.tsx'
 
 describe('ActionBar', () => {
-  it('offers Postpone, Delete and Complete with visible labels, in thumb-zone order', () => {
+  it('offers Later, Tomorrow, Delete and Complete with visible labels, Complete on the right', () => {
     renderWithI18n(<ActionBar disabled={false} onAction={vi.fn()} />)
 
     const group = screen.getByRole('group', { name: 'Ações da carta' })
     expect(within(group).getAllByRole('button').map((button) => button.textContent)).toEqual([
-      'Adiar',
+      'Mais tarde',
+      'Amanhã',
       'Apagar',
       'Concluir',
     ])
@@ -19,17 +20,18 @@ describe('ActionBar', () => {
     const onAction = vi.fn()
     const { user } = renderWithI18n(<ActionBar disabled={false} onAction={onAction} />)
 
-    await user.click(screen.getByRole('button', { name: 'Adiar' }))
+    await user.click(screen.getByRole('button', { name: 'Mais tarde' }))
+    await user.click(screen.getByRole('button', { name: 'Amanhã' }))
     await user.click(screen.getByRole('button', { name: 'Apagar' }))
     await user.click(screen.getByRole('button', { name: 'Concluir' }))
 
-    expect(onAction.mock.calls).toEqual([['postpone'], ['remove'], ['complete']])
+    expect(onAction.mock.calls).toEqual([['postpone'], ['snooze'], ['remove'], ['complete']])
   })
 
   it('disables every button when there is no card to act on', () => {
     renderWithI18n(<ActionBar disabled onAction={vi.fn()} />)
 
-    for (const name of ['Adiar', 'Apagar', 'Concluir']) {
+    for (const name of ['Mais tarde', 'Amanhã', 'Apagar', 'Concluir']) {
       expect(screen.getByRole('button', { name })).toBeDisabled()
     }
   })
@@ -41,5 +43,7 @@ describe('ActionBar', () => {
     expect(details).not.toHaveAttribute('open')
     expect(within(details as HTMLElement).getByText('Atalhos')).toBeInTheDocument()
     expect(within(details as HTMLElement).getByText('Espaço')).toBeInTheDocument()
+    expect(within(details as HTMLElement).getByText('↓')).toBeInTheDocument()
+    expect(within(details as HTMLElement).getAllByText('Amanhã')).toHaveLength(1)
   })
 })

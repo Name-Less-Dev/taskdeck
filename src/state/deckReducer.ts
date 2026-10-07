@@ -12,6 +12,8 @@ import {
   removeTask,
   renameDeck,
   createDeck,
+  snoozeTask,
+  unsnoozeTask,
   undo,
   updateTask,
   upsertTask,
@@ -37,6 +39,8 @@ export type DeckAction =
   | { readonly type: 'complete'; readonly id: string; readonly now: Date }
   | { readonly type: 'postpone'; readonly id: string; readonly now: Date }
   | { readonly type: 'remove'; readonly id: string; readonly now: Date }
+  | { readonly type: 'snooze'; readonly id: string; readonly now: Date }
+  | { readonly type: 'unsnooze'; readonly id: string; readonly now: Date }
   | { readonly type: 'updateTask'; readonly id: string; readonly patch: TaskPatch; readonly now: Date }
   | { readonly type: 'addDeck'; readonly deck: Deck; readonly now: Date }
   | { readonly type: 'renameDeck'; readonly id: string; readonly name: string; readonly now: Date }
@@ -89,6 +93,15 @@ function apply(data: AppData, action: Exclude<DeckAction, { type: 'undo' | 'redo
     case 'postpone': {
       const task = findActive(tasks, action.id)
       return task === null ? null : withTasks(upsertTask(tasks, postponeTask(task, action.now)))
+    }
+
+    case 'snooze':
+    case 'unsnooze': {
+      const task = findActive(tasks, action.id)
+      if (task === null) return null
+      const next = action.type === 'snooze' ? snoozeTask(task, action.now) : unsnoozeTask(task)
+      // Not snoozable / nothing to clear: no change, no history entry.
+      return next === task ? null : withTasks(upsertTask(tasks, next))
     }
 
     case 'remove':

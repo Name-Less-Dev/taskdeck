@@ -40,7 +40,7 @@ describe('cards that exit but stay in the deck', () => {
     const { user } = renderWithI18n(<App {...appProps({ decks: [{ id: 'd', name: 'G' }], tasks: [a, task('b', 'Outra')] })} />)
     const cardA = topCard()
 
-    await user.click(screen.getByRole('button', { name: 'Adiar' }))
+    await user.click(screen.getByRole('button', { name: 'Mais tarde' }))
     await waitFor(() => {
       expect(topCard()).toHaveAccessibleName(/^Outra/)
     })
@@ -81,11 +81,11 @@ describe('cards that exit but stay in the deck', () => {
   it('actions keep working after a card comes back (nothing stays locked)', async () => {
     const { user } = renderWithI18n(<App {...appProps({ decks: [{ id: 'd', name: 'G' }], tasks: [task('a', 'A'), task('b', 'B')] })} />)
 
-    await user.click(screen.getByRole('button', { name: 'Adiar' }))
+    await user.click(screen.getByRole('button', { name: 'Mais tarde' }))
     await waitFor(() => {
       expect(topCard()).toHaveAccessibleName(/^B/)
     })
-    await user.click(screen.getByRole('button', { name: 'Adiar' }))
+    await user.click(screen.getByRole('button', { name: 'Mais tarde' }))
     await waitFor(() => {
       expect(topCard()).toHaveAccessibleName(/^A/)
     })

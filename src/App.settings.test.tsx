@@ -87,7 +87,7 @@ describe('settings: storage status', () => {
     const { user } = renderApp({ persistence })
     expect(persistence.request).not.toHaveBeenCalled()
 
-    await user.click(screen.getByRole('button', { name: 'Adiar' }))
+    await user.click(screen.getByRole('button', { name: 'Mais tarde' }))
 
     await waitFor(() => {
       expect(persistence.request).toHaveBeenCalledTimes(1)
@@ -98,7 +98,7 @@ describe('settings: storage status', () => {
     const persistence = fakePersistence()
     const { user } = renderApp({ persistence, storageMode: 'memory' })
 
-    await user.click(screen.getByRole('button', { name: 'Adiar' }))
+    await user.click(screen.getByRole('button', { name: 'Mais tarde' }))
     const dialog = await openSettings(user)
 
     expect(persistence.request).not.toHaveBeenCalled()

@@ -4,7 +4,7 @@
  * so the rule is unit-tested without simulating pointer events.
  */
 
-export type SwipeAction = 'complete' | 'postpone' | 'remove'
+export type SwipeAction = 'complete' | 'postpone' | 'remove' | 'snooze'
 
 export interface Vector {
   readonly x: number
@@ -23,7 +23,7 @@ export interface SwipeInput {
 /** Horizontal swipes need at least this fraction of the card width. */
 export const HORIZONTAL_DISTANCE_RATIO = 0.3
 
-/** Upward swipes need at least this fraction of the card height. */
+/** Vertical swipes (up and down) need at least this fraction of the card height. */
 export const VERTICAL_DISTANCE_RATIO = 0.22
 
 /** A release at least this fast (px/s) on the dominant axis counts as a flick... */
@@ -49,7 +49,8 @@ function passes(offset: number, velocity: number, distanceThreshold: number): bo
 }
 
 /**
- * Right = complete, left = postpone, up = remove, down or undecided = null.
+ * Right = complete, left = postpone ("Later"), up = remove, down = snooze
+ * ("Tomorrow"), undecided = null. Up and down use the same thresholds.
  * A swipe is accepted by distance (30% of the width / 22% of the height) or
  * by a flick (>= 500 px/s with at least 40 px of travel). A non-positive
  * size disables the distance rule; flicks still work.
@@ -67,6 +68,6 @@ export function decideSwipe({ offset, velocity, size }: SwipeInput): SwipeAction
     return offset.x > 0 ? 'complete' : 'postpone'
   }
 
-  if (offset.y > 0) return null
-  return passes(offset.y, velocity.y, size.height * VERTICAL_DISTANCE_RATIO) ? 'remove' : null
+  if (!passes(offset.y, velocity.y, size.height * VERTICAL_DISTANCE_RATIO)) return null
+  return offset.y < 0 ? 'remove' : 'snooze'
 }

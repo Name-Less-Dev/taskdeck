@@ -5,6 +5,7 @@ import { Icon, type IconName } from './Icon.tsx'
 
 const BUTTONS: readonly { action: SwipeAction; icon: IconName }[] = [
   { action: 'postpone', icon: 'clock' },
+  { action: 'snooze', icon: 'moon' },
   { action: 'remove', icon: 'trash' },
   { action: 'complete', icon: 'check' },
 ]
@@ -54,6 +55,10 @@ export function ActionBar({ disabled, onAction }: ActionBarProps) {
             <kbd>←</kbd>
           </dt>
           <dd>{keys.postpone}</dd>
+          <dt>
+            <kbd>↓</kbd>
+          </dt>
+          <dd>{keys.snooze}</dd>
           <dt>
             <kbd>Delete</kbd> / <kbd>Backspace</kbd>
           </dt>

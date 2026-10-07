@@ -35,8 +35,8 @@ test('dragging left postpones the top card', async ({ page }) => {
 
   await drag(page, -260, 0)
 
-  await expect(page.getByText('Tarefa adiada', { exact: true })).toBeVisible()
-  await expect(liveRegion(page)).toContainText(`Tarefa adiada: ${title}.`)
+  await expect(page.getByText('Para mais tarde', { exact: true })).toBeVisible()
+  await expect(liveRegion(page)).toContainText(`Para mais tarde: ${title}.`)
   expect(await topCardTitle(page)).not.toBe(title)
 })
 

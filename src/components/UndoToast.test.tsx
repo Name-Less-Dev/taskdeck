@@ -100,7 +100,7 @@ describe('UndoToast', () => {
     advance(5000)
     rerender(
       <I18nProvider locale="pt-BR">
-        <UndoToast toast={{ id: 2, message: 'Tarefa adiada' }} onUndo={vi.fn()} onDismiss={onDismiss} />
+        <UndoToast toast={{ id: 2, message: 'Para mais tarde' }} onUndo={vi.fn()} onDismiss={onDismiss} />
       </I18nProvider>,
     )
     advance(5000)

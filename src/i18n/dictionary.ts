@@ -29,6 +29,7 @@ export interface Dictionary {
   readonly actions: {
     readonly complete: string
     readonly postpone: string
+    readonly snooze: string
     readonly remove: string
     readonly undo: string
     readonly redo: string
@@ -77,6 +78,7 @@ export interface Dictionary {
   readonly toast: {
     readonly completed: string
     readonly postponed: string
+    readonly snoozed: string
     readonly removed: string
     readonly deckCreated: string
     readonly deckRenamed: string
@@ -88,6 +90,7 @@ export interface Dictionary {
   readonly announce: {
     readonly completed: (title: string) => string
     readonly postponed: (title: string) => string
+    readonly snoozed: (title: string) => string
     readonly removed: (title: string) => string
     readonly added: (title: string) => string
     readonly samplesLoaded: (count: number) => string
@@ -137,6 +140,7 @@ export interface Dictionary {
     readonly flip: string
     readonly complete: string
     readonly postpone: string
+    readonly snooze: string
     readonly remove: string
     readonly undo: string
     readonly redo: string

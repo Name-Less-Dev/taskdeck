@@ -226,3 +226,34 @@ describe('deckReducer: no-ops never push history', () => {
     expect(state.present.decks).toHaveLength(2)
   })
 })
+
+describe('deckReducer: snooze and unsnooze', () => {
+  it('snoozes until tomorrow with an undo entry, and redo applies it again', () => {
+    const snoozed = run([{ type: 'snooze', id: 'report', now: NOW }])
+
+    expect(task(snoozed, 'report')).toMatchObject({ snoozedUntil: '2026-10-06', postponedDays: 1 })
+    expect(canUndo(snoozed)).toBe(true)
+    const undone = deckReducer(snoozed, { type: 'undo', now: LATER })
+    expect(task(undone, 'report')?.snoozedUntil).toBeNull()
+    expect(task(deckReducer(undone, { type: 'redo', now: LATER }), 'report')?.snoozedUntil).toBe('2026-10-06')
+  })
+
+  it('unsnooze brings it back, with its own undo entry', () => {
+    const snoozed = run([{ type: 'snooze', id: 'report', now: NOW }])
+    const back = deckReducer(snoozed, { type: 'unsnooze', id: 'report', now: LATER })
+
+    expect(task(back, 'report')?.snoozedUntil).toBeNull()
+    expect(task(deckReducer(back, { type: 'undo', now: LATER }), 'report')?.snoozedUntil).toBe('2026-10-06')
+  })
+
+  it.each<[string, DeckAction]>([
+    ['snoozing an already snoozed task', { type: 'snooze', id: 'report', now: LATER }],
+    ['snoozing a done task', { type: 'snooze', id: 'done', now: LATER }],
+    ['snoozing an unknown task', { type: 'snooze', id: 'nope', now: LATER }],
+    ['unsnoozing a task that is not snoozed', { type: 'unsnooze', id: 'one-off', now: LATER }],
+  ])('is a no-op without a history entry: %s', (_name, action) => {
+    const before = run([{ type: 'snooze', id: 'report', now: NOW }])
+
+    expect(deckReducer(before, action)).toBe(before)
+  })
+})

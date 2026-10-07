@@ -45,9 +45,17 @@ describe('decideSwipe', () => {
     ['a diagonal at the upper edge of the dead zone (1.4)', { x: 280, y: -200 }, still, null],
     ['just outside the dead zone, horizontal wins', { x: 290, y: -200 }, still, 'complete'],
     ['just outside the dead zone, vertical wins', { x: -130, y: -200 }, still, 'remove'],
-    // Downwards
-    ['down by a long distance', { x: 0, y: 300 }, still, null],
-    ['a fast flick downwards', { x: 0, y: 100 }, { x: 0, y: 2000 }, null],
+    // Downwards: snooze ("Tomorrow"), same thresholds as up
+    ['down by a long distance', { x: 0, y: 300 }, still, 'snooze'],
+    ['down at exactly 22% of the height', { x: 5, y: 110 }, still, 'snooze'],
+    ['down just under the distance threshold, slow', { x: 0, y: 109 }, still, null],
+    ['a fast flick downwards', { x: 0, y: 100 }, { x: 0, y: 2000 }, 'snooze'],
+    ['a downward flick at exactly 500 px/s and 40 px', { x: 0, y: 40 }, { x: 0, y: 500 }, 'snooze'],
+    ['a downward flick that moved less than 40 px', { x: 0, y: 39 }, { x: 0, y: 2000 }, null],
+    ['a downward flick just under 500 px/s', { x: 0, y: 60 }, { x: 0, y: 499 }, null],
+    ['a flick up while dragged down cancels', { x: 0, y: 80 }, { x: 0, y: -900 }, null],
+    ['a 45-degree diagonal downwards', { x: -200, y: 200 }, { x: -900, y: 900 }, null],
+    ['just outside the dead zone downwards, vertical wins', { x: 130, y: 200 }, still, 'snooze'],
     // Zero values
     ['no movement at all', { x: 0, y: 0 }, still, null],
     ['no movement with velocity noise', { x: 0, y: 0 }, { x: 900, y: 0 }, null],

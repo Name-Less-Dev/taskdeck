@@ -61,6 +61,7 @@ const OVERLAYS: readonly { action: SwipeAction; icon: IconName }[] = [
   { action: 'complete', icon: 'check' },
   { action: 'postpone', icon: 'clock' },
   { action: 'remove', icon: 'trash' },
+  { action: 'snooze', icon: 'moon' },
 ]
 
 function progress(distance: number, threshold: number): number {
@@ -114,7 +115,8 @@ export function TaskCard({
   const completeOpacity = useTransform(x, (v) => progress(v, sizeRef.current.width * HORIZONTAL_DISTANCE_RATIO))
   const postponeOpacity = useTransform(x, (v) => progress(-v, sizeRef.current.width * HORIZONTAL_DISTANCE_RATIO))
   const removeOpacity = useTransform(y, (v) => progress(-v, sizeRef.current.height * VERTICAL_DISTANCE_RATIO))
-  const overlayOpacity = { complete: completeOpacity, postpone: postponeOpacity, remove: removeOpacity }
+  const snoozeOpacity = useTransform(y, (v) => progress(v, sizeRef.current.height * VERTICAL_DISTANCE_RATIO))
+  const overlayOpacity = { complete: completeOpacity, postpone: postponeOpacity, remove: removeOpacity, snooze: snoozeOpacity }
 
   const onExitedRef = useRef(onExited)
   const onExitInterruptedRef = useRef(onExitInterrupted)
@@ -151,7 +153,9 @@ export function TaskCard({
             ? { value: x, to: window.innerWidth * 1.2 }
             : exit === 'postpone'
               ? { value: x, to: -window.innerWidth * 1.2 }
-              : { value: y, to: -window.innerHeight * 1.2 }
+              : exit === 'snooze'
+                ? { value: y, to: window.innerHeight * 1.2 }
+                : { value: y, to: -window.innerHeight * 1.2 }
         await Promise.all([
           animate(target.value, target.to, EXIT_TRANSITION).finished,
           animate(opacity, 0, EXIT_TRANSITION).finished,

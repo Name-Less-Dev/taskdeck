@@ -226,6 +226,10 @@
   background: var(--color-remove);
 }
 
+.overlay[data-action='snooze'] {
+  background: var(--color-snooze);
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* No 3D flip: the faces cross-fade instead. Dragging still works. */
   .slot {

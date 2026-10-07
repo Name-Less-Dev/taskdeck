@@ -56,6 +56,7 @@
   --color-complete: #1d7238;
   --color-postpone: #8a4b00;
   --color-remove: #b3261e;
+  --color-snooze: #5b3fa8;
   --color-on-overlay: #ffffff;
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 8%), 0 8px 24px rgb(0 0 0 / 10%);
@@ -90,6 +91,7 @@
   --color-complete: #1d7238;
   --color-postpone: #8a4b00;
   --color-remove: #b3261e;
+  --color-snooze: #5b3fa8;
   --color-on-overlay: #ffffff;
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 45%);
@@ -124,6 +126,7 @@
   --color-complete: #1d7238;
   --color-postpone: #8a4b00;
   --color-remove: #b3261e;
+  --color-snooze: #5b3fa8;
   --color-on-overlay: #ffffff;
 
   --shadow-card: 0 1px 2px rgb(58 29 61 / 8%), 0 8px 24px rgb(58 29 61 / 10%);
@@ -158,6 +161,7 @@
   --color-complete: #1d7238;
   --color-postpone: #8a4b00;
   --color-remove: #b3261e;
+  --color-snooze: #5b3fa8;
   --color-on-overlay: #ffffff;
   --color-tag-fg: #2b2620;
   --color-tag-0: #ffd9d6;
@@ -199,6 +203,7 @@
   --color-complete: #7dff4d;
   --color-postpone: #ffb000;
   --color-remove: #ff3d8b;
+  --color-snooze: #b28cff;
   --color-on-overlay: #0a0a0f;
 
   --shadow-card: 0 1px 2px rgb(0 0 0 / 50%), 0 8px 24px rgb(0 0 0 / 55%);

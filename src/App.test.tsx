@@ -121,7 +121,7 @@ describe('App deck', () => {
       expect(deckTitles()).toEqual(['Enviar relatório', 'Ler um livro', 'Pagar a luz'])
     })
     expect(screen.getByText('adiada 1 dia')).toBeInTheDocument()
-    expect(liveRegion()).toHaveTextContent('Tarefa adiada: Pagar a luz.')
+    expect(liveRegion()).toHaveTextContent('Para mais tarde: Pagar a luz.')
   })
 
   it('deletes with the button and with the Delete key', async () => {
@@ -197,7 +197,7 @@ describe('App undo and redo', () => {
   it('undoes from the toast, restoring the postponed counter', async () => {
     const { user } = renderApp([overdue, today])
 
-    await user.click(screen.getByRole('button', { name: 'Adiar' }))
+    await user.click(screen.getByRole('button', { name: 'Mais tarde' }))
     const toast = await screen.findByTestId('undo-toast')
     expect(screen.getByText('adiada 1 dia')).toBeInTheDocument()
 
@@ -219,7 +219,7 @@ describe('App empty state', () => {
     expect(liveRegion()).toHaveTextContent(
       'Tarefa concluída: Enviar relatório. Desfazer disponível. Nenhuma tarefa no baralho.',
     )
-    for (const name of ['Adiar', 'Apagar', 'Concluir']) {
+    for (const name of ['Mais tarde', 'Apagar', 'Concluir']) {
       expect(screen.getByRole('button', { name })).toBeDisabled()
     }
     expect(screen.getByRole('region', { name: 'Baralho de tarefas' })).toHaveFocus()
