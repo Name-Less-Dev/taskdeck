@@ -53,7 +53,7 @@ function nextRecurrence(task: Task, patch: TaskPatch, due: Due | null): Recurren
 
 /**
  * Applies an edit and re-validates the task. id, createdAt, status,
- * completedAt, skippedAt and postponedDays are preserved; only the listed
+ * completedAt, skippedAt, postponedDays and snoozedUntil are preserved; only the listed
  * patch fields are read, whatever else the object carries.
  * Throws ZodError when the result is invalid, e.g. a recurrence without a due
  * date (removing the due date is fine if the same patch removes the recurrence).
@@ -78,5 +78,6 @@ export function updateTask(task: Task, patch: TaskPatch): Task {
     completedAt: task.completedAt,
     skippedAt: task.skippedAt,
     postponedDays: task.postponedDays,
+    snoozedUntil: task.snoozedUntil,
   })
 }

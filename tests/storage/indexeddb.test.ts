@@ -148,6 +148,21 @@ describe('IndexedDB storage: settings added later', () => {
   })
 })
 
+describe('IndexedDB storage: fields added later to tasks', () => {
+  it('loads tasks saved before snoozedUntil existed, with no snooze and nothing quarantined', async () => {
+    const storage = await createIndexedDbStorage(context())
+    await storage.save(sampleData(), sampleMeta)
+    const old: Record<string, unknown> = { ...makeTask({ id: 'old', deckId: 'home' }) }
+    delete old.snoozedUntil
+    await writeRaw({ tasks: [old] })
+
+    const loaded = ready(await storage.load())
+
+    expect(loaded.data.tasks.find((task) => task.id === 'old')?.snoozedUntil).toBeNull()
+    expect(loaded.quarantined).toBe(0)
+  })
+})
+
 describe('IndexedDB storage: versions', () => {
   it('migrates an older snapshot through the registered steps and rewrites it', async () => {
     // A fictional v0 where tasks had "name" instead of "title".

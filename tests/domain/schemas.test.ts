@@ -27,6 +27,7 @@ describe('createTask', () => {
       completedAt: null,
       skippedAt: null,
       postponedDays: 0,
+      snoozedUntil: null,
     })
   })
 

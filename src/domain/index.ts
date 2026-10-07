@@ -29,6 +29,7 @@ export {
   isoToTime,
   isSameLocalDay,
   toDayKey,
+  tomorrowKey,
 } from './dates.ts'
 export type { DayKey, IntervalUnit } from './dates.ts'
 
@@ -40,7 +41,7 @@ export { compareUrgency, isPostponedToday, orderDeck, topCard, URGENCY_BANDS } f
 export { isRecurring, nextDue } from './recurrence.ts'
 export type { RecurringTask } from './recurrence.ts'
 
-export { completeTask, postponeTask, removeTask, upsertTask } from './actions.ts'
+export { completeTask, postponeTask, removeTask, snoozeTask, unsnoozeTask, upsertTask } from './actions.ts'
 
 export { canRedo, canUndo, createHistory, DEFAULT_HISTORY_LIMIT, pushHistory, redo, undo } from './history.ts'
 export type { History } from './history.ts'
@@ -69,7 +70,7 @@ export type { RecurrenceInput, TaskPatch } from './edit.ts'
 export { describeRecurrence, diffDueBands, dueBand } from './bands.ts'
 export type { BandChange, BandKey, RecurrenceDescription } from './bands.ts'
 
-export { availableTasks, dailyProgress, dormantTasks, isAvailable } from './availability.ts'
+export { availableTasks, dailyProgress, dormantTasks, isAvailable, isSnoozed, snoozedTasks } from './availability.ts'
 export type { DailyProgress } from './availability.ts'
 
 export { alignToWeekdays, nextWeekdayAfter, weekdayOf } from './weekdays.ts'

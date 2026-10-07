@@ -80,18 +80,18 @@ describe('dailyProgress', () => {
       recurring('left-2', '2026-10-01'),
     ]
 
-    expect(dailyProgress(deepFreeze(tasks), NOW)).toEqual({ done: 2, remaining: 2 })
+    expect(dailyProgress(deepFreeze(tasks), NOW)).toEqual({ done: 2, remaining: 2, snoozed: 0 })
   })
 
   it('starts a new count at local midnight', () => {
     const tasks = [makeTask({ id: 'x', status: 'done', completedAt: localIso(2026, 9, 5, 23, 30) })]
 
-    expect(dailyProgress(tasks, new Date(2026, 9, 5, 23, 59))).toEqual({ done: 1, remaining: 0 })
-    expect(dailyProgress(tasks, new Date(2026, 9, 6, 0, 0))).toEqual({ done: 0, remaining: 0 })
+    expect(dailyProgress(tasks, new Date(2026, 9, 5, 23, 59))).toEqual({ done: 1, remaining: 0, snoozed: 0 })
+    expect(dailyProgress(tasks, new Date(2026, 9, 6, 0, 0))).toEqual({ done: 0, remaining: 0, snoozed: 0 })
   })
 
   it('is zero for nothing', () => {
-    expect(dailyProgress([], NOW)).toEqual({ done: 0, remaining: 0 })
+    expect(dailyProgress([], NOW)).toEqual({ done: 0, remaining: 0, snoozed: 0 })
   })
 })
 
@@ -104,7 +104,7 @@ describe('completing tasks and availability', () => {
     expect(done.due).toEqual({ date: '2026-10-12' })
     expect(isAvailable(done, NOW)).toBe(false)
     expect(isAvailable(done, new Date(2026, 9, 12, 0, 0))).toBe(true)
-    expect(dailyProgress([done], NOW)).toEqual({ done: 1, remaining: 0 })
+    expect(dailyProgress([done], NOW)).toEqual({ done: 1, remaining: 0, snoozed: 0 })
   })
 
   it('completing a dormant task early ("due" anchor) advances from its due date', () => {

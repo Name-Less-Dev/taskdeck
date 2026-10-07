@@ -23,6 +23,11 @@ export function toDayKey(date: Date): DayKey {
   return format(date, DAY_KEY_FORMAT)
 }
 
+/** The local day after the day of `now`, by the calendar (never by adding 24 h). */
+export function tomorrowKey(now: Date): DayKey {
+  return addToDayKey(toDayKey(now), 'day', 1)
+}
+
 function parseNumbers(text: string, separator: string): number[] {
   return text.split(separator).map(Number)
 }

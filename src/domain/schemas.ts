@@ -95,6 +95,10 @@ export const TaskSchema = z
     completedAt: z.iso.datetime().nullable(),
     skippedAt: z.iso.datetime().nullable(),
     postponedDays: z.int().min(0),
+    // "Tomorrow": hidden from the deck until this local day (exclusive of earlier days).
+    // Additive with a default, so data and backups saved before it load unchanged
+    // (schemaVersion stays 1). The due date is never touched by it.
+    snoozedUntil: z.iso.date().nullable().default(null),
   })
   .refine((t) => t.recurrence === null || t.due !== null, {
     error: 'a recurring task needs a due date',
@@ -163,5 +167,6 @@ export function createTask(input: TaskInput, { id, now }: CreateTaskContext): Ta
     completedAt: null,
     skippedAt: null,
     postponedDays: 0,
+    snoozedUntil: null,
   })
 }
