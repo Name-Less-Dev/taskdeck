@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { completeTask, type Task } from '../../src/domain/index.ts'
+import { completeTask, snoozeTask, type Task } from '../../src/domain/index.ts'
 import { rolloverStep } from '../../src/ui/rollover.ts'
 import { makeTask, NOW } from '../domain/fixtures.ts'
 
@@ -35,7 +35,16 @@ describe('rolloverStep', () => {
     const first = rolloverStep(null, [today], NOW)
     const completed = rolloverStep(first.state, [completeTask(today, NOW)], NOW)
 
-    expect(completed.state.dormantIds.has('today')).toBe(true)
+    expect(completed.state.waitingIds.has('today')).toBe(true)
     expect(rolloverStep(completed.state, [today], NOW).appeared).toBe(0)
+  })
+})
+
+describe('rolloverStep with snoozed cards', () => {
+  it('counts a card snoozed yesterday when it comes back', () => {
+    const snoozed = snoozeTask(makeTask({ id: 's' }), NOW)
+    const { state } = rolloverStep(null, [snoozed], NOW)
+
+    expect(rolloverStep(state, [snoozed], new Date(2026, 9, 6, 0, 0, 10)).appeared).toBe(1)
   })
 })

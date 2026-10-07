@@ -71,7 +71,7 @@ describe('startup', () => {
     const { user, unmount } = renderRoot()
 
     await user.click(await screen.findByRole('button', { name: 'Começar do zero' }))
-    expect(screen.getByRole('heading', { name: 'Tudo em dia!' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Nada para hoje' })).toBeInTheDocument()
     await waitFor(async () => {
       const storage = await createIndexedDbStorage({ createId: () => 'x', names })
       expect(await storage.load()).toMatchObject({ ok: true, firstRun: false, data: { tasks: [] } })
@@ -79,7 +79,7 @@ describe('startup', () => {
     unmount()
 
     renderRoot()
-    expect(await screen.findByRole('heading', { name: 'Tudo em dia!' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Nada para hoje' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Carregar tarefas de exemplo' })).toBeNull()
   })
 

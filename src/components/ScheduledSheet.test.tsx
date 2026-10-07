@@ -22,7 +22,7 @@ const TASKS = [recurring('a', 'Regar as plantas', '2026-10-06'), recurring('b', 
 function renderSheet(props: Partial<ScheduledSheetProps> = {}) {
   const handlers = { onCompleteNow: vi.fn(), onEdit: vi.fn(), onRemove: vi.fn(), onClose: vi.fn() }
   const result = renderWithI18n(
-    <ScheduledSheet tasks={TASKS} deckNames={new Map([['home', 'Casa']])} {...handlers} {...props} />,
+    <ScheduledSheet snoozed={[]} dormant={TASKS} onBringBack={vi.fn()} deckNames={new Map([['home', 'Casa']])} {...handlers} {...props} />,
   )
   return { ...result, ...handlers }
 }
@@ -58,11 +58,42 @@ describe('ScheduledSheet', () => {
     const handlers = { onCompleteNow: vi.fn(), onEdit: vi.fn(), onClose: vi.fn() }
 
     await user.click(screen.getByRole('button', { name: 'Apagar Regar as plantas' }))
-    rerender(<ScheduledSheet tasks={[TASKS[1] as RecurringTask]} deckNames={new Map()} onRemove={vi.fn()} {...handlers} />)
+    rerender(<ScheduledSheet snoozed={[]} dormant={[TASKS[1] as RecurringTask]} onBringBack={vi.fn()} deckNames={new Map()} onRemove={vi.fn()} {...handlers} />)
     expect(screen.getByRole('button', { name: 'Concluir agora: Lavar a roupa' })).toHaveFocus()
 
     await user.click(screen.getByRole('button', { name: 'Apagar Lavar a roupa' }))
-    rerender(<ScheduledSheet tasks={[]} deckNames={new Map()} onRemove={vi.fn()} {...handlers} />)
+    rerender(<ScheduledSheet snoozed={[]} dormant={[]} onBringBack={vi.fn()} deckNames={new Map()} onRemove={vi.fn()} {...handlers} />)
     expect(screen.getByText('Nenhuma carta agendada.')).toHaveFocus()
+  })
+})
+
+describe('ScheduledSheet: For tomorrow', () => {
+  const snoozed = [
+    { ...createTask({ deckId: 'home', title: 'Ligar para o banco', due: { date: '2026-10-05' } }, { id: 's', now: NOW }), snoozedUntil: '2026-10-06' },
+  ]
+
+  it('lists snoozed cards first, under "Para amanhã", before "Próximas"', () => {
+    renderSheet({ snoozed })
+
+    const headings = screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)
+    expect(headings).toEqual(['Para amanhã', 'Próximas'])
+    const item = screen.getByTestId('snoozed-item')
+    expect(item).toHaveTextContent('Volta amanhã')
+    expect(item).toHaveTextContent('Baralho: Casa')
+  })
+
+  it('offers "Trazer para hoje" plus complete now, edit and delete', async () => {
+    const onBringBack = vi.fn()
+    const { user, onCompleteNow, onEdit, onRemove } = renderSheet({ snoozed, onBringBack })
+
+    await user.click(screen.getByRole('button', { name: 'Trazer para hoje: Ligar para o banco' }))
+    await user.click(screen.getByRole('button', { name: 'Concluir agora: Ligar para o banco' }))
+    await user.click(screen.getByRole('button', { name: 'Editar a tarefa Ligar para o banco' }))
+    await user.click(screen.getByRole('button', { name: 'Apagar Ligar para o banco' }))
+
+    expect(onBringBack).toHaveBeenCalledWith('s')
+    expect(onCompleteNow).toHaveBeenCalledWith('s')
+    expect(onEdit).toHaveBeenCalledWith('s')
+    expect(onRemove).toHaveBeenCalledWith('s')
   })
 })

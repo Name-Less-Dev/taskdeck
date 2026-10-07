@@ -24,6 +24,10 @@
   font-size: 1rem;
 }
 
+.list + .list {
+  margin-top: var(--space-4);
+}
+
 .meta {
   display: flex;
   flex-direction: column;
@@ -67,4 +71,16 @@
 .empty {
   margin: var(--space-3) 0 0;
   color: var(--color-text-muted);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-4);
+}
+
+.groupHeading {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
 }

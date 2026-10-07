@@ -228,7 +228,7 @@ describe('App empty state', () => {
   it('starts empty without crashing', () => {
     renderApp([])
 
-    expect(screen.getByRole('heading', { name: 'Tudo em dia!' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Nada para hoje' })).toBeInTheDocument()
   })
 })
 

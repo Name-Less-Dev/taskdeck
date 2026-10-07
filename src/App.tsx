@@ -28,6 +28,7 @@ import {
   collectTags,
   dailyProgress,
   dormantTasks,
+  snoozedTasks,
   createDeck,
   filterByTag,
   getDueStatus,
@@ -134,6 +135,9 @@ export default function App({
   const tasks = useMemo(() => orderDeck(visibleTasks, now), [visibleTasks, now])
   const progress = dailyProgress(deckTasks, now)
   const dormant = useMemo(() => dormantTasks(deckTasks, now), [deckTasks, now])
+  const snoozed = useMemo(() => snoozedTasks(deckTasks, now), [deckTasks, now])
+  // "Scheduled (N)": everything waiting for a later day (snoozed + recurring).
+  const scheduledCount = dormant.length + snoozed.length
   const top = tasks[0] ?? null
 
   const meta = useMemo<Meta>(
@@ -425,15 +429,30 @@ export default function App({
     openSheet('edit', null)
   }
 
-  /** "Complete now" on a scheduled card: completes it early (its next date moves on), undoable. */
+  /**
+   * "Complete now" on a scheduled card, undoable: a recurring card moves on to
+   * its next date; a snoozed one-off card is simply done.
+   */
   function completeScheduled(id: string) {
     const task = allTasks.find((candidate) => candidate.id === id)
     if (task === undefined) return
     const action = { type: 'complete' as const, id, now: new Date() }
     const after = deckReducer(state, action).present.tasks.find((candidate) => candidate.id === id)
-    if (after?.due == null) return
-    const date = formatDueDate(after.due, locale, t)
-    if (apply(action, t.announce.completedUntil(task.title, date))) showToast(t.toast.completedUntil(date))
+    if (after?.status === 'active' && after.due !== null) {
+      const date = formatDueDate(after.due, locale, t)
+      if (apply(action, t.announce.completedUntil(task.title, date))) showToast(t.toast.completedUntil(date))
+      return
+    }
+    if (apply(action, t.announce.completed(task.title))) showToast(t.toast.completed)
+  }
+
+  /** "Bring back today" on a snoozed card, undoable. */
+  function bringBack(id: string) {
+    const task = allTasks.find((candidate) => candidate.id === id)
+    if (task === undefined) return
+    if (apply({ type: 'unsnooze', id, now: new Date() }, t.announce.broughtBack(task.title))) {
+      showToast(t.toast.broughtBack)
+    }
   }
 
   function removeScheduled(id: string) {
@@ -591,13 +610,22 @@ export default function App({
           {t.firstRun.startEmpty}
         </button>
       </EmptyState>
+    ) : activeTag === null && tasks.length === 0 && snoozed.length > 0 ? (
+      // Honest: cards were left for tomorrow, so this is not "all done".
+      <EmptyState title={t.day.snoozedTitle} body={t.day.snoozedBody(snoozed.length)} icon="moon">
+        <button
+          type="button"
+          className={emptyStateButton.secondary}
+          aria-haspopup="dialog"
+          onClick={(event) => {
+            openSheet('scheduled', event.currentTarget)
+          }}
+        >
+          {t.day.seeScheduled}
+        </button>
+      </EmptyState>
     ) : activeTag === null && tasks.length === 0 && (progress.done > 0 || dormant.length > 0) ? (
-      <EmptyState
-        title={progress.done > 0 ? t.day.doneTitle : t.day.nothingTitle}
-        body={progress.done > 0 ? t.day.doneBody : t.day.nothingBody}
-        icon={progress.done > 0 ? 'check' : 'calendar'}
-        celebrate={progress.done > 0}
-      >
+      <EmptyState title={t.day.doneTitle} body={t.day.doneBody} icon="check" celebrate={progress.done > 0}>
         {dormant.length > 0 && (
           <button
             type="button"
@@ -611,6 +639,8 @@ export default function App({
           </button>
         )}
       </EmptyState>
+    ) : activeTag === null && tasks.length === 0 && !firstRun ? (
+      <EmptyState title={t.day.nothingTitle} body={t.day.nothingBody} icon="calendar" />
     ) : activeTag !== null ? (
       <EmptyState title={t.tags.emptyTitle(activeTag)} body={t.tags.emptyBody} icon="folder">
         <button
@@ -667,18 +697,18 @@ export default function App({
             <p className={styles.progress} data-testid="daily-progress">
               {t.progress.today(progress.done, progress.done + progress.remaining)}
             </p>
-            {dormant.length > 0 && (
+            {scheduledCount > 0 && (
               <button
                 type="button"
                 className={styles.scheduledButton}
                 aria-haspopup="dialog"
-                aria-label={t.scheduled.openLabel(dormant.length)}
+                aria-label={t.scheduled.openLabel(scheduledCount)}
                 onClick={(event) => {
                   openSheet('scheduled', event.currentTarget)
                 }}
               >
                 <Icon name="calendar" size={16} />
-                <span aria-hidden="true">{t.scheduled.open(dormant.length)}</span>
+                <span aria-hidden="true">{t.scheduled.open(scheduledCount)}</span>
               </button>
             )}
           </div>
@@ -804,7 +834,9 @@ export default function App({
       )}
       {sheet === 'scheduled' && (
         <ScheduledSheet
-          tasks={dormant}
+          snoozed={snoozed}
+          dormant={dormant}
+          onBringBack={bringBack}
           deckNames={new Map(decks.map((deck) => [deck.id, deck.name]))}
           onCompleteNow={completeScheduled}
           onEdit={editScheduled}

@@ -99,18 +99,19 @@ describe('daily empty states', () => {
     expect(within(screen.getByRole('dialog', { name: 'Agendadas' })).getAllByTestId('scheduled-item')).toHaveLength(2)
   })
 
-  it('"Nada para hoje" when nothing was completed today and only scheduled cards exist', () => {
+  it('"Tudo feito por hoje" without the celebration when only scheduled cards exist and nothing was done', () => {
     renderApp([plants])
 
-    expect(screen.getByRole('heading', { name: 'Nada para hoje' })).toBeInTheDocument()
+    const heading = screen.getByRole('heading', { name: 'Tudo feito por hoje' })
+    expect(heading.closest('[data-celebrate]')).toBeNull()
     expect(screen.getByRole('button', { name: 'Próximas (1)' })).toBeInTheDocument()
     expect(progress()).toHaveTextContent('0 de 0 hoje')
   })
 
-  it('keeps the general empty state when there is nothing at all', () => {
+  it('"Nada para hoje" when there is nothing at all', () => {
     renderApp([])
 
-    expect(screen.getByRole('heading', { name: 'Tudo em dia!' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Nada para hoje' })).toBeInTheDocument()
   })
 
   it.each<[Locale, string, string]>([

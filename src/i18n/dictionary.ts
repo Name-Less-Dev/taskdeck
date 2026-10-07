@@ -79,6 +79,7 @@ export interface Dictionary {
     readonly completed: string
     readonly postponed: string
     readonly snoozed: string
+    readonly broughtBack: string
     readonly removed: string
     readonly deckCreated: string
     readonly deckRenamed: string
@@ -91,6 +92,7 @@ export interface Dictionary {
     readonly completed: (title: string) => string
     readonly postponed: (title: string) => string
     readonly snoozed: (title: string) => string
+    readonly broughtBack: (title: string) => string
     readonly removed: (title: string) => string
     readonly added: (title: string) => string
     readonly samplesLoaded: (count: number) => string
@@ -123,6 +125,11 @@ export interface Dictionary {
     readonly completeNow: string
     readonly completeNowLabel: (title: string) => string
     readonly removeLabel: (title: string) => string
+    readonly tomorrowHeading: string
+    readonly upcomingHeading: string
+    readonly backTomorrow: string
+    readonly bringBack: string
+    readonly bringBackLabel: (title: string) => string
   }
   readonly day: {
     readonly doneTitle: string
@@ -130,6 +137,9 @@ export interface Dictionary {
     readonly nothingTitle: string
     readonly nothingBody: string
     readonly upcoming: (count: number) => string
+    readonly snoozedTitle: string
+    readonly snoozedBody: (count: number) => string
+    readonly seeScheduled: string
   }
   readonly progress: {
     readonly today: (done: number, total: number) => string
