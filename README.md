@@ -4,6 +4,11 @@ A to-do app where your tasks are a deck of cards: one card at a time, swipe to d
 
 **Demo: <https://taskdeck-flax.vercel.app>** · [![CI](https://github.com/Name-Less-Dev/taskdeck/actions/workflows/ci.yml/badge.svg)](https://github.com/Name-Less-Dev/taskdeck/actions/workflows/ci.yml)
 
+<p>
+  <img src="docs/screenshot-deck.png" width="280" alt="The deck in the dark theme: the top card, Organizar a gaveta de documentos, is being dragged right and shows the green Concluir overlay; the header reads 3 de 6 hoje with a Scheduled button, and the four action buttons sit at the bottom.">
+  <img src="docs/demo.gif" width="280" alt="Short screen recording of the deck in the dark theme: the top card is dragged with the mouse and leaves the deck, with the four action buttons below.">
+</p>
+
 ## Resumo em português
 
 taskdeck é um app de tarefas em formato de baralho, mobile-first e 100% no navegador
@@ -138,11 +143,5 @@ All of them: [limitations](docs/limitations.md)
 - An animated "ghost" gesture in the tutorial and contextual tips.
 - Colour per deck.
 - Optional: an Android package (Capacitor) with system notifications.
-
-## Pending
-
-- [ ] `public/og.png` (1200x630) for link previews
-- [ ] A screenshot (`docs/screenshot-deck.png`) and a short demo GIF (`docs/demo.gif`)
-- [ ] The phone checklists in [manual QA](docs/manual-qa.md)
 
 How it was built, step by step: [project history](docs/history.md)

@@ -41,6 +41,9 @@ export default defineConfig({
       workbox: {
         // Default is js/css/html only; the icons are needed offline too.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+        // og.png is only for link previews: installing the app must not download it.
+        // (The first entry is workbox-build's default, kept.)
+        globIgnores: ['**/node_modules/**/*', 'og.png'],
         // Any navigation (e.g. /?lang=en) opens the cached app shell.
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,

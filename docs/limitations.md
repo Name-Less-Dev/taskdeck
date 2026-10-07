@@ -39,8 +39,6 @@
   it; the status is shown in Settings.
 - The bundle is about 199 kB gzip (JS 189 + workbox-window 2.2; CSS 7.6). Motion's
   `LazyMotion` and code-splitting the sheets could cut it.
-- `og:image` points to `/og.png` (1200x630), which does not exist yet: link previews
-  show no image until it is made (see [Pending](../README.md#pending)).
 - **DST.** Wall-clock due dates follow the device's zone. A local time that does not
   exist (the hour skipped when DST starts) or happens twice is resolved by JavaScript
   `Date` in the app, and by each calendar app for the floating times in the `.ics`

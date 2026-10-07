@@ -195,9 +195,9 @@ progress, rollover announcement) and days of the week in recurrences. The themes
 package added Settings > Appearance (auto, dark, light, lilac, pastel, neon). Otherwise:
 bug fixes (test first, fix in its own commit), dependency updates and documentation.
 
-Still manual (see docs/manual-qa.md and the README "Pending"): the phone QA checklists (gestures, persistence,
-calendar and reminders, PWA and time field), `public/og.png` (1200x630),
-`docs/screenshot-deck.png` and `docs/demo.gif`. Verified by hand so far: only an
+Still manual (see docs/manual-qa.md): the phone QA checklists (gestures, persistence,
+calendar and reminders, PWA and time field).
+Verified by hand so far: only an
 `.ics` imported into an Android calendar (time, daily repetition, alarm fired).
 
 ## Roadmap (not started)
