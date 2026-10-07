@@ -272,6 +272,22 @@ export interface Dictionary {
     /** Exactly five steps, in order. */
     readonly steps: readonly { readonly title: string; readonly body: string }[]
   }
+  readonly practice: {
+    readonly notSaved: string
+    readonly deckName: string
+    readonly deckLabel: string
+    readonly cardTitle: string
+    readonly cardBody: string
+    readonly cardGone: string
+    readonly prompt: Readonly<Record<'complete' | 'postpone' | 'remove' | 'snooze', string>>
+    readonly did: Readonly<Record<'complete' | 'postpone' | 'remove' | 'snooze', string>>
+    readonly nowTry: Readonly<Record<'complete' | 'postpone' | 'remove' | 'snooze', string>>
+    readonly wellDone: string
+    readonly stepDone: string
+    readonly hint: (button: string) => string
+    readonly tryAgain: string
+    readonly skipStep: string
+  }
   readonly firstRun: {
     readonly title: string
     readonly body: string

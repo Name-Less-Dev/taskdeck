@@ -13,10 +13,12 @@ const BUTTONS: readonly { action: SwipeAction; icon: IconName }[] = [
 export interface ActionBarProps {
   readonly disabled: boolean
   readonly onAction: (action: SwipeAction) => void
+  /** The keyboard legend (off in the how-to practice). */
+  readonly showShortcuts?: boolean
 }
 
 /** Button alternative to the swipe gestures, in the thumb zone. */
-export function ActionBar({ disabled, onAction }: ActionBarProps) {
+export function ActionBar({ disabled, onAction, showShortcuts = true }: ActionBarProps) {
   const { t } = useI18n()
   const keys = t.shortcuts
 
@@ -40,39 +42,41 @@ export function ActionBar({ disabled, onAction }: ActionBarProps) {
         ))}
       </div>
 
-      <details className={styles.shortcuts}>
-        <summary>{keys.summary}</summary>
-        <dl>
-          <dt>
-            <kbd>Enter</kbd> / <kbd>{keys.spaceKey}</kbd>
-          </dt>
-          <dd>{keys.flip}</dd>
-          <dt>
-            <kbd>→</kbd>
-          </dt>
-          <dd>{keys.complete}</dd>
-          <dt>
-            <kbd>←</kbd>
-          </dt>
-          <dd>{keys.postpone}</dd>
-          <dt>
-            <kbd>↓</kbd>
-          </dt>
-          <dd>{keys.snooze}</dd>
-          <dt>
-            <kbd>Delete</kbd> / <kbd>Backspace</kbd>
-          </dt>
-          <dd>{keys.remove}</dd>
-          <dt>
-            <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd>
-          </dt>
-          <dd>{keys.undo}</dd>
-          <dt>
-            <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Y</kbd>
-          </dt>
-          <dd>{keys.redo}</dd>
-        </dl>
-      </details>
+      {showShortcuts && (
+        <details className={styles.shortcuts}>
+          <summary>{keys.summary}</summary>
+          <dl>
+            <dt>
+              <kbd>Enter</kbd> / <kbd>{keys.spaceKey}</kbd>
+            </dt>
+            <dd>{keys.flip}</dd>
+            <dt>
+              <kbd>→</kbd>
+            </dt>
+            <dd>{keys.complete}</dd>
+            <dt>
+              <kbd>←</kbd>
+            </dt>
+            <dd>{keys.postpone}</dd>
+            <dt>
+              <kbd>↓</kbd>
+            </dt>
+            <dd>{keys.snooze}</dd>
+            <dt>
+              <kbd>Delete</kbd> / <kbd>Backspace</kbd>
+            </dt>
+            <dd>{keys.remove}</dd>
+            <dt>
+              <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd>
+            </dt>
+            <dd>{keys.undo}</dd>
+            <dt>
+              <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Y</kbd>
+            </dt>
+            <dd>{keys.redo}</dd>
+          </dl>
+        </details>
+      )}
     </footer>
   )
 }

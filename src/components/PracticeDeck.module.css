@@ -1,0 +1,75 @@
+.practice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+/* Always visible: nothing done here is saved. */
+.badge {
+  align-self: flex-start;
+  margin: 0;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-info-bg);
+  color: var(--color-info-fg);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.prompt {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* A fixed stage for the real deck (its cards size from the container). */
+.deck {
+  position: relative;
+  height: 240px;
+  min-width: 0;
+}
+
+.gone {
+  margin: 0;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-fg);
+}
+
+.feedback p {
+  flex: 1 1 12rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.skip {
+  align-self: flex-start;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

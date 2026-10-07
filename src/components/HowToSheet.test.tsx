@@ -5,15 +5,15 @@ import { renderWithI18n } from '../test/render.tsx'
 import { FINE_POINTER_QUERY } from '../ui/useFinePointer.ts'
 import { HowToSheet } from './HowToSheet.tsx'
 
-function renderSheet(locale: Locale = 'pt-BR') {
+function renderSheet(locale: Locale = 'pt-BR', practice = true) {
   const onClose = vi.fn()
-  const result = renderWithI18n(<HowToSheet onClose={onClose} />, locale)
+  const result = renderWithI18n(<HowToSheet onClose={onClose} practice={practice} />, locale)
   return { ...result, onClose }
 }
 
 const progress = () => screen.getByTestId('how-to-progress')
 const stepTitle = () => screen.getByRole('heading', { level: 3 })
-const sheetRegion = () => screen.getByRole('status')
+const sheetRegion = () => screen.getByTestId('how-to-live')
 
 /** Answers the fine-pointer query as given; every other query is "no". */
 function pointer(fine: boolean) {
@@ -93,8 +93,8 @@ describe('HowToSheet', () => {
     expect(onClose).toHaveBeenCalledWith('closed')
   })
 
-  it('draws every direction with an arrow and a word', async () => {
-    const { user } = renderSheet()
+  it('draws every direction with an arrow and a word (static figures, without practice)', async () => {
+    const { user } = renderSheet('pt-BR', false)
 
     await user.click(screen.getByRole('button', { name: 'Próximo' }))
     expect(screen.getByTestId('how-to-figure')).toHaveTextContent('← Mais tarde')

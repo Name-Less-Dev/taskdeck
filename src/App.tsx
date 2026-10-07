@@ -61,6 +61,7 @@ import { calendarBlob, downloadBlob, jsonBlob, type Download } from './ui/downlo
 import { buildIcs, exportableCount, icsFileName, type AlarmOption } from './calendar/ics.ts'
 import { deckNameError } from './ui/form-errors.ts'
 import { EXIT_TIMEOUT_MS, exitReducer, IDLE, isExiting, type ExitEvent, type ExitState } from './ui/exitState.ts'
+import { swipeActionForKey } from './ui/deckKeys.ts'
 import type { SwipeAction } from './ui/gestures.ts'
 import { useAutosave } from './ui/useAutosave.ts'
 import { useNow } from './ui/useNow.ts'
@@ -606,23 +607,12 @@ export default function App({
         event.preventDefault()
         openEdit()
         return
-      case 'ArrowRight':
-        event.preventDefault()
-        requestAction('complete')
-        return
-      case 'ArrowLeft':
-        event.preventDefault()
-        requestAction('postpone')
-        return
-      case 'ArrowDown':
-        event.preventDefault()
-        requestAction('snooze')
-        return
-      case 'Delete':
-      case 'Backspace':
-        event.preventDefault()
-        requestAction('remove')
-        return
+    }
+
+    const action = swipeActionForKey(event.key)
+    if (action !== null) {
+      event.preventDefault()
+      requestAction(action)
     }
   }
 

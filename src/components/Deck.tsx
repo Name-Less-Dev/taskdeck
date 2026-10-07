@@ -36,6 +36,8 @@ export interface DeckProps {
   readonly onEdit?: () => void
   /** Exports the top card to a calendar file. */
   readonly onAddToCalendar?: () => void
+  /** Accessible name of the region (the practice deck has its own). */
+  readonly label?: string
 }
 
 export function Deck({
@@ -53,11 +55,12 @@ export function Deck({
   deckNames,
   onEdit,
   onAddToCalendar,
+  label,
 }: DeckProps) {
   const { t } = useI18n()
 
   return (
-    <section ref={regionRef} className={styles.region} aria-label={t.app.deckLabel} tabIndex={-1} onKeyDown={onKeyDown}>
+    <section ref={regionRef} className={styles.region} aria-label={label ?? t.app.deckLabel} tabIndex={-1} onKeyDown={onKeyDown}>
       {tasks.length === 0
         ? (emptyState ?? <EmptyState />)
         : tasks.slice(0, VISIBLE_CARDS).map((task, depth) => (
