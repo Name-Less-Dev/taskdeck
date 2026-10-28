@@ -114,6 +114,24 @@ npm run build         # production build with the service worker
 Details, time zones and the debug panel: [testing](docs/testing.md) ·
 [manual QA](docs/manual-qa.md)
 
+## Running with Docker (Rodando com Docker)
+
+A multi-stage image: Node 24 builds the app, nginx serves `dist/`
+([`Dockerfile`](Dockerfile), [`nginx.conf`](nginx.conf)). nginx falls back to
+`index.html` for unknown paths, gzips text, caches hashed files for a year and never
+caches `index.html`, `sw.js` or the manifest, so a new version reaches installed apps.
+
+```bash
+docker build -t taskdeck .
+docker run --rm -p 8080:80 taskdeck
+# in another terminal: status, SPA fallback, cache headers and gzip
+sh scripts/docker-smoke.sh http://localhost:8080
+```
+
+These exact commands run in CI on every push (job "Docker image"). They were **not**
+run on the development machine, which has no Docker; `scripts/docker-smoke.sh` itself
+was exercised against `vite preview`.
+
 ## Bugs found and fixed
 
 - **Enter submitted the task form** from a phone keyboard; Enter now moves to the next

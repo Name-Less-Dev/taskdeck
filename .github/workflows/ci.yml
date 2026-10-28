@@ -90,3 +90,24 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 14
+
+  docker:
+    name: Docker image (nginx)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build -t taskdeck .
+      - run: docker run -d --name taskdeck -p 8080:80 taskdeck
+      - name: Wait for nginx
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:8080/ && exit 0
+            sleep 1
+          done
+          exit 1
+      # Status, SPA fallback, cache headers and gzip (see the script).
+      - run: sh scripts/docker-smoke.sh http://localhost:8080
+      - name: Container logs
+        if: always()
+        run: docker logs taskdeck
