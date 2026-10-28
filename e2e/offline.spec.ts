@@ -1,7 +1,14 @@
 import { expect, test } from '@playwright/test'
 import { addTask, dialog, openFirstRun, openSettings, startEmpty, topCardTitle } from './helpers.ts'
 
-test('once the service worker is ready, the app opens and works offline', async ({ page, context }) => {
+test('once the service worker is ready, the app opens and works offline', async ({ page, context }, testInfo) => {
+  // Real limitation of the tool, not of the app: in Playwright's WebKit, context.setOffline()
+  // also fails requests the service worker answers from its cache (fetch('/index.html') gives
+  // "Load failed" offline, while online every response is fromServiceWorker() === true and
+  // index.html is in the precache). Playwright documents service worker support as
+  // Chromium-only (https://playwright.dev/docs/service-workers). Offline stays covered by
+  // the Chromium projects (desktop and Pixel 7).
+  test.skip(testInfo.project.name === 'webkit', 'Playwright WebKit offline emulation blocks service-worker responses')
   await openFirstRun(page)
   await startEmpty(page)
   // Waits until a worker is active, i.e. its install step finished the precache.

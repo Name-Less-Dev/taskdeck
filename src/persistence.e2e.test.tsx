@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from './i18n/index.tsx'
@@ -126,7 +126,7 @@ describe('persistence across reloads', () => {
     expect((await stored()).data.tasks).toHaveLength(1)
   })
 
-  it('flushes immediately when the page is hidden, without waiting for the debounce', async () => {
+  it('saves a change right away, so nothing is pending when the page goes away', async () => {
     const memory = createMemoryStorage({ createId: () => 'g', names })
     const saves: string[][] = []
     const recording = {
@@ -138,16 +138,10 @@ describe('persistence across reloads', () => {
     }
     const { user } = renderRoot({ open: () => Promise.resolve({ storage: recording, mode: 'indexeddb', fallbackReason: null }) })
     await user.click(await screen.findByRole('button', { name: 'Começar do zero' }))
+
     await createTaskThroughUi(user, 'Salvar já')
-    saves.length = 0
 
-    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })
-    act(() => {
-      document.dispatchEvent(new Event('visibilitychange'))
-    })
-    Reflect.deleteProperty(document, 'visibilityState')
-
-    // The debounce is 300 ms: seeing the save well before that proves the flush.
+    // No debounce: WebKit drops a write still pending when the page goes away.
     await waitFor(
       () => {
         expect(saves).toContainEqual(['Salvar já'])

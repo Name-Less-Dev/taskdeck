@@ -27,8 +27,16 @@
      the exit is now a pure state machine (`src/ui/exitState.ts`) that always commits
      (finished, interrupted, or after a 600 ms safety-net timeout).
 
+- **Escape did not close a sheet in Safari/WebKit** (found by the Playwright suite on
+  WebKit). Safari does not focus a checkbox or button when it is clicked, so after
+  ticking "Repeat" focus stayed on `<body>` and Escape never reached the dialog's key
+  handler. Fix: the sheet also listens for an unhandled Escape on the document; a
+  component test reproduces the `<body>` focus case.
 - **A change made right before a reload was lost** (found by the Playwright
   persistence test). Saves are debounced by 300 ms and flushed on `pagehide`, but in
   Chromium the flushed transaction never committed before the page went away (with
   1 s of wait the test passed). Fix: `tx.commit()` once every write is queued, with a
-  unit test that the commit happens and the e2e test as the reproduction.
+  unit test that the commit happens and the e2e test as the reproduction. Running the
+  same test on WebKit later showed that WebKit also drops the write started on
+  `pagehide`, committed or not: saves now start right after each change instead of
+  after a 300 ms debounce.

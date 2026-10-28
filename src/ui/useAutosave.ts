@@ -11,7 +11,7 @@ export interface AutosaveState {
 }
 
 /**
- * Saves `data` + `meta` ~300 ms after they change, and immediately when the
+ * Saves `data` + `meta` right after they change (AUTOSAVE_DELAY_MS), and when the
  * page is hidden or unloaded (visibilitychange: hidden, pagehide). The
  * snapshot that was just loaded is not written back. Errors never throw.
  */

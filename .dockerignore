@@ -1,0 +1,21 @@
+# Rebuilt inside the image or not needed by it.
+node_modules
+dist
+dist-ssr
+coverage
+test-results
+playwright-report
+blob-report
+.git
+.github
+.vscode
+.idea
+*.log
+Dockerfile
+.dockerignore
+
+# Never send secrets to the build context.
+.env
+.env.*
+!.env.example
+*.local

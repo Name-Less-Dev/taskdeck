@@ -20,8 +20,10 @@ npm run e2e            # Playwright: builds, serves on port 4173, runs desktop +
 npm run icons          # regenerate public/*.png from public/icon.svg (only when the SVG changes)
 ```
 
-Playwright needs its Chromium once: `npx playwright install chromium` (on Linux CI:
-`npx playwright install --with-deps chromium`, which also installs system libraries).
+Playwright needs its browsers once: `npx playwright install chromium firefox webkit`
+(on Linux CI: `npx playwright install --with-deps <browser>`, which also installs
+system libraries). CI runs one job per engine: Chromium (`desktop` and `mobile`),
+`firefox` and `webkit`.
 
 Tests default to `TZ=America/Sao_Paulo`. To run them in another zone, set `TZ`
 (Linux/macOS: `TZ=Pacific/Auckland npm test`; Windows PowerShell:
@@ -36,7 +38,7 @@ Test pyramid (run `npm test` and `npm run e2e` for the current counts):
 | --- | --- | --- |
 | Unit (domain, state, storage, calendar, ui logic, i18n, pwa, themes and contrast) | Vitest, `node` project | pure logic, `tests/` |
 | Component and integration (React, jsdom, fake-indexeddb) | Vitest, `dom` project | `src/**/*.test.tsx` |
-| End-to-end (production build, real Chromium) | Playwright, `desktop` + `mobile` (Pixel 7) | `e2e/`; the shortcuts legend is checked per project, so one test is skipped in each |
+| End-to-end (production build, real browsers) | Playwright, `desktop` + `mobile` (Pixel 7) on Chromium, `firefox`, `webkit` | `e2e/`; the shortcuts legend is checked per device class, so one test is skipped in each project |
 
 End-to-end specs (`e2e/`): layout (no horizontal scroll at 320 and 360 px, light and
 dark, in first run, deck, form, decks sheet and settings), gestures with real mouse
@@ -85,3 +87,19 @@ innerHeight changing near the problem = viewport/keyboard; `pointercancel` durin
 drag = the browser took the touch; pointerdown without "drag ON" = drag controls on
 the wrong element; top card opacity 0 or OFF-SCREEN = the card is there but invisible.
 The panel never intercepts touches and is not part of production builds.
+
+## Browser-specific exclusions
+
+Only one end-to-end test does not run on every engine, for a limitation of the tool:
+
+- `e2e/offline.spec.ts` is excluded on **WebKit**. With `context.setOffline(true)`,
+  Playwright's WebKit also fails requests that the service worker answers from its
+  cache (`fetch('/index.html')` gives "Load failed"), although online every response
+  comes from the service worker and `index.html` is in the precache. Playwright
+  documents service worker support as Chromium-only
+  (<https://playwright.dev/docs/service-workers>). Offline stays covered on Chromium.
+
+Running the suite on WebKit also found two app bugs, fixed at the source (see
+[bugs](bugs.md)): Escape did not close a sheet after clicking a checkbox (Safari does
+not focus clicked buttons or checkboxes), and a change made right before a reload was
+lost.

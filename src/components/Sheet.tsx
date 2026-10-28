@@ -37,6 +37,28 @@ export function Sheet({ title, onClose, children }: SheetProps) {
     target?.focus()
   }, [])
 
+  // Safari does not focus a button or checkbox when it is clicked, so with the
+  // sheet open focus can sit on <body>, out of reach of the dialog's own key
+  // handler. Escape from outside the dialog closes it too (the page behind is
+  // inert, so nothing else there can be using the key).
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
+  useEffect(() => {
+    const onDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      const dialog = dialogRef.current
+      if (dialog === null || (event.target instanceof Node && dialog.contains(event.target))) return
+      event.preventDefault()
+      onCloseRef.current()
+    }
+    document.addEventListener('keydown', onDocumentKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onDocumentKeyDown)
+    }
+  }, [])
+
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Escape') {
       event.preventDefault()
