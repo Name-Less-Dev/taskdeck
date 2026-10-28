@@ -56,8 +56,20 @@ jobs:
       - run: npm run test:coverage
 
   e2e:
-    name: End-to-end (Playwright, Chromium)
+    name: End-to-end (Playwright, ${{ matrix.browser }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # One job per engine, in parallel; each installs only its own browser.
+          - browser: chromium
+            projects: --project=desktop --project=mobile
+          - browser: firefox
+            projects: --project=firefox
+          - browser: webkit
+            projects: --project=webkit
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -65,15 +77,15 @@ jobs:
           node-version: lts/*
           cache: npm
       - run: npm ci
-      - name: Install Chromium and its system dependencies
-        run: npx playwright install --with-deps chromium
+      - name: Install ${{ matrix.browser }} and its system dependencies
+        run: npx playwright install --with-deps ${{ matrix.browser }}
       # playwright.config.ts builds the app and serves it with vite preview.
-      - run: npm run e2e
+      - run: npm run e2e -- ${{ matrix.projects }}
       - name: Upload report and traces
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.browser }}
           path: |
             playwright-report/
             test-results/
