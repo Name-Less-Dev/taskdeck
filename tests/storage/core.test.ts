@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  AUTOSAVE_DELAY_MS,
   createAutosaver,
   createMemoryStorage,
   getPersistence,
@@ -127,8 +128,23 @@ describe('autosave', () => {
     return { save, onError, onSaved, saver: createAutosaver({ save, onError, onSaved }) }
   }
 
-  it('waits 300 ms of quiet and saves only the latest snapshot', async () => {
+  it('saves right away by default, and changes from the same task are saved together', async () => {
     const { save, saver } = setup()
+    const first = sampleData()
+    const second = { ...sampleData(), decks: [] }
+
+    saver.schedule(first, meta)
+    saver.schedule(second, meta)
+    expect(AUTOSAVE_DELAY_MS).toBe(0)
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(save).toHaveBeenCalledWith(second, meta)
+  })
+
+  it('with a delay, waits for quiet and saves only the latest snapshot', async () => {
+    const save = vi.fn((): Promise<void> => Promise.resolve())
+    const saver = createAutosaver({ save, delayMs: 300 })
     const first = sampleData()
     const second = { ...sampleData(), decks: [] }
 

@@ -1,7 +1,13 @@
 import type { AppData } from '../domain/index.ts'
 import type { Meta } from './types.ts'
 
-export const AUTOSAVE_DELAY_MS = 300
+/**
+ * Saves start right after a change (next task), not after a debounce: WebKit
+ * drops an IndexedDB write that is still pending when the page goes away, even
+ * one started on pagehide, so nothing may wait. Changes from the same task are
+ * still saved together, and saves never overlap.
+ */
+export const AUTOSAVE_DELAY_MS = 0
 
 export interface AutosaverOptions {
   readonly save: (data: AppData, meta: Meta) => Promise<void>

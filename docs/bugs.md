@@ -31,4 +31,7 @@
   persistence test). Saves are debounced by 300 ms and flushed on `pagehide`, but in
   Chromium the flushed transaction never committed before the page went away (with
   1 s of wait the test passed). Fix: `tx.commit()` once every write is queued, with a
-  unit test that the commit happens and the e2e test as the reproduction.
+  unit test that the commit happens and the e2e test as the reproduction. Running the
+  same test on WebKit later showed that WebKit also drops the write started on
+  `pagehide`, committed or not: saves now start right after each change instead of
+  after a 300 ms debounce.

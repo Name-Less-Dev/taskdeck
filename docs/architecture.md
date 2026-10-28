@@ -196,8 +196,9 @@ preferences in `localStorage`, outside `Meta` and backups.
   The format is at v1, so the registry is empty, but the mechanism is tested with a
   fictional v0. A snapshot from a **newer** version is never loaded and never
   overwritten: the app opens read-only with a warning and can export the raw records.
-- **Debounce and flush.** Changes are saved ~300 ms after the last one; saving
-  happens immediately when the page is hidden (`visibilitychange`) or unloaded
+- **Save right away, and flush.** Changes are saved right after they happen (no
+  debounce: WebKit drops a write still pending when the page goes away); saving
+  is also flushed when the page is hidden (`visibilitychange`) or unloaded
   (`pagehide`). Saves never overlap. A failed save shows a discreet "Try again".
 - **Persistent storage.** After the first user action, `navigator.storage.persist()`
   is requested if it exists (it only exists in secure contexts); Settings shows yes /
