@@ -29,7 +29,9 @@
 - **No sync between devices**; moving data means export + import.
 - **Native date pickers**: the date field is the browser's own and looks different on
   each platform (only the time field was replaced).
-- **Safari/iOS and Firefox are not tested**: Playwright runs Chromium only, and no
+- **Real Safari/iOS and Firefox are not checked by hand**: Playwright runs the suite on
+  the Chromium, Firefox and WebKit engines (Desktop Firefox and Desktop Safari
+  profiles; the offline spec is Chromium-only, see [testing](testing.md)), and no
   manual check has been done in them.
 - **The undo history is not saved.** Reloading keeps the data but forgets what can be
   undone.

@@ -99,7 +99,7 @@ More: [features](docs/features.md) · [architecture](docs/architecture.md) ·
 | --- | --- | --- |
 | Unit | Vitest (`node`) | domain, reducer, storage (fake-indexeddb), calendar, gestures, themes and contrast, i18n parity |
 | Component and integration | Vitest (`jsdom`) + Testing Library | screens, sheets, keyboard and focus, persistence through `Root` |
-| End-to-end | Playwright (Chromium: desktop and Pixel 7) | real drags, layout at 320/360 px, offline, backup, `.ics`, themes, tutorial, axe |
+| End-to-end | Playwright: Chromium (desktop and Pixel 7), Firefox and WebKit | real drags, layout at 320/360 px, offline, backup, `.ics`, themes, tutorial, axe |
 
 ```bash
 npm install
@@ -113,6 +113,39 @@ npm run build         # production build with the service worker
 
 Details, time zones and the debug panel: [testing](docs/testing.md) ·
 [manual QA](docs/manual-qa.md)
+
+### Lighthouse
+
+Measured on 2026-10-28 with Lighthouse 13.6.0 (HeadlessChrome 153, Playwright's
+Chromium) against the production build served locally by `vite preview`; three runs
+per mode, all three identical.
+
+| Mode | Performance | Accessibility | Best practices | SEO | FCP | LCP | TBT | CLS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Mobile (default throttling) | 100 | 100 | 100 | 100 | 0.8 s | 0.8 s | 0 ms | 0 |
+| Desktop (`--preset=desktop`) | 100 | 100 | 100 | 100 | 0.2 s | 0.2 s | 0 ms | 0 |
+
+- The first measurement gave **SEO 91**: there was no `robots.txt`, so the
+  single-page fallback answered `/robots.txt` with `index.html`. A real
+  `public/robots.txt` fixed it (the table shows the re-measurement).
+- Lighthouse 13 has no PWA category (it was removed in Lighthouse 12); installability
+  and offline are covered by the end-to-end tests instead.
+- These are local numbers (no real network, simulated throttling on mobile), not
+  numbers from the deployed site.
+
+How to reproduce (Lighthouse launches Chrome itself when one is installed; on a
+machine where it cannot, `scripts/lighthouse-browser.mjs` starts Playwright's Chromium
+with a debugging port for it):
+
+```bash
+npm run build
+npx vite preview --port 4175 --strictPort                      # terminal 1
+node scripts/lighthouse-browser.mjs 9222                         # terminal 2 (optional)
+npx lighthouse@13.6.0 http://localhost:4175/ --port=9222 \
+  --only-categories=performance,accessibility,best-practices,seo
+npx lighthouse@13.6.0 http://localhost:4175/ --port=9222 --preset=desktop \
+  --only-categories=performance,accessibility,best-practices,seo
+```
 
 ## Running with Docker (Rodando com Docker)
 
@@ -149,7 +182,8 @@ Root causes and fixes: [bugs](docs/bugs.md)
   exported calendar event.
 - Data lives only in this browser: no sync between devices, and iOS may delete the
   data of sites that are not installed (backups are the safety net).
-- Tested on Chromium only; Safari/iOS and Firefox were not checked.
+- The end-to-end suite runs on the Chromium, Firefox and WebKit engines, but no real
+  Safari/iOS device or desktop Firefox was checked by hand.
 - Two open tabs: the last save wins.
 - "Tomorrow" is the only snooze; there is no free date.
 

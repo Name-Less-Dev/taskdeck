@@ -15,7 +15,8 @@ projects, Vitest 5) with V8 coverage, Testing Library,
 with typescript-eslint in type-checked strict mode. PWA:
 [vite-plugin-pwa](https://vite-pwa-org.netlify.app) 2.0 (Workbox 7.4) and
 @vite-pwa/assets-generator 2.0 for the icons. End-to-end:
-[Playwright](https://playwright.dev) 1.63 (Chromium) and @axe-core/playwright 4.13.
+[Playwright](https://playwright.dev) 1.63 (Chromium, Firefox and WebKit) and
+@axe-core/playwright 4.13.
 
 **Why idb and fake-indexeddb.** `idb` (by Jake Archibald) is a ~1 kB promise wrapper
 that keeps IndexedDB's own semantics (real transactions, `tx.done` rejecting on
