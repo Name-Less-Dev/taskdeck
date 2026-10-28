@@ -35,7 +35,8 @@ test('step 4 mentions the arrow keys only where there is a fine pointer', async 
   for (let i = 0; i < 3; i += 1) await sheet.getByRole('button', { name: 'Próximo' }).click()
 
   const hint = sheet.getByText('No computador, as setas do teclado também.')
-  if (testInfo.project.name === 'desktop') await expect(hint).toBeVisible()
+  // Desktop projects (Chromium, Firefox, WebKit) have hover and a fine pointer; the Pixel 7 does not.
+  if (testInfo.project.use.isMobile !== true) await expect(hint).toBeVisible()
   else await expect(hint).toHaveCount(0)
 })
 

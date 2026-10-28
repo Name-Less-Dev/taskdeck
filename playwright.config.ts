@@ -26,6 +26,9 @@ export default defineConfig({
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     // "Pixel 7" exists in the installed @playwright/test 1.63 device list.
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    // Other engines (descriptors from the installed @playwright/test 1.63).
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],
   webServer: {
     command: `npm run build && npx vite preview --port ${String(PORT)} --strictPort`,
