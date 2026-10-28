@@ -35,3 +35,13 @@ describe('index.html metadata', () => {
     expect(meta('name', 'twitter:image')).toBe(meta('property', 'og:image'))
   })
 })
+
+describe('robots.txt', () => {
+  it('exists as a real file, so the SPA fallback never answers it with index.html', () => {
+    const robots = readFileSync(new URL('../../public/robots.txt', import.meta.url), 'utf8')
+
+    expect(robots).toMatch(/^User-agent: \*$/m)
+    expect(robots).toMatch(/^Allow: \/$/m)
+    expect(robots).not.toContain('<')
+  })
+})
